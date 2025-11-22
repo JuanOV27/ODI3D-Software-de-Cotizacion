@@ -1,0 +1,693 @@
+/* ============================================
+   ESTILOS PARA INTEGRACIÓN KIRI:MOTO
+   ============================================ */
+
+/* Sección de carga de archivos */
+.kiri-upload-section {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px dashed #0ea5e9;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.kiri-upload-section:hover {
+    border-color: #0284c7;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+.kiri-upload-section label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #0c4a6e;
+    margin-bottom: 15px;
+}
+
+.upload-icon {
+    font-size: 1.5rem;
+}
+
+.mode-badge {
+    background: #0ea5e9;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.upload-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.file-status {
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.status-loading {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fbbf24;
+}
+
+.status-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+.status-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
+
+.status-warning {
+    background: #fed7aa;
+    color: #9a3412;
+    border: 1px solid #f97316;
+}
+
+/* ============================================
+   CONTENEDOR IFRAME (MODO ESCRITORIO)
+   ============================================ */
+
+.kiri-iframe-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.kiri-iframe-container.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.kiri-header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.kiri-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.kiri-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kiri-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+#kiriFrame {
+    flex: 1;
+    border: none;
+    width: 100%;
+    background: white;
+}
+
+.kiri-controls {
+    background: #f9fafb;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    border-top: 2px solid #e5e7eb;
+}
+
+.kiri-controls .btn {
+    min-width: 150px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ============================================
+   INDICADORES DE CARGA
+   ============================================ */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.status-loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-loading::before {
+    content: '⏳ ';
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   INFORMACIÓN DEL MODELO
+   ============================================ */
+
+.model-info-box {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.model-info-box h4 {
+    color: #1f2937;
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.model-info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.model-info-item:last-child {
+    border-bottom: none;
+}
+
+.model-info-label {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.model-info-value {
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   ESTILOS RESPONSIVE - MÓVIL
+   ============================================ */
+
+@media (max-width: 768px) {
+    .kiri-upload-section {
+        padding: 15px;
+    }
+
+    .mode-badge {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+
+    .kiri-header {
+        padding: 15px 20px;
+    }
+
+    .kiri-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .kiri-controls {
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .kiri-controls .btn {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .model-info-box {
+        padding: 12px;
+    }
+
+    .model-info-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* ============================================
+   ANIMACIONES DE ENTRADA
+   ============================================ */
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.kiri-iframe-container.active {
+    animation: slideInUp 0.4s ease-out;
+}
+
+/* ============================================
+   TOOLTIPS Y AYUDAS
+   ============================================ */
+
+.kiri-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.kiri-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: #1f2937;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.kiri-tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 8px);
+}
+
+/* ============================================
+   ALERTAS DE VALIDACIÓN
+   ============================================ */
+
+.volume-alert {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.volume-alert-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.volume-alert-content {
+    flex: 1;
+}
+
+.volume-alert-title {
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 5px;
+}
+
+.volume-alert-message {
+    color: #78350f;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ============================================
+   ESTADO DE PROCESAMIENTO
+   ============================================ */
+
+.processing-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 12px;
+}
+
+.processing-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.processing-text {
+    margin-top: 15px;
+    color: #4b5563;
+    font-weight: 500;
+}
+
+/* ============================================
+   MEJORAS DE ACCESIBILIDAD
+   ============================================ */
+
+.btn:focus,
+.kiri-close:focus {
+    outline: 3px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+.file-status[role="alert"] {
+    /* Screen readers will announce this */
+}
+
+/* ============================================
+   DARK MODE (Opcional)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .kiri-upload-section {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d3748 100%);
+        border-color: #3b82f6;
+    }
+
+    .file-status {
+        background: #374151;
+        color: #f3f4f6;
+    }
+
+    .model-info-box {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .model-info-label,
+    .model-info-value {
+        color: #f3f4f6;
+    }
+}
+
+/* ============================================
+   MODAL DE CAPTURA DE DATOS
+   ============================================ */
+
+.kiri-data-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.kiri-data-modal-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.kiri-data-header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kiri-data-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.kiri-data-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.kiri-data-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.kiri-data-body {
+    padding: 25px;
+    max-height: calc(90vh - 100px);
+    overflow-y: auto;
+}
+
+.kiri-instructions {
+    background: #f0f9ff;
+    border-left: 4px solid #3b82f6;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.kiri-instructions p {
+    margin: 0 0 10px 0;
+    color: #1e40af;
+    font-weight: 500;
+}
+
+.kiri-instructions ol {
+    margin: 10px 0;
+    padding-left: 20px;
+    color: #1e3a8a;
+}
+
+.kiri-instructions li {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.kiri-data-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.kiri-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kiri-input-group label {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kiri-input-group .hint {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 400;
+    margin-left: auto;
+}
+
+.kiri-input-group input {
+    padding: 12px 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.kiri-input-group input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.kiri-helper {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.kiri-helper strong {
+    color: #374151;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.kiri-helper input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.btn-convert {
+    background: #6366f1;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-convert:hover {
+    background: #4f46e5;
+}
+
+.kiri-data-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #f3f4f6;
+}
+
+.kiri-data-actions .btn {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Responsive para móvil */
+@media (max-width: 768px) {
+    .kiri-data-modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .kiri-data-header {
+        padding: 15px 20px;
+    }
+
+    .kiri-data-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .kiri-data-body {
+        padding: 20px;
+    }
+
+    .kiri-helper > div {
+        flex-direction: column;
+    }
+
+    .kiri-helper input,
+    .btn-convert {
+        width: 100%;
+    }
+
+    .kiri-data-actions {
+        flex-direction: column;
+    }
+}

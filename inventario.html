@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Filamentos</title>
+    <link rel="stylesheet" href="css/styleinventario.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="nav-back">← Volver al Menú</a>
+            <h1>📦 Inventario de Filamentos</h1>
+            <p>Gestiona tus perfiles de filamento y controla el stock de carretes</p>
+        </div>
+
+        <div class="main-content">
+            <!-- SIDEBAR CON PASOS -->
+            <div class="sidebar">
+                <!-- PASO 1: Seleccionar Perfil -->
+                <div class="step-container">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Seleccionar Perfil</h3>
+                    
+                    <div class="form-group">
+                        <label for="perfilFilamento">Perfil de Filamento</label>
+                        <select id="perfilFilamento" onchange="cargarPerfilFilamento()">
+                            <option value="">-- Seleccionar perfil --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipoFilamento">Tipo de Filamento</label>
+                        <input type="text" id="tipoFilamento" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marcaFilamento">Marca</label>
+                        <input type="text" id="marcaFilamento" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="colorFilamento">Color</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="color-preview" id="colorPreview"></div>
+                            <input type="text" id="colorFilamento" readonly style="flex: 1;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Calidad del Filamento</label>
+                        <div class="estrellas-calidad" id="calidadEstrellas"></div>
+                        <textarea id="notaCalidad" readonly rows="2" style="margin-top: 5px;"></textarea>
+                    </div>
+
+                    <aside class="aside-help">
+                        <h4>💡 Ayuda</h4>
+                        <p>Selecciona un perfil para ver sus detalles o crea uno nuevo para comenzar.</p>
+                    </aside>
+                </div>
+
+                <!-- PASO 2: Gestionar Perfiles -->
+                <div class="step-container">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Gestionar Perfiles</h3>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="mostrarModalFilamento()" style="width: 100%;">
+                            ➕ Nuevo Perfil
+                        </button>
+                        <button class="btn btn-outline" onclick="editarPerfilFilamento()" id="btnEditarPerfil" disabled>
+                            ✏️ Editar
+                        </button>
+                        <button class="btn btn-outline" onclick="eliminarPerfilFilamento()" id="btnEliminarPerfil" disabled>
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+                    <div class="button-group">
+                        <input type="file" id="fileInputFilamentos" accept=".csv" onchange="cargarFilamentosCSV(event)" style="display: none;">
+                        <button class="btn btn-outline" onclick="document.getElementById('fileInputFilamentos').click()">
+                            📁 Cargar CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="descargarFilamentosCSV()">
+                            ⬇️ Descargar CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL PRINCIPAL: Inventario -->
+            <div class="main-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h2 style="color: #4f46e5; font-size: 2rem;">Inventario de Carretes</h2>
+                    <div class="button-group" style="margin: 0;">
+                        <button class="btn btn-secondary" onclick="sincronizarInventarioConPerfiles()">
+                            🔄 Sincronizar
+                        </button>
+                        <button class="btn btn-outline" onclick="limpiarInventario()">
+                            🗑️ Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estadísticas -->
+                <div id="estadisticasInventario" class="stats-grid">
+                    <!-- Se llenarán dinámicamente -->
+                </div>
+
+                <!-- Control de carga/descarga de inventario -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="file" id="fileInputInventario" accept=".csv" onchange="cargarInventarioCSV(event)" style="display: none;">
+                    <button class="btn btn-outline" onclick="document.getElementById('fileInputInventario').click()">
+                        📁 Cargar Inventario CSV
+                    </button>
+                    <button class="btn btn-primary" onclick="descargarInventarioCSV()">
+                        ⬇️ Descargar Inventario CSV
+                    </button>
+                </div>
+
+                <!-- Lista de Carretes -->
+                <div id="inventarioCarretes">
+                    <p style="text-align: center; color: #6b7280; padding: 40px; font-size: 1.1rem;">
+                        📦 No hay carretes en el inventario<br>
+                        <span style="font-size: 0.9rem;">Primero crea perfiles de filamento y luego sincroniza el inventario</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA GESTIÓN DE PERFILES -->
+    <div class="modal-overlay" id="modalFilamento">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="tituloModalFilamento">🧵 Nuevo Perfil de Filamento</h3>
+                <button class="modal-close" onclick="cerrarModalFilamento()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modalTipoFilamento">Tipo de Filamento *</label>
+                    <select id="modalTipoFilamento">
+                        <option value="PLA">PLA</option>
+                        <option value="PLA+">PLA+</option>
+                        <option value="ABS">ABS</option>
+                        <option value="PETG">PETG</option>
+                        <option value="TPU">TPU</option>
+                        <option value="Wood">Wood Fill</option>
+                        <option value="Metal">Metal Fill</option>
+                        <option value="Carbon">Carbon Fiber</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modalMarcaFilamento">Marca *</label>
+                    <input type="text" id="modalMarcaFilamento" placeholder="Ej: Polymaker, Prusament, eSUN">
+                </div>
+
+                <div class="form-group">
+                    <label for="modalColorFilamento">Color *</label>
+                    <div class="color-selector">
+                        <input type="color" id="modalCodigoColor" value="#000000">
+                        <input type="text" id="modalColorFilamento" placeholder="Nombre del color" style="flex: 1;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="modalCalidadEstrellas">Calidad *</label>
+                    <div class="estrellas-calidad" id="modalCalidadEstrellas">
+                        <span class="estrella" data-value="1">☆</span>
+                        <span class="estrella" data-value="2">☆</span>
+                        <span class="estrella" data-value="3">☆</span>
+                        <span class="estrella" data-value="4">☆</span>
+                        <span class="estrella" data-value="5">☆</span>
+                    </div>
+                    <input type="hidden" id="modalCalidad" value="0">
+                    <textarea id="modalNotaCalidad" placeholder="Nota sobre la calidad..." rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="modalPesoCarrete">Peso del Carrete (kg) *</label>
+                    <input type="number" id="modalPesoCarrete" value="1" min="0.1" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label for="modalCostoCarrete">Costo del Carrete (COP) *</label>
+                    <input type="number" id="modalCostoCarrete" value="120000" min="0" step="1000">
+                </div>
+
+                <div class="form-group">
+                    <label for="modalTemperaturaFilamento">Temperatura Ideal (°C)</label>
+                    <input type="number" id="modalTemperaturaFilamento" placeholder="210" min="150" max="300">
+                </div>
+
+                <div class="form-group">
+                    <label for="modalFechaCompra">Fecha de Compra</label>
+                    <input type="date" id="modalFechaCompra">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="guardarPerfilFilamento()" id="btnGuardarPerfil">
+                        💾 Guardar
+                    </button>
+                    <button class="btn btn-outline" onclick="cerrarModalFilamento()">
+                        ✖ Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/inventario.js"></script>
+</body>
+</html>

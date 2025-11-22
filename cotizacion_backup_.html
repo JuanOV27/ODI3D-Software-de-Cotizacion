@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotización 3D con Kiri:Moto</title>
+    <link rel="stylesheet" href="css/stylecotizacion.css">
+    <!-- NUEVO: Estilos de Kiri:Moto -->
+    <link rel="stylesheet" href="css/kirimoto-styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="nav-back">← Volver al Menú</a>
+            <h1>💰 Cotización de Proyectos 3D</h1>
+            <p>Ahora con integración de Kiri:Moto - Carga tus modelos STL directamente</p>
+            <button class="calc-toggle-btn" onclick="toggleMobileCalc()">
+                🧮 Calculadora Básica
+            </button>
+        </div>
+
+        <div class="main-content">
+            <!-- COLUMNA DE PASOS -->
+            <div class="steps-column">
+                
+                <!-- PASO 1: Información de la Pieza -->
+                <div class="step-container">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Información de la Pieza</h3>
+                    
+                    <div class="form-group">
+                        <label for="nombrePieza">Nombre de la Pieza</label>
+                        <input type="text" id="nombrePieza" placeholder="Ej: Engranaje v2.1">
+                    </div>
+
+                    <!-- 
+                        NOTA: El módulo KiriMotoIntegration automáticamente
+                        insertará aquí la sección de carga de archivos STL
+                        después de este primer form-group
+                    -->
+
+                    <div class="form-group">
+                        <label for="pesoPieza">
+                            Peso de la Pieza (g)
+                            <span style="color: #059669; font-size: 0.85rem;">
+                                ✨ Auto-completado al cargar STL
+                            </span>
+                        </label>
+                        <input type="number" id="pesoPieza" value="50" min="0.1" step="0.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tiempoImpresion">
+                            Tiempo de Impresión (minutos)
+                            <span style="color: #059669; font-size: 0.85rem;">
+                                ✨ Auto-completado al cargar STL
+                            </span>
+                        </label>
+                        <input type="number" id="tiempoImpresion" value="120" min="1">
+                    </div>
+
+                    <aside class="aside-help">
+                        <h4>💡 Nueva Funcionalidad</h4>
+                        <p>
+                            <strong>📱 En móvil:</strong> Carga tu archivo STL y obtén peso y tiempo automáticamente.<br>
+                            <strong>💻 En escritorio:</strong> Además puedes editar, escalar y rotar tu modelo visualmente.
+                        </p>
+                    </aside>
+                </div>
+
+                <!-- PASO 2: Costos de Materiales -->
+                <div class="step-container">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Costos de Materiales</h3>
+                    
+                    <div class="form-group">
+                        <label for="costoCarrete">Costo del Carrete (COP)</label>
+                        <input type="number" id="costoCarrete" value="120000" min="0" step="1000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pesoCarrete">Peso del Carrete (kg)</label>
+                        <input type="number" id="pesoCarrete" value="1" min="0.1" step="0.1">
+                    </div>
+                </div>
+
+                <!-- PASO 3: Costos de Diseño -->
+                <div class="step-container">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Costos de Diseño</h3>
+                    
+                    <div class="form-group">
+                        <label for="horasDiseno">Horas de Diseño</label>
+                        <input type="number" id="horasDiseno" value="2" min="0" step="0.5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="costoHoraDiseno">Costo por Hora (COP)</label>
+                        <input type="number" id="costoHoraDiseno" value="25000" min="0" step="1000">
+                    </div>
+                </div>
+
+                <!-- PASO 4: Parámetros Adicionales -->
+                <div class="step-container">
+                    <div class="step-number">4</div>
+                    <h3 class="step-title">Parámetros Adicionales</h3>
+                    
+                    <div class="form-group">
+                        <label for="factorSeguridad">Factor de Seguridad</label>
+                        <input type="number" id="factorSeguridad" value="1.1" min="1" step="0.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="usoElectricidad">Electricidad por Hora (COP)</label>
+                        <input type="number" id="usoElectricidad" value="600" min="0" step="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gif">GIF - Gastos Indirectos (%)</label>
+                        <input type="number" id="gif" value="15" min="0" max="100" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiu">AIU - Administración e Imprevistos (%)</label>
+                        <input type="number" id="aiu" value="25" min="0" max="100" step="1">
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="incluirMarcaAgua">
+                            Incluir Marca de Agua en el Modelo
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="grupoMarcaAgua" style="display: none;">
+                        <label for="porcentajeMarcaAgua">Costo Marca de Agua (%)</label>
+                        <input type="number" id="porcentajeMarcaAgua" value="10" min="0" max="50" step="1">
+                    </div>
+                </div>
+
+                <!-- PASO 5: Cantidad y Lotes -->
+                <div class="step-container">
+                    <div class="step-number">5</div>
+                    <h3 class="step-title">Cantidad y Lotes</h3>
+                    
+                    <div class="form-group">
+                        <label for="cantidadPiezas">Cantidad Total de Piezas</label>
+                        <input type="number" id="cantidadPiezas" value="1" min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="piezasPorLote">Piezas por Lote de Impresión</label>
+                        <input type="number" id="piezasPorLote" value="1" min="1">
+                    </div>
+
+                    <div id="errorLote" class="error-message" style="display: none;">
+                        ⚠️ El número de piezas por lote no puede ser mayor que la cantidad total
+                    </div>
+                </div>
+
+                <!-- PASO 6: Márgenes de Venta -->
+                <div class="step-container">
+                    <div class="step-number">6</div>
+                    <h3 class="step-title">Márgenes de Venta</h3>
+                    
+                    <div class="form-group">
+                        <label for="margenMinorista">Margen Minorista (%)</label>
+                        <input type="number" id="margenMinorista" value="30" min="0" max="100" step="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="margenMayorista">Margen Mayorista (%)</label>
+                        <input type="number" id="margenMayorista" value="20" min="0" max="100" step="1">
+                    </div>
+                    
+                    <aside class="aside-help">
+                        <h4>💡 Márgenes de Ganancia</h4>
+                        <p>
+                            Define el porcentaje de ganancia sobre el precio base para diferentes canales de venta.
+                        </p>
+                    </aside>
+                </div>
+
+                <!-- Botón Calcular -->
+                <div class="step-container">
+                    <button class="btn btn-primary btn-large" onclick="calcularPrecio()" style="width: 100%;">
+                        🎯 Calcular Cotización
+                    </button>
+                </div>
+            </div>
+
+            <!-- DIVISOR REDIMENSIONABLE -->
+            <div class="resizer" id="resizer"></div>
+
+            <!-- COLUMNA DE RESULTADOS -->
+            <div class="results-column">
+                <h2 class="section-title">📊 Resultados de la Cotización</h2>
+                
+                <div class="results-grid">
+                    <div class="result-item highlight">
+                        <span class="result-label">💰 Precio Base por Pieza:</span>
+                        <span class="result-value" id="precioFinal">$0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">📦 Costo Fabricación:</span>
+                        <span class="result-value" id="costoFabricacion">$0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">⚡ Costo Energía:</span>
+                        <span class="result-value" id="costoEnergia">$0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">🎨 Costo Diseño:</span>
+                        <span class="result-value" id="costoDiseno">$0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">🔧 Depreciación Máquina:</span>
+                        <span class="result-value" id="depreciacionMaquina">$0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">📈 Gastos Indirectos (GIF):</span>
+                        <span class="result-value" id="costoGIF">$0</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">🛡️ AIU:</span>
+                        <span class="result-value" id="costoAIU">$0</span>
+                    </div>
+                    
+                    <div class="result-item" id="itemMarcaAgua" style="display: none;">
+                        <span class="result-label">🏷️ Marca de Agua:</span>
+                        <span class="result-value" id="costoMarcaAguaDisplay">$0</span>
+                    </div>
+                    
+                    <div class="result-item highlight">
+                        <span class="result-label">💵 Precio Minorista:</span>
+                        <span class="result-value" id="precioMinorista">$0</span>
+                    </div>
+                    
+                    <div class="result-item highlight">
+                        <span class="result-label">🏪 Precio Mayorista:</span>
+                        <span class="result-value" id="precioMayorista">$0</span>
+                    </div>
+                </div>
+
+                <!-- Resumen de Pedido -->
+                <div class="order-summary">
+                    <h3>📋 Resumen del Pedido</h3>
+                    <div class="summary-item">
+                        <span>Cantidad Total:</span>
+                        <span id="resumenCantidad">1 pieza</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Número de Lotes:</span>
+                        <span id="resumenLotes">1 lote</span>
+                    </div>
+                    <div class="summary-item highlight">
+                        <span>💰 Costo Total (Base):</span>
+                        <span id="resumenCostoTotal">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts existentes -->
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/cotizacion.js"></script>
+    
+    <!-- NUEVO: Script de integración Kiri:Moto -->
+    <script src="js/kirimoto-integration.js"></script>
+    
+    <!-- NUEVO: Script de redimensionamiento de paneles -->
+    <script src="js/resizer.js"></script>
+</body>
+</html>
