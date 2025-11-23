@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Fabricación - Gestión de Máquinas</title>
+    <link rel="stylesheet" href="css/stylemaquinas.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="nav-back">← Volver al Menú</a>
+            <h1>🏭 Centro de Fabricación</h1>
+            <p>Gestiona las máquinas de impresión 3D y sus costos de depreciación</p>
+        </div>
+
+        <!-- DASHBOARD DE ESTADÍSTICAS -->
+        <div class="dashboard">
+            <div class="stat-card">
+                <div class="stat-icon">🖨️</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalMaquinas">0</div>
+                    <div class="stat-label">Total de Máquinas</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="maquinasActivas">0</div>
+                    <div class="stat-label">Máquinas Activas</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="horasTotales">0h</div>
+                    <div class="stat-label">Horas de Uso Total</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="valorTotal">$0</div>
+                    <div class="stat-label">Valor Total del Parque</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="mostrarModalMaquina()">
+                ➕ Agregar Nueva Máquina
+            </button>
+            <button class="btn btn-secondary" onclick="actualizarListaMaquinas()">
+                🔄 Actualizar Lista
+            </button>
+        </div>
+
+        <!-- LISTA DE MÁQUINAS -->
+        <div class="section">
+            <h2 class="section-title">📋 Máquinas Registradas</h2>
+            
+            <div class="table-container">
+                <table class="maquinas-table">
+                    <thead>
+                        <tr>
+                            <th>Estado</th>
+                            <th>Nombre</th>
+                            <th>Modelo</th>
+                            <th>Tipo</th>
+                            <th>Depreciación/h</th>
+                            <th>Horas de Uso</th>
+                            <th>Valor Actual</th>
+                            <th>Vida Útil</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maquinasTableBody">
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;">
+                                Cargando máquinas...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: AGREGAR/EDITAR MÁQUINA -->
+    <div id="modalMaquina" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">➕ Agregar Nueva Máquina</h2>
+                <button class="modal-close" onclick="cerrarModalMaquina()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="formMaquina" onsubmit="guardarMaquina(event)">
+                    <input type="hidden" id="maquinaId" value="">
+                    
+                    <!-- INFORMACIÓN BÁSICA -->
+                    <div class="form-section">
+                        <h3>📝 Información Básica</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nombreMaquina">Nombre de la Máquina *</label>
+                                <input type="text" id="nombreMaquina" required 
+                                       placeholder="Ej: Ender 3 V3 SE #1">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="modeloMaquina">Modelo</label>
+                                <input type="text" id="modeloMaquina" 
+                                       placeholder="Ej: Creality Ender 3 V3 SE">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tipoMaquina">Tipo de Máquina *</label>
+                                <select id="tipoMaquina" required>
+                                    <option value="FDM">FDM (Mono-extrusor)</option>
+                                    <option value="FDM_MULTICOLOR">FDM Multicolor/Multi-extrusor</option>
+                                    <option value="RESINA">Resina</option>
+                                    <option value="SLA">SLA</option>
+                                    <option value="SLS">SLS</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fechaAdquisicion">Fecha de Adquisición</label>
+                                <input type="date" id="fechaAdquisicion">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COSTOS Y DEPRECIACIÓN -->
+                    <div class="form-section">
+                        <h3>💰 Costos y Depreciación</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="costoAdquisicion">Costo de Adquisición ($) *</label>
+                                <input type="number" id="costoAdquisicion" required step="0.01" min="0"
+                                       placeholder="800000" onchange="calcularDepreciacion()">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vidaUtilHoras">Vida Útil (horas) *</label>
+                                <input type="number" id="vidaUtilHoras" required min="1"
+                                       placeholder="5000" onchange="calcularDepreciacion()">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="depreciacionPorHora">
+                                    Depreciación por Hora ($)
+                                    <span style="color: #059669; font-size: 0.85rem;">
+                                        ✨ Auto-calculado
+                                    </span>
+                                </label>
+                                <input type="number" id="depreciacionPorHora" step="0.0001" readonly
+                                       style="background: #f3f4f6;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="horasUsoTotal">Horas de Uso Acumuladas</label>
+                                <input type="number" id="horasUsoTotal" step="0.01" min="0"
+                                       placeholder="0" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ESPECIFICACIONES TÉCNICAS -->
+                    <div class="form-section">
+                        <h3>⚙️ Especificaciones Técnicas</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="volumenX">Volumen X (mm)</label>
+                                <input type="number" id="volumenX" step="0.1" min="0"
+                                       placeholder="220">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="volumenY">Volumen Y (mm)</label>
+                                <input type="number" id="volumenY" step="0.1" min="0"
+                                       placeholder="220">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="volumenZ">Volumen Z (mm)</label>
+                                <input type="number" id="volumenZ" step="0.1" min="0"
+                                       placeholder="250">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="velocidadMax">Velocidad Máxima (mm/s)</label>
+                                <input type="number" id="velocidadMax" step="1" min="0"
+                                       placeholder="250">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="numExtrusores">Número de Extrusores</label>
+                                <input type="number" id="numExtrusores" min="1" value="1"
+                                       placeholder="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ESTADO Y NOTAS -->
+                    <div class="form-section">
+                        <h3>📌 Estado y Notas</h3>
+                        
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="maquinaActiva" checked>
+                                <span>Máquina activa y disponible para cotizaciones</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notasMaquina">Notas</label>
+                            <textarea id="notasMaquina" rows="3" 
+                                      placeholder="Información adicional sobre la máquina, mantenimiento, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- BOTONES DEL FORMULARIO -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="cerrarModalMaquina()">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            💾 Guardar Máquina
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: VER DETALLES DE MÁQUINA -->
+    <div id="modalDetallesMaquina" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖨️ Detalles de la Máquina</h2>
+                <button class="modal-close" onclick="cerrarModalDetalles()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="contenidoDetalles">
+                    <!-- Se llenará dinámicamente con JavaScript -->
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="cerrarModalDetalles()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div id="notificaciones" class="notificaciones-container"></div>
+
+    <!-- SCRIPTS -->
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/maquinas.js"></script>
+</body>
+</html>
