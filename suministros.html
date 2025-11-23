@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Suministros</title>
+    <link rel="stylesheet" href="css/stylesuministros.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="nav-back">← Volver al Menú</a>
+            <h1>🧰 Inventario de Suministros</h1>
+            <p>Gestiona los insumos para postprocesado, empaquetado y accesorios de fabricación</p>
+        </div>
+
+        <!-- DASHBOARD DE ESTADÍSTICAS -->
+        <div class="dashboard">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalSuministros">0</div>
+                    <div class="stat-label">Total de Suministros</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="valorInventario">$0</div>
+                    <div class="stat-label">Valor del Inventario</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="stockBajo">0</div>
+                    <div class="stat-label">Stock Bajo</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🗂️</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalCategorias">0</div>
+                    <div class="stat-label">Categorías Activas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="mostrarModalSuministro()">
+                ➕ Agregar Nuevo Suministro
+            </button>
+            <button class="btn btn-secondary" onclick="exportarInventario()">
+                💾 Exportar Inventario
+            </button>
+            <button class="btn btn-outline" onclick="mostrarModalCategoria()">
+                🗂️ Gestionar Categorías
+            </button>
+        </div>
+
+        <!-- FILTROS Y BÚSQUEDA -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="filtroCategoria">Categoría:</label>
+                <select id="filtroCategoria" onchange="filtrarSuministros()">
+                    <option value="">Todas las categorías</option>
+                    <option value="postprocesado">🎨 Postprocesado</option>
+                    <option value="paqueteria">📦 Paquetería</option>
+                    <option value="accesorios">🔗 Accesorios</option>
+                    <option value="herramientas">🔧 Herramientas</option>
+                    <option value="varios">🧩 Varios</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtroStock">Estado de Stock:</label>
+                <select id="filtroStock" onchange="filtrarSuministros()">
+                    <option value="">Todos</option>
+                    <option value="disponible">✅ Disponible</option>
+                    <option value="bajo">⚠️ Stock Bajo</option>
+                    <option value="agotado">❌ Agotado</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="buscarSuministro">Buscar:</label>
+                <input type="text" id="buscarSuministro" placeholder="Nombre, marca, descripción..." 
+                       oninput="filtrarSuministros()">
+            </div>
+        </div>
+
+        <!-- TABLA DE SUMINISTROS -->
+        <div class="table-section">
+            <h2 class="section-title">📋 Listado de Suministros</h2>
+            
+            <div class="table-responsive">
+                <table id="tablaSuministros">
+                    <thead>
+                        <tr>
+                            <th>Foto</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Unidad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaSuministros">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
+                                No hay suministros registrados. Agrega uno nuevo para comenzar.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MODAL: AGREGAR/EDITAR SUMINISTRO -->
+        <div id="modalSuministro" class="modal" style="display: none;">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2 id="tituloModalSuministro">➕ Agregar Nuevo Suministro</h2>
+                    <button class="modal-close" onclick="cerrarModalSuministro()">✕</button>
+                </div>
+
+                <form id="formSuministro" onsubmit="guardarSuministro(event)">
+                    <div class="modal-body">
+                        <!-- SECCIÓN: INFORMACIÓN BÁSICA (ESENCIAL) -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">📝 Información Básica (Obligatorio)</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="nombreSuministro">Nombre del Producto *</label>
+                                    <input type="text" id="nombreSuministro" required 
+                                           placeholder="Ej: Pintura Acrílica Roja">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="categoriaSuministro">Categoría *</label>
+                                    <select id="categoriaSuministro" required>
+                                        <option value="">-- Seleccionar --</option>
+                                        <option value="postprocesado">🎨 Postprocesado</option>
+                                        <option value="paqueteria">📦 Paquetería</option>
+                                        <option value="accesorios">🔗 Accesorios</option>
+                                        <option value="herramientas">🔧 Herramientas</option>
+                                        <option value="varios">🧩 Varios</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="precioSuministro">Precio Unitario (COP) *</label>
+                                    <input type="number" id="precioSuministro" required 
+                                           min="0" step="100" placeholder="0">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="unidadesSuministro">Unidades Disponibles *</label>
+                                    <input type="number" id="unidadesSuministro" required 
+                                           min="0" step="1" placeholder="0">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="unidadMedida">Unidad de Medida *</label>
+                                    <select id="unidadMedida" required>
+                                        <option value="unidades">Unidades</option>
+                                        <option value="ml">Mililitros (ml)</option>
+                                        <option value="gramos">Gramos (g)</option>
+                                        <option value="metros">Metros (m)</option>
+                                        <option value="litros">Litros (L)</option>
+                                        <option value="kg">Kilogramos (kg)</option>
+                                        <option value="paquetes">Paquetes</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="descripcionSuministro">Descripción *</label>
+                                <textarea id="descripcionSuministro" rows="3" required
+                                          placeholder="Descripción breve del producto..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN: INFORMACIÓN OPCIONAL -->
+                        <div class="form-section">
+                            <h3 class="section-subtitle">🔍 Información Adicional (Opcional)</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="marcaSuministro">Marca</label>
+                                    <input type="text" id="marcaSuministro" 
+                                           placeholder="Ej: Rust-Oleum">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="colorSuministro">Color</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <input type="color" id="colorSuministroPicker" 
+                                               style="width: 60px; height: 40px; border: none; cursor: pointer;">
+                                        <input type="text" id="colorSuministro" 
+                                               placeholder="Ej: Rojo Mate" style="flex: 1;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="medidas">Medidas (opcional)</label>
+                                    <input type="text" id="medidas" 
+                                           placeholder="Ej: 25cm x 15cm x 10cm">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="fechaCompra">Fecha de Compra</label>
+                                    <input type="date" id="fechaCompra">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="stockMinimo">Stock Mínimo (Alerta)</label>
+                                    <input type="number" id="stockMinimo" 
+                                           min="0" step="1" placeholder="5">
+                                    <small>Recibirás una alerta cuando el stock esté por debajo de este valor</small>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="notasSuministro">Notas Adicionales</label>
+                                <textarea id="notasSuministro" rows="2"
+                                          placeholder="Observaciones, proveedor, detalles técnicos..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fotoSuministro">Foto del Producto</label>
+                                <input type="file" id="fotoSuministro" accept="image/*" 
+                                       onchange="previsualizarFoto(event)">
+                                <div id="previewFoto" style="margin-top: 10px; display: none;">
+                                    <img id="imgPreview" style="max-width: 200px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BOTONES DEL FORMULARIO -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="cerrarModalSuministro()">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            💾 Guardar Suministro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: DETALLES DEL SUMINISTRO -->
+        <div id="modalDetalles" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📦 Detalles del Suministro</h2>
+                    <button class="modal-close" onclick="cerrarModalDetalles()">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="contenidoDetalles">
+                        <!-- Se llenará dinámicamente con JavaScript -->
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="cerrarModalDetalles()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: GESTIONAR CATEGORÍAS -->
+        <div id="modalCategoria" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🗂️ Gestionar Categorías</h2>
+                    <button class="modal-close" onclick="cerrarModalCategoria()">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <p style="color: #6b7280; margin-bottom: 20px;">
+                        Administra las categorías de suministros disponibles en el sistema.
+                    </p>
+
+                    <div class="categorias-list" id="listaCategorias">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                        <h4 style="margin-bottom: 10px;">Agregar Nueva Categoría</h4>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="nuevaCategoriaNombre" placeholder="Nombre de la categoría" 
+                                   style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <input type="text" id="nuevaCategoriaIcono" placeholder="Icono (emoji)" 
+                                   style="width: 80px; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <button class="btn btn-primary" onclick="agregarCategoria()">
+                                ➕ Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="cerrarModalCategoria()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div id="notificaciones" class="notificaciones-container"></div>
+
+    <!-- SCRIPTS -->
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/suministros.js"></script>
+</body>
+</html>
