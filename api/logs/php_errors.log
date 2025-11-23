@@ -952,3 +952,60 @@ Stack trace:
 [23-Nov-2025 13:43:37 America/Bogota] ✓ Conexión exitosa a MySQL
 [23-Nov-2025 13:43:38 America/Bogota] ✓ Conexión exitosa a MySQL
 [23-Nov-2025 13:43:38 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:33 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:34 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:34 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:34:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:22 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:22 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:31 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:31 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:53:31 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:54:38 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 15:54:38 America/Bogota] ERROR en api_cotizaciones: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// NUEVO
+    fecha, fecha_completa
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ...' at line 9
+[23-Nov-2025 15:54:38 America/Bogota] Archivo: C:\xampp\htdocs\gestion3d\api\api_cotizaciones.php Línea: 81
+[23-Nov-2025 16:12:23 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:25 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:25 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:12:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:19 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:19 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:19 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:19 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:21 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:21 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:22 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:14:24 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:15:04 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:15:04 America/Bogota] ERROR en api_cotizaciones: SQLSTATE[HY093]: Invalid parameter number
+[23-Nov-2025 16:15:04 America/Bogota] Archivo: C:\xampp\htdocs\gestion3d\api\api_cotizaciones.php Línea: 82
+[23-Nov-2025 16:25:47 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 16:25:47 America/Bogota] ERROR en api_cotizaciones: SQLSTATE[HY093]: Invalid parameter number
+[23-Nov-2025 16:25:47 America/Bogota] Archivo: C:\xampp\htdocs\gestion3d\api\api_cotizaciones.php Línea: 82

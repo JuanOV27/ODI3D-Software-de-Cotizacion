@@ -1,7 +1,7 @@
 <?php
 // API_COTIZACIONES.PHP - VERSIÓN SIMPLIFICADA SIN UTILS
 // No depende de Utils::sendSuccess, usa echo json_encode directamente
-
+require_once 'api_postprocesado_functions.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // No mostrar errores en output, solo en log
 ini_set('log_errors', 1);
@@ -67,11 +67,15 @@ try {
             $sqlCot = "INSERT INTO cotizaciones (
                 id, nombre_pieza, perfil_filamento_id, carrete_id,
                 peso_pieza, tiempo_impresion, cantidad_piezas, piezas_por_lote,
-                horas_diseno, costo_hora_diseno, factor_seguridad,
-                uso_electricidad, gif, aiu, margen_minorista, margen_mayorista,
-                incluir_marca_agua, porcentaje_marca_agua, fecha
+                costo_carrete, peso_carrete, horas_diseno, costo_hora_diseno,
+                factor_seguridad, uso_electricidad, gif, aiu,
+                incluir_marca_agua, porcentaje_marca_agua,
+                margen_minorista, margen_mayorista,
+                maquina_id,
+                incluir_postprocesado, nivel_dificultad_postprocesado, costo_mano_obra_postprocesado,
+                fecha, fecha_completa
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()
             )";
             
             $stmtCot = $db->prepare($sqlCot);
@@ -84,22 +88,30 @@ try {
                 $input['tiempoImpresion'],
                 $input['cantidadPiezas'] ?? 1,
                 $input['piezasPorLote'] ?? 1,
+                $input['costoCarrete'] ?? 0,  // FALTABA
+                $input['pesoCarrete'] ?? 1,   // FALTABA
                 $input['horasDiseno'] ?? 0,
                 $input['costoHoraDiseno'] ?? 0,
                 $input['factorSeguridad'] ?? 1,
                 $input['usoElectricidad'] ?? 0,
                 $input['gif'] ?? 0,
                 $input['aiu'] ?? 0,
+                $input['incluirMarcaAgua'] ?? 0,
+                $input['porcentajeMarcaAgua'] ?? 0,
                 $input['margenMinorista'] ?? 0,
                 $input['margenMayorista'] ?? 0,
-                $input['incluirMarcaAgua'] ?? 0,
-                $input['porcentajeMarcaAgua'] ?? 0
+                $input['maquinaId'] ?? null,
+                $input['incluir_postprocesado'] ?? 0,
+                $input['nivel_dificultad_postprocesado'] ?? null,
+                $input['costo_mano_obra_postprocesado'] ?? 0
             ]);
             
             // 2. CALCULAR PRECIOS
             $costoCarrete = $input['costoCarrete'] ?? 0;
             $pesoCarrete = $input['pesoCarrete'] ?? 1;
             
+
+
             // Obtener datos del perfil si existe
             if (!empty($input['perfilFilamentoId'])) {
                 $stmtPerfil = $db->prepare("SELECT costo, peso FROM perfiles_filamento WHERE id = ?");
@@ -111,6 +123,10 @@ try {
                     $pesoCarrete = $perfil['peso'];
                 }
             }
+
+            if (!empty($input['insumos_postprocesado'])) {
+            guardarInsumosPostprocesado($db, $id, $input['insumos_postprocesado']);
+}
             
             // Variables
             $pesoPieza = floatval($input['pesoPieza']);
@@ -137,6 +153,11 @@ try {
             
             $costoDiseno = ($costoHoraDiseno * $horasDiseno) / $cantidadPiezas;
             
+            $costosPostprocesado = calcularCostosPostprocesado(
+            $input['costo_mano_obra_postprocesado'] ?? 0,
+            $input['insumos_postprocesado'] ?? []
+            );
+
             // Depreciación
             $depreciacionMaquina = (1400000 * 0.9 / (3 * 12 * 210)) * $pesoPieza;
             
@@ -147,7 +168,9 @@ try {
             
             $costoMarcaAgua = $incluirMarcaAgua ? ($subtotal + $costoGIF + $costoAIU) * ($porcentajeMarcaAgua / 100) : 0;
             
-            $precioFinal = ($subtotal + $costoGIF + $costoAIU + $costoMarcaAgua) / $piezasPorLote;
+            $costoTotalPostprocesado = $costosPostprocesado['costo_total'];
+
+            $precioFinal = ($subtotal + $costoGIF + $costoAIU + $costoMarcaAgua + $costoTotalPostprocesado) / $piezasPorLote;
             
             $precioMinorista = $precioFinal * (1 + $margenMinorista / 100);
             $precioMayorista = $precioFinal * (1 + $margenMayorista / 100);
@@ -167,14 +190,15 @@ try {
             // 3. INSERTAR CÁLCULOS
             $sqlCalc = "INSERT INTO calculos_cotizacion (
                 cotizacion_id, costo_fabricacion, costo_energia, costo_diseno,
-                depreciacion_maquina, subtotal, costo_gif, costo_aiu, costo_marca_agua,
-                precio_final, precio_minorista, precio_mayorista,
-                numero_lotes, costo_por_lote, costo_total_pedido,
-                tiempo_total_minutos, tiempo_total_horas, filamento_total_gramos,
-                costo_electrico_total, costo_total_pedido_minorista, costo_total_pedido_mayorista
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-            )";
+    depreciacion_maquina, subtotal, costo_gif, costo_aiu, costo_marca_agua,
+    precio_final, precio_minorista, precio_mayorista,
+    numero_lotes, costo_por_lote, costo_total_pedido,
+    tiempo_total_minutos, tiempo_total_horas, filamento_total_gramos,
+    costo_electrico_total, costo_total_pedido_minorista, costo_total_pedido_mayorista,
+    costo_mano_obra_postprocesado, costo_insumos_postprocesado, costo_total_postprocesado  // NUEVO
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+)";
             
             $stmtCalc = $db->prepare($sqlCalc);
             $stmtCalc->execute([
@@ -198,7 +222,10 @@ try {
                 round($filamentoTotalGramos, 2),
                 round($costoElectricoTotal, 2),
                 round($costoTotalPedidoMinorista, 2),
-                round($costoTotalPedidoMayorista, 2)
+                round($costoTotalPedidoMayorista, 2),
+                $costosPostprocesado['costo_mano_obra'],      // NUEVO
+    $costosPostprocesado['costo_insumos'],        // NUEVO
+    $costosPostprocesado['costo_total']           // NUEVO
             ]);
             
             $db->commit();

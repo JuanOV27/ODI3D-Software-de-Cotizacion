@@ -38,6 +38,27 @@ function validarSeleccionMaquina() {
     return true;
 }
 
+// Inicializar el módulo cuando se cargue la página
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarModuloPostprocesado();
+        renderizarSelectorInsumos();
+        
+        // Actualizar resumen cuando cambien los valores
+        setInterval(function() {
+            const datos = obtenerDatosPostprocesado();
+            if (datos.incluir_postprocesado) {
+                document.getElementById('resumenManoObraPostprocesado').textContent = 
+                    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(datos.costo_mano_obra);
+                
+                document.getElementById('resumenInsumosPostprocesado').textContent = 
+                    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(datos.costo_total_insumos);
+                
+                document.getElementById('resumenTotalPostprocesado').textContent = 
+                    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(datos.costo_total_postprocesado);
+            }
+        }, 500);
+    });
+
 // ============================================
 // UTILIDADES
 // ============================================
@@ -93,6 +114,15 @@ async function calcularPrecio() {
             : null,
         depreciacion_por_hora: datosMaquina.depreciacionPorHora
     };
+
+    // NUEVO: Obtener datos de postprocesado
+    const datosPostprocesado = obtenerDatosPostprocesado();
+    
+    // Agregar los datos de postprocesado al objeto datos
+    datos.incluir_postprocesado = datosPostprocesado.incluir_postprocesado;
+    datos.nivel_dificultad_postprocesado = datosPostprocesado.nivel_dificultad;
+    datos.costo_mano_obra_postprocesado = datosPostprocesado.costo_mano_obra;
+    datos.insumos_postprocesado = datosPostprocesado.insumos;
     
     console.log('ðŸ“ Datos capturados:', datos);
     
@@ -122,7 +152,11 @@ async function calcularPrecio() {
             numeroLotes: cotizacion.numero_lotes || 1,
             costoTotalPedido: cotizacion.costo_total_pedido || 0,
             tiempoTotalHoras: cotizacion.tiempo_total_horas || 0,
-            filamentoTotalGramos: cotizacion.filamento_total_gramos || 0
+            filamentoTotalGramos: cotizacion.filamento_total_gramos || 0,
+            
+            costoManoObraPostprocesado: cotizacion.costo_mano_obra_postprocesado || 0,
+            costoInsumosPostprocesado: cotizacion.costo_insumos_postprocesado || 0,
+            costoTotalPostprocesado: cotizacion.costo_total_postprocesado || 0
         };
         
         console.log('âœ… CÃ¡lculos realizados:', calculos);

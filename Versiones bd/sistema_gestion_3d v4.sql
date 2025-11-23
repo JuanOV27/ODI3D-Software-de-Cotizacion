@@ -1,0 +1,916 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: 127.0.0.1:3307
+-- Tiempo de generación: 23-11-2025 a las 21:38:12
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de datos: `sistema_gestion_3d`
+--
+
+DELIMITER $$
+--
+-- Procedimientos
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_estadisticas_inventario` ()   BEGIN
+    SELECT 
+        COUNT(*) AS total_carretes,
+        SUM(CASE WHEN estado = 'activo' THEN 1 ELSE 0 END) AS carretes_activos,
+        SUM(peso_inicial) AS peso_total_inicial,
+        SUM(peso_usado) AS peso_total_usado,
+        SUM(peso_restante) AS peso_total_restante,
+        ROUND(AVG(porcentaje_restante), 2) AS porcentaje_restante_promedio,
+        COUNT(CASE WHEN porcentaje_restante < 20 AND estado = 'activo' THEN 1 END) AS carretes_bajo_stock
+    FROM inventario_carretes;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_registrar_uso_filamento` (IN `p_carrete_id` VARCHAR(50), IN `p_gramos_usados` DECIMAL(10,2), IN `p_nombre_proyecto` VARCHAR(200))   BEGIN
+    DECLARE v_perfil_id VARCHAR(50);
+    DECLARE v_peso_restante_anterior DECIMAL(10,2);
+    DECLARE v_peso_restante_actual DECIMAL(10,2);
+    DECLARE v_uso_id VARCHAR(50);
+    
+    -- Obtener datos del carrete
+    SELECT perfil_id, peso_restante INTO v_perfil_id, v_peso_restante_anterior
+    FROM inventario_carretes
+    WHERE id = p_carrete_id;
+    
+    -- Validar que hay suficiente filamento
+    IF v_peso_restante_anterior < p_gramos_usados THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No hay suficiente filamento en el carrete';
+    END IF;
+    
+    -- Calcular peso restante actual
+    SET v_peso_restante_actual = v_peso_restante_anterior - p_gramos_usados;
+    
+    -- Generar ID único
+    SET v_uso_id = CONCAT(UNIX_TIMESTAMP(), '_', SUBSTRING(MD5(RAND()), 1, 9));
+    
+    -- Actualizar carrete
+    UPDATE inventario_carretes
+    SET peso_usado = peso_usado + p_gramos_usados
+    WHERE id = p_carrete_id;
+    
+    -- Cambiar estado si se agotó
+    IF v_peso_restante_actual <= 0 THEN
+        UPDATE inventario_carretes
+        SET estado = 'agotado'
+        WHERE id = p_carrete_id;
+    END IF;
+    
+    -- Registrar en historial
+    INSERT INTO historial_uso (
+        id, carrete_id, perfil_id, gramos_usados,
+        peso_restante_anterior, peso_restante_actual, nombre_proyecto
+    ) VALUES (
+        v_uso_id, p_carrete_id, v_perfil_id, p_gramos_usados,
+        v_peso_restante_anterior, v_peso_restante_actual, p_nombre_proyecto
+    );
+    
+    SELECT v_uso_id AS id, 'Uso registrado exitosamente' AS mensaje;
+END$$
+
+--
+-- Funciones
+--
+CREATE DEFINER=`root`@`localhost` FUNCTION `calcular_depreciacion_maquina` (`p_costo_adquisicion` DECIMAL(10,2), `p_vida_util_horas` INT) RETURNS DECIMAL(10,4) DETERMINISTIC BEGIN
+    RETURN ROUND(p_costo_adquisicion / p_vida_util_horas, 4);
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `calculos_cotizacion`
+--
+
+CREATE TABLE `calculos_cotizacion` (
+  `cotizacion_id` varchar(50) NOT NULL,
+  `costo_fabricacion` decimal(10,2) NOT NULL,
+  `costo_energia` decimal(10,2) NOT NULL,
+  `costo_diseno` decimal(10,2) NOT NULL,
+  `depreciacion_maquina` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) NOT NULL,
+  `costo_gif` decimal(10,2) NOT NULL,
+  `costo_aiu` decimal(10,2) NOT NULL,
+  `costo_marca_agua` decimal(10,2) DEFAULT 0.00,
+  `precio_final` decimal(10,2) NOT NULL,
+  `precio_minorista` decimal(10,2) NOT NULL,
+  `precio_mayorista` decimal(10,2) NOT NULL,
+  `numero_lotes` int(11) NOT NULL,
+  `costo_por_lote` decimal(10,2) NOT NULL,
+  `costo_total_pedido` decimal(10,2) NOT NULL,
+  `tiempo_total_minutos` decimal(10,2) NOT NULL,
+  `tiempo_total_horas` decimal(10,2) NOT NULL,
+  `filamento_total_gramos` decimal(10,2) NOT NULL,
+  `costo_electrico_total` decimal(10,2) NOT NULL,
+  `costo_total_pedido_minorista` decimal(10,2) NOT NULL,
+  `costo_total_pedido_mayorista` decimal(10,2) NOT NULL,
+  `costo_mano_obra_postprocesado` decimal(10,2) DEFAULT 0.00 COMMENT 'Costo de mano de obra del postprocesado',
+  `costo_insumos_postprocesado` decimal(10,2) DEFAULT 0.00 COMMENT 'Costo total de insumos para postprocesado',
+  `costo_total_postprocesado` decimal(10,2) DEFAULT 0.00 COMMENT 'Costo total de postprocesado (mano de obra + insumos)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `calculos_cotizacion`
+--
+
+INSERT INTO `calculos_cotizacion` (`cotizacion_id`, `costo_fabricacion`, `costo_energia`, `costo_diseno`, `depreciacion_maquina`, `subtotal`, `costo_gif`, `costo_aiu`, `costo_marca_agua`, `precio_final`, `precio_minorista`, `precio_mayorista`, `numero_lotes`, `costo_por_lote`, `costo_total_pedido`, `tiempo_total_minutos`, `tiempo_total_horas`, `filamento_total_gramos`, `costo_electrico_total`, `costo_total_pedido_minorista`, `costo_total_pedido_mayorista`, `costo_mano_obra_postprocesado`, `costo_insumos_postprocesado`, `costo_total_postprocesado`) VALUES
+('1762401552_cd485fbdd', 6006.00, 1980.00, 10000.00, 7583.33, 25569.33, 3835.40, 7351.18, 0.00, 36755.92, 47782.69, 44107.10, 5, 36755.92, 183779.58, 900.00, 15.00, 227.50, 9000.00, 238913.46, 220535.50, 0.00, 0.00, 0.00),
+('1762402645_2c180bbfa', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1762402654_e3e3e6b64', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1762403714_a7266509d', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1762404008_ac66b0267', 976.80, 440.00, 50000.00, 1233.33, 52650.13, 7897.52, 15136.91, 0.00, 75684.57, 98389.94, 90821.48, 1, 75684.57, 75684.57, 40.00, 0.70, 7.40, 400.00, 98389.94, 90821.48, 0.00, 0.00, 0.00),
+('1762404048_e36a25aa5', 1332.00, 600.00, 0.00, 1233.33, 3165.33, 474.80, 910.03, 0.00, 4550.17, 5915.22, 5460.20, 1, 4550.17, 4550.17, 40.00, 0.70, 7.40, 400.00, 5915.22, 5460.20, 0.00, 0.00, 0.00),
+('1762404229_d67daaec0', 2112.00, 473.00, 50000.00, 2666.67, 55251.67, 8287.75, 15884.85, 0.00, 79424.27, 103251.55, 95309.13, 1, 79424.27, 79424.27, 43.00, 0.70, 16.00, 430.00, 103251.55, 95309.13, 0.00, 0.00, 0.00),
+('1762437173_b1250b662', 2112.00, 473.00, 50000.00, 2666.67, 55251.67, 8287.75, 15884.85, 0.00, 79424.27, 103251.55, 95309.13, 1, 79424.27, 79424.27, 43.00, 0.70, 16.00, 430.00, 103251.55, 95309.13, 0.00, 0.00, 0.00),
+('1762439142_a0b4b08b2', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1762439737_296a8fee6', 963.60, 484.00, 50000.00, 1216.67, 52664.27, 7899.64, 15140.98, 0.00, 75704.88, 98416.35, 90845.86, 1, 75704.88, 75704.88, 44.00, 0.70, 7.30, 440.00, 98416.35, 90845.86, 0.00, 0.00, 0.00),
+('1762439761_72d0308d1', 642.40, 484.00, 50000.00, 1216.67, 52343.07, 7851.46, 15048.63, 0.00, 75243.16, 97816.11, 90291.79, 1, 75243.16, 75243.16, 44.00, 0.70, 7.30, 440.00, 97816.11, 90291.79, 0.00, 0.00, 0.00),
+('1762439826_be1fa7192', 1084.05, 473.00, 50000.00, 1216.67, 52773.72, 7916.06, 15172.44, 0.00, 75862.22, 98620.88, 91034.66, 1, 75862.22, 75862.22, 43.00, 0.70, 7.30, 430.00, 98620.88, 91034.66, 0.00, 0.00, 0.00),
+('1762447780_eeb0c0bd2', 695.20, 484.00, 50000.00, 1316.67, 52495.87, 7874.38, 15092.56, 0.00, 75462.81, 98101.65, 90555.37, 1, 75462.81, 75462.81, 44.00, 0.70, 7.90, 440.00, 98101.65, 90555.37, 0.00, 0.00, 0.00),
+('1762447805_dbafc6cda', 695.20, 484.00, 2500.00, 1316.67, 4995.87, 749.38, 1436.31, 0.00, 718.16, 933.60, 861.79, 2, 7181.56, 14363.12, 88.00, 1.50, 15.80, 880.00, 18672.05, 17235.74, 0.00, 0.00, 0.00),
+('1762448896_3d15951f1', 880.00, 550.00, 50000.00, 138.89, 51568.89, 7735.33, 14826.06, 0.00, 74130.28, 96369.36, 88956.33, 1, 74130.28, 74130.28, 50.00, 0.80, 10.00, 480.00, 96369.36, 88956.33, 0.00, 0.00, 0.00),
+('1762448964_77b6c36fb', 7975.00, 1320.00, 50000.00, 333.33, 59628.33, 8944.25, 17143.15, 0.00, 85715.73, 111430.45, 102858.88, 1, 85715.73, 85715.73, 120.00, 2.00, 50.00, 1200.00, 111430.45, 102858.88, 0.00, 0.00, 0.00),
+('1762449029_e63026205', 6600.00, 1320.00, 50000.00, 333.33, 58253.33, 8738.00, 16747.83, 0.00, 83739.17, 108860.92, 100487.00, 1, 83739.17, 83739.17, 120.00, 2.00, 50.00, 1200.00, 108860.92, 100487.00, 0.00, 0.00, 0.00),
+('1762449224_99d2f8cb4', 6600.00, 1320.00, 50000.00, 333.33, 58253.33, 8738.00, 16747.83, 0.00, 83739.17, 108860.92, 100487.00, 1, 83739.17, 83739.17, 120.00, 2.00, 50.00, 1200.00, 108860.92, 100487.00, 0.00, 0.00, 0.00),
+('1762449244_d755f8fb4', 7975.00, 1320.00, 50000.00, 333.33, 59628.33, 8944.25, 17143.15, 0.00, 85715.73, 111430.45, 102858.88, 1, 85715.73, 85715.73, 120.00, 2.00, 50.00, 1200.00, 111430.45, 102858.88, 0.00, 0.00, 0.00),
+('1762449342_523b4c5cf', 1042.80, 484.00, 50000.00, 122.22, 51649.02, 7747.35, 14849.09, 0.00, 74245.47, 96519.11, 89094.56, 1, 74245.47, 74245.47, 44.00, 0.70, 7.90, 420.00, 96519.11, 89094.56, 0.00, 0.00, 0.00),
+('1762449353_8e63bf441', 1260.05, 484.00, 50000.00, 122.22, 51866.27, 7779.94, 14911.55, 0.00, 74557.77, 96925.10, 89469.32, 1, 74557.77, 74557.77, 44.00, 0.70, 7.90, 420.00, 96925.10, 89469.32, 0.00, 0.00, 0.00),
+('1762785371_09941798f', 7975.00, 1320.00, 50000.00, 333.33, 59628.33, 8944.25, 17143.15, 0.00, 85715.73, 111430.45, 102858.88, 1, 85715.73, 85715.73, 120.00, 2.00, 50.00, 1200.00, 111430.45, 102858.88, 0.00, 0.00, 0.00),
+('1762785492_97186539a', 7425.00, 1320.00, 50000.00, 333.33, 59078.33, 8861.75, 16985.02, 0.00, 84925.10, 110402.64, 101910.13, 1, 84925.10, 84925.10, 120.00, 2.00, 50.00, 1200.00, 110402.64, 101910.13, 0.00, 0.00, 0.00),
+('1762785510_bb620d768', 7425.00, 1320.00, 12500.00, 333.33, 21578.33, 3236.75, 6203.77, 0.00, 31018.85, 40324.51, 37222.63, 4, 31018.85, 124075.42, 480.00, 8.00, 200.00, 4800.00, 161298.04, 148890.50, 0.00, 0.00, 0.00),
+('1762786276_712a15e81', 6600.00, 1320.00, 50000.00, 333.33, 58253.33, 8738.00, 16747.83, 0.00, 83739.17, 108860.92, 100487.00, 1, 83739.17, 83739.17, 120.00, 2.00, 50.00, 1200.00, 108860.92, 100487.00, 0.00, 0.00, 0.00),
+('1762786285_bf267c7b0', 7975.00, 1320.00, 50000.00, 333.33, 59628.33, 8944.25, 17143.15, 0.00, 85715.73, 111430.45, 102858.88, 1, 85715.73, 85715.73, 120.00, 2.00, 50.00, 1200.00, 111430.45, 102858.88, 0.00, 0.00, 0.00),
+('1763852717_885ec81ae', 6600.00, 1320.00, 50000.00, 333.33, 58253.33, 8738.00, 16747.83, 0.00, 83739.17, 108860.92, 100487.00, 1, 83739.17, 83739.17, 120.00, 2.00, 50.00, 1200.00, 108860.92, 100487.00, 0.00, 0.00, 0.00),
+('1763855451_e75bb864e', 6600.00, 1320.00, 50000.00, 333.33, 58253.33, 8738.00, 16747.83, 0.00, 83739.17, 108860.92, 100487.00, 1, 83739.17, 83739.17, 120.00, 2.00, 50.00, 1200.00, 108860.92, 100487.00, 0.00, 0.00, 0.00),
+('1763855558_40dd2454f', 6600.00, 1320.00, 50000.00, 333.33, 58253.33, 8738.00, 16747.83, 0.00, 83739.17, 108860.92, 100487.00, 1, 83739.17, 83739.17, 120.00, 2.00, 50.00, 1200.00, 108860.92, 100487.00, 0.00, 0.00, 0.00),
+('1763856508_1b893684b', 6600000.00, 1200.00, 50000.00, 333.33, 6651533.33, 997730.00, 1912315.83, 0.00, 9561579.17, 12430052.92, 11473895.00, 1, 9561579.17, 9561579.17, 120.00, 2.00, 50.00, 1200.00, 12430052.92, 11473895.00, 0.00, 0.00, 0.00),
+('1763857237_35cb26525', 4400000.00, 1200.00, 50000.00, 333.33, 4451533.33, 667730.00, 1279815.83, 0.00, 6399079.17, 8318802.92, 7678895.00, 1, 6399079.17, 6399079.17, 120.00, 2.00, 50.00, 1200.00, 8318802.92, 7678895.00, 0.00, 0.00, 0.00),
+('1763858354_5d45c53c1', 4400.00, 1320.00, 50000.00, 8333.33, 64053.33, 9608.00, 18415.33, 0.00, 92076.67, 119699.67, 110492.00, 1, 92076.67, 92076.67, 120.00, 2.00, 50.00, 1200.00, 119699.67, 110492.00, 0.00, 0.00, 0.00),
+('1763858822_test', 4400.00, 1320.00, 50000.00, 8333.33, 64053.33, 9608.00, 18415.33, 0.00, 92076.67, 119699.67, 110492.00, 1, 92076.67, 92076.67, 120.00, 2.00, 50.00, 1320.00, 119699.67, 110492.00, 0.00, 0.00, 0.00),
+('1763858894_9c9ca5a72', 4400.00, 1320.00, 50000.00, 8333.33, 64053.33, 9608.00, 18415.33, 0.00, 92076.67, 119699.67, 110492.00, 1, 92076.67, 92076.67, 120.00, 2.00, 50.00, 1200.00, 119699.67, 110492.00, 0.00, 0.00, 0.00),
+('1763858917_9738570f1', 4400.00, 1320.00, 2500.00, 8333.33, 16553.33, 2483.00, 4759.08, 0.00, 2379.54, 3093.40, 2855.45, 2, 23795.42, 47590.83, 240.00, 4.00, 100.00, 2400.00, 61868.08, 57109.00, 0.00, 0.00, 0.00),
+('1763858973_6ae1a6995', 6800.00, 2040.00, 2500.00, 8333.33, 19673.33, 2951.00, 5656.08, 0.00, 2828.04, 3676.45, 3393.65, 2, 28280.42, 56560.83, 240.00, 4.00, 100.00, 2400.00, 73529.08, 67873.00, 0.00, 0.00, 0.00),
+('1763868900_test', 4400.00, 1320.00, 50000.00, 8333.33, 64053.33, 9608.00, 18415.33, 0.00, 92076.67, 119699.67, 110492.00, 1, 92076.67, 92076.67, 120.00, 2.00, 50.00, 1320.00, 119699.67, 110492.00, 0.00, 0.00, 0.00),
+('1763870454_debdce740', 7425.00, 1320.00, 50000.00, 8333.33, 67078.33, 10061.75, 19285.02, 0.00, 96425.10, 125352.64, 115710.13, 1, 96425.10, 96425.10, 120.00, 2.00, 50.00, 1200.00, 125352.64, 115710.13, 0.00, 0.00, 0.00),
+('1763870711_54ec381d4', 7975.00, 1320.00, 50000.00, 8333.33, 67628.33, 10144.25, 19443.15, 0.00, 97215.73, 126380.45, 116658.88, 1, 97215.73, 97215.73, 120.00, 2.00, 50.00, 1200.00, 126380.45, 116658.88, 0.00, 0.00, 0.00),
+('1763870799_335d56505', 7975.00, 1320.00, 50000.00, 8333.33, 67628.33, 10144.25, 19443.15, 0.00, 97215.73, 126380.45, 116658.88, 1, 97215.73, 97215.73, 120.00, 2.00, 50.00, 1200.00, 126380.45, 116658.88, 0.00, 0.00, 0.00),
+('1763871098_e63130a54', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1763871870_491639607', 7975.00, 1320.00, 50000.00, 8333.33, 67628.33, 10144.25, 19443.15, 0.00, 97215.73, 126380.45, 116658.88, 1, 97215.73, 97215.73, 120.00, 2.00, 50.00, 1200.00, 126380.45, 116658.88, 0.00, 0.00, 0.00),
+('1763871952_ef18f3f9f', 7975.00, 1320.00, 1666.67, 8333.33, 19295.00, 2894.25, 5547.31, 0.00, 2773.66, 3605.75, 3328.39, 3, 27736.56, 83209.69, 360.00, 6.00, 150.00, 3600.00, 108172.59, 99851.63, 0.00, 0.00, 0.00),
+('1763877687_aef275471', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1763877719_596015001', 6600.00, 1320.00, 50000.00, 8333.33, 66253.33, 9938.00, 19047.83, 0.00, 95239.17, 123810.92, 114287.00, 1, 95239.17, 95239.17, 120.00, 2.00, 50.00, 1200.00, 123810.92, 114287.00, 0.00, 0.00, 0.00),
+('1763877771_3d3996746', 6600.00, 1320.00, 75000.00, 8333.33, 91253.33, 13688.00, 26235.33, 0.00, 131176.67, 170529.67, 157412.00, 1, 131176.67, 131176.67, 120.00, 2.00, 50.00, 1200.00, 170529.67, 157412.00, 0.00, 0.00, 0.00),
+('1763877792_e676e4e85', 6600.00, 4400.00, 75000.00, 8333.33, 94333.33, 14150.00, 27120.83, 0.00, 135604.17, 176285.42, 162725.00, 1, 135604.17, 135604.17, 400.00, 6.67, 50.00, 4000.00, 176285.42, 162725.00, 0.00, 0.00, 0.00),
+('1763877938_8b262a5ff', 7425.00, 1320.00, 1666.67, 8333.33, 18745.00, 2811.75, 5389.19, 0.00, 2694.59, 3502.97, 3233.51, 3, 26945.94, 80837.81, 360.00, 6.00, 150.00, 3600.00, 105089.16, 97005.38, 0.00, 0.00, 0.00),
+('1763878157_test', 4400.00, 1320.00, 50000.00, 8333.33, 64053.33, 9608.00, 18415.33, 0.00, 92076.67, 119699.67, 110492.00, 1, 92076.67, 92076.67, 120.00, 2.00, 50.00, 1320.00, 119699.67, 110492.00, 0.00, 0.00, 0.00),
+('1763907449_754fd8e1a', 1584.00, 726.00, 11300.00, 2000.00, 15610.00, 2341.50, 4487.88, 0.00, 22439.38, 29171.19, 26927.25, 1, 22439.38, 22439.38, 66.00, 1.10, 12.00, 660.00, 29171.19, 26927.25, 0.00, 0.00, 0.00),
+('1763910407_49c1ce375', 7425.00, 1320.00, 50000.00, 8333.33, 67078.33, 10061.75, 19285.02, 0.00, 96425.10, 125352.64, 115710.13, 1, 96425.10, 96425.10, 120.00, 2.00, 50.00, 1200.00, 125352.64, 115710.13, 0.00, 0.00, 0.00),
+('1763922903_cedf777f8', 14107.50, 1430.00, 10000.00, 15833.33, 41370.83, 6205.63, 11894.11, 0.00, 14867.64, 19327.94, 17841.17, 2, 59470.57, 74338.22, 260.00, 4.33, 118.75, 2600.00, 96639.68, 89205.86, 0.00, 0.00, 0.00);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `configuracion`
+--
+
+CREATE TABLE `configuracion` (
+  `id` int(11) NOT NULL,
+  `clave` varchar(100) NOT NULL,
+  `valor` text NOT NULL,
+  `tipo` enum('numero','texto','json','booleano') DEFAULT 'texto',
+  `descripcion` text DEFAULT NULL,
+  `fecha_modificacion` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `configuracion`
+--
+
+INSERT INTO `configuracion` (`id`, `clave`, `valor`, `tipo`, `descripcion`, `fecha_modificacion`) VALUES
+(1, 'version_sistema', '5.0', 'texto', 'Versión del sistema', '2025-11-05 17:37:38'),
+(2, 'factor_seguridad', '1.1', 'numero', 'Factor de seguridad para cálculos', '2025-11-05 17:37:38'),
+(3, 'uso_electricidad', '600', 'numero', 'Costo de electricidad por hora (COP)', '2025-11-05 17:37:38'),
+(4, 'gif', '15', 'numero', 'Porcentaje de GIF', '2025-11-05 17:37:38'),
+(5, 'aiu', '25', 'numero', 'Porcentaje de AIU', '2025-11-05 17:37:38'),
+(6, 'margen_minorista', '30', 'numero', 'Margen de venta minorista (%)', '2025-11-05 17:37:38'),
+(7, 'margen_mayorista', '20', 'numero', 'Margen de venta mayorista (%)', '2025-11-05 17:37:38'),
+(8, 'costo_hora_diseno', '25000', 'numero', 'Costo por hora de diseño (COP)', '2025-11-05 17:37:38'),
+(9, 'depreciacion_costo_inicial', '1400000', 'numero', 'Costo inicial de la máquina', '2025-11-05 17:37:38'),
+(10, 'depreciacion_valor_residual', '0.1', 'numero', 'Valor residual de la máquina', '2025-11-05 17:37:38'),
+(11, 'depreciacion_vida_util', '3', 'numero', 'Vida útil de la máquina (años)', '2025-11-05 17:37:38'),
+(12, 'depreciacion_horas_mensuales', '210', 'numero', 'Horas de uso mensual estimadas', '2025-11-05 17:37:38');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `cotizaciones`
+--
+
+CREATE TABLE `cotizaciones` (
+  `id` varchar(50) NOT NULL,
+  `nombre_pieza` varchar(200) NOT NULL,
+  `perfil_filamento_id` varchar(50) DEFAULT NULL,
+  `carrete_id` varchar(50) DEFAULT NULL,
+  `peso_pieza` decimal(10,2) NOT NULL COMMENT 'Peso en gramos',
+  `tiempo_impresion` decimal(10,2) NOT NULL COMMENT 'Tiempo en minutos',
+  `cantidad_piezas` int(11) NOT NULL DEFAULT 1,
+  `piezas_por_lote` int(11) NOT NULL DEFAULT 1,
+  `costo_carrete` decimal(10,2) NOT NULL,
+  `peso_carrete` decimal(10,2) NOT NULL COMMENT 'Peso en kg',
+  `horas_diseno` decimal(10,2) DEFAULT 0.00,
+  `costo_hora_diseno` decimal(10,2) NOT NULL,
+  `factor_seguridad` decimal(5,2) NOT NULL DEFAULT 1.10,
+  `uso_electricidad` decimal(10,2) NOT NULL COMMENT 'Costo por hora en COP',
+  `gif` decimal(5,2) NOT NULL COMMENT 'Porcentaje GIF',
+  `aiu` decimal(5,2) NOT NULL COMMENT 'Porcentaje AIU',
+  `incluir_marca_agua` tinyint(1) DEFAULT 0,
+  `porcentaje_marca_agua` decimal(5,2) DEFAULT 0.00,
+  `margen_minorista` decimal(5,2) NOT NULL,
+  `margen_mayorista` decimal(5,2) NOT NULL,
+  `fecha` date NOT NULL,
+  `fecha_completa` datetime DEFAULT current_timestamp(),
+  `maquina_id` varchar(50) DEFAULT NULL COMMENT 'ID de la máquina usada',
+  `maquinas_multiples` text DEFAULT NULL COMMENT 'JSON con distribución de piezas por máquina si se usan varias',
+  `incluir_postprocesado` tinyint(1) DEFAULT 0 COMMENT 'Indica si se incluyen costos de postprocesado',
+  `nivel_dificultad_postprocesado` varchar(20) DEFAULT NULL COMMENT 'facil, intermedio, dificil',
+  `costo_mano_obra_postprocesado` decimal(10,2) DEFAULT 0.00 COMMENT 'Costo de mano de obra del postprocesado'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `cotizaciones`
+--
+
+INSERT INTO `cotizaciones` (`id`, `nombre_pieza`, `perfil_filamento_id`, `carrete_id`, `peso_pieza`, `tiempo_impresion`, `cantidad_piezas`, `piezas_por_lote`, `costo_carrete`, `peso_carrete`, `horas_diseno`, `costo_hora_diseno`, `factor_seguridad`, `uso_electricidad`, `gif`, `aiu`, `incluir_marca_agua`, `porcentaje_marca_agua`, `margen_minorista`, `margen_mayorista`, `fecha`, `fecha_completa`, `maquina_id`, `maquinas_multiples`, `incluir_postprocesado`, `nivel_dificultad_postprocesado`, `costo_mano_obra_postprocesado`) VALUES
+('1762401552_cd485fbdd', 'Soporte para Monitor', NULL, NULL, 45.50, 180.00, 5, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-05', '2025-11-05 22:59:12', NULL, NULL, 0, NULL, 0.00),
+('1762402645_2c180bbfa', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 10.00, 30.00, 20.00, '2025-11-05', '2025-11-05 23:17:25', NULL, NULL, 0, NULL, 0.00),
+('1762402654_e3e3e6b64', 'Morrocoy', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 10.00, 30.00, 20.00, '2025-11-05', '2025-11-05 23:17:34', NULL, NULL, 0, NULL, 0.00),
+('1762403714_a7266509d', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 10.00, 30.00, 20.00, '2025-11-05', '2025-11-05 23:35:14', NULL, NULL, 0, NULL, 0.00),
+('1762404008_ac66b0267', 'Pieza sin nombre', NULL, NULL, 7.40, 40.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 10.00, 30.00, 20.00, '2025-11-05', '2025-11-05 23:40:08', NULL, NULL, 0, NULL, 0.00),
+('1762404048_e36a25aa5', 'Cubo simple', NULL, NULL, 7.40, 40.00, 1, 1, 120000.00, 1.00, 0.00, 25000.00, 1.50, 600.00, 15.00, 25.00, 0, 10.00, 30.00, 20.00, '2025-11-05', '2025-11-05 23:40:48', NULL, NULL, 0, NULL, 0.00),
+('1762404229_d67daaec0', 'Cubo simple', NULL, NULL, 16.00, 43.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-05', '2025-11-05 23:43:49', NULL, NULL, 0, NULL, 0.00),
+('1762437173_b1250b662', 'Cubo simple', NULL, NULL, 16.00, 43.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 08:52:53', NULL, NULL, 0, NULL, 0.00),
+('1762439142_a0b4b08b2', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 09:25:42', NULL, NULL, 0, NULL, 0.00),
+('1762439737_296a8fee6', 'cubo kiri', NULL, NULL, 7.30, 44.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 09:35:37', NULL, NULL, 0, NULL, 0.00),
+('1762439761_72d0308d1', 'cubo kiri', NULL, NULL, 7.30, 44.00, 1, 1, 80000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 09:36:01', NULL, NULL, 0, NULL, 0.00),
+('1762439826_be1fa7192', 'cubo kiri v2', NULL, NULL, 7.30, 43.00, 1, 1, 135000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 09:37:06', NULL, NULL, 0, NULL, 0.00),
+('1762447780_eeb0c0bd2', 'cubo kiri v', NULL, NULL, 7.90, 44.00, 1, 1, 80000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 11:49:40', NULL, NULL, 0, NULL, 0.00),
+('1762447805_dbafc6cda', 'cubo kiri v', NULL, NULL, 7.90, 44.00, 20, 10, 80000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 11:50:05', NULL, NULL, 0, NULL, 0.00),
+('1762448896_3d15951f1', 'cubo kiri c', NULL, NULL, 10.00, 50.00, 1, 1, 80000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:08:16', NULL, NULL, 0, NULL, 0.00),
+('1762448964_77b6c36fb', 'engra', NULL, NULL, 50.00, 120.00, 1, 1, 145000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:09:24', NULL, NULL, 0, NULL, 0.00),
+('1762449029_e63026205', 'engra', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:10:29', NULL, NULL, 0, NULL, 0.00),
+('1762449224_99d2f8cb4', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:13:44', NULL, NULL, 0, NULL, 0.00),
+('1762449244_d755f8fb4', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 145000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:14:04', NULL, NULL, 0, NULL, 0.00),
+('1762449342_523b4c5cf', 'Pieza sin nombre', NULL, NULL, 7.90, 44.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:15:42', NULL, NULL, 0, NULL, 0.00),
+('1762449353_8e63bf441', 'Pieza sin nombre', NULL, NULL, 7.90, 44.00, 1, 1, 145000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-06', '2025-11-06 12:15:53', NULL, NULL, 0, NULL, 0.00),
+('1762785371_09941798f', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 145000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-10', '2025-11-10 09:36:11', NULL, NULL, 0, NULL, 0.00),
+('1762785492_97186539a', 'Morrocoy', NULL, NULL, 50.00, 120.00, 1, 1, 135000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-10', '2025-11-10 09:38:12', NULL, NULL, 0, NULL, 0.00),
+('1762785510_bb620d768', 'Morrocoy', NULL, NULL, 50.00, 120.00, 4, 1, 135000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-10', '2025-11-10 09:38:30', NULL, NULL, 0, NULL, 0.00),
+('1762786276_712a15e81', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-10', '2025-11-10 09:51:16', NULL, NULL, 0, NULL, 0.00),
+('1762786285_bf267c7b0', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 145000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-10', '2025-11-10 09:51:25', NULL, NULL, 0, NULL, 0.00),
+('1763852717_885ec81ae', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 18:05:17', NULL, NULL, 0, NULL, 0.00),
+('1763855451_e75bb864e', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 18:50:51', NULL, NULL, 0, NULL, 0.00),
+('1763855558_40dd2454f', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 120000.00, 1.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 18:52:38', NULL, NULL, 0, NULL, 0.00),
+('1763856508_1b893684b', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:08:28', NULL, NULL, 0, NULL, 0.00),
+('1763857237_35cb26525', 'Benchy', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:20:37', NULL, NULL, 0, NULL, 0.00),
+('1763858354_5d45c53c1', 'Tortuga articulada', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:39:14', NULL, NULL, 0, NULL, 0.00),
+('1763858822_test', 'Test Pieza', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:47:02', NULL, NULL, 0, NULL, 0.00),
+('1763858894_9c9ca5a72', 'Morrocoy', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:48:14', NULL, NULL, 0, NULL, 0.00),
+('1763858917_9738570f1', 'Morrocoy', NULL, NULL, 50.00, 120.00, 20, 10, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:48:37', NULL, NULL, 0, NULL, 0.00),
+('1763858973_6ae1a6995', 'Morrocoy', NULL, NULL, 50.00, 120.00, 20, 10, 0.00, 0.00, 2.00, 25000.00, 1.70, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 19:49:33', NULL, NULL, 0, NULL, 0.00),
+('1763868900_test', 'Test Pieza', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 22:35:00', NULL, NULL, 0, NULL, 0.00),
+('1763870454_debdce740', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 23:00:54', NULL, NULL, 0, NULL, 0.00),
+('1763870711_54ec381d4', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 23:05:11', NULL, NULL, 0, NULL, 0.00),
+('1763870799_335d56505', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 1, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 23:06:39', NULL, NULL, 0, NULL, 0.00),
+('1763871098_e63130a54', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 23:11:38', NULL, NULL, 0, NULL, 0.00),
+('1763871870_491639607', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 23:24:30', NULL, NULL, 0, NULL, 0.00),
+('1763871952_ef18f3f9f', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 30, 10, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-22', '2025-11-22 23:25:52', NULL, NULL, 0, NULL, 0.00),
+('1763877687_aef275471', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 01:01:27', NULL, NULL, 0, NULL, 0.00),
+('1763877719_596015001', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 01:01:59', NULL, NULL, 0, NULL, 0.00),
+('1763877771_3d3996746', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 3.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 01:02:51', NULL, NULL, 0, NULL, 0.00),
+('1763877792_e676e4e85', 'Pieza sin nombre', NULL, NULL, 50.00, 400.00, 1, 1, 0.00, 0.00, 3.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 01:03:12', NULL, NULL, 0, NULL, 0.00),
+('1763877938_8b262a5ff', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 30, 10, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 01:05:38', NULL, NULL, 0, NULL, 0.00),
+('1763878157_test', 'Test Pieza', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 01:09:17', NULL, NULL, 0, NULL, 0.00),
+('1763907449_754fd8e1a', 'Engrane1', NULL, NULL, 12.00, 66.00, 1, 1, 0.00, 0.00, 1.00, 11300.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 09:17:29', NULL, NULL, 0, NULL, 0.00),
+('1763910407_49c1ce375', 'Pieza sin nombre', NULL, NULL, 50.00, 120.00, 1, 1, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 10:06:47', NULL, NULL, 0, NULL, 0.00),
+('1763922903_cedf777f8', 'Pieza sin nombre', NULL, NULL, 95.00, 130.00, 5, 4, 0.00, 0.00, 2.00, 25000.00, 1.10, 600.00, 15.00, 25.00, 0, 0.00, 30.00, 20.00, '2025-11-23', '2025-11-23 13:35:03', NULL, NULL, 0, NULL, 0.00);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `historial_uso`
+--
+
+CREATE TABLE `historial_uso` (
+  `id` varchar(50) NOT NULL,
+  `carrete_id` varchar(50) NOT NULL,
+  `perfil_id` varchar(50) NOT NULL,
+  `gramos_usados` decimal(10,2) NOT NULL,
+  `peso_restante_anterior` decimal(10,2) NOT NULL,
+  `peso_restante_actual` decimal(10,2) NOT NULL,
+  `nombre_proyecto` varchar(200) DEFAULT NULL,
+  `fecha_hora` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `historial_uso`
+--
+
+INSERT INTO `historial_uso` (`id`, `carrete_id`, `perfil_id`, `gramos_usados`, `peso_restante_anterior`, `peso_restante_actual`, `nombre_proyecto`, `fecha_hora`) VALUES
+('1762403542_c613a95a4', '1762401545_570d4abb7', '1762401542_68aa21fbf', 39.00, 1000.00, 961.00, '', '2025-11-05 23:32:22'),
+('1762403599_f4350dfda', '1762401590_2cf516597', '1762401585_b1a2ca463', 75.00, 1000.00, 925.00, '', '2025-11-05 23:33:19'),
+('1762403609_4b98bb2b6', '1762403322_1c7e00aa7', '1762403316_a282007f1', 20.00, 1000.00, 980.00, '', '2025-11-05 23:33:29'),
+('1762403643_827b78baa', '1762403322_1c7e00aa7', '1762403316_a282007f1', 123.00, 980.00, 857.00, '', '2025-11-05 23:34:03');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `inventario_carretes`
+--
+
+CREATE TABLE `inventario_carretes` (
+  `id` varchar(50) NOT NULL,
+  `perfil_id` varchar(50) NOT NULL,
+  `peso_inicial` decimal(10,2) NOT NULL COMMENT 'Peso inicial en gramos',
+  `peso_usado` decimal(10,2) DEFAULT 0.00 COMMENT 'Peso usado en gramos',
+  `estado` enum('activo','agotado','pausado') DEFAULT 'activo',
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  `fecha_modificacion` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `peso_restante` decimal(10,2) GENERATED ALWAYS AS (`peso_inicial` - `peso_usado`) STORED,
+  `porcentaje_restante` decimal(5,2) GENERATED ALWAYS AS ((`peso_inicial` - `peso_usado`) / `peso_inicial` * 100) STORED
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `inventario_carretes`
+--
+
+INSERT INTO `inventario_carretes` (`id`, `perfil_id`, `peso_inicial`, `peso_usado`, `estado`, `fecha_creacion`, `fecha_modificacion`) VALUES
+('1762401537_9163256e3', '1762401518_a4ff01eca', 1000.00, 0.00, 'activo', '2025-11-05 22:58:57', '2025-11-05 22:58:57'),
+('1762401545_570d4abb7', '1762401542_68aa21fbf', 1000.00, 39.00, 'activo', '2025-11-05 22:59:05', '2025-11-05 23:32:22'),
+('1762401590_2cf516597', '1762401585_b1a2ca463', 1000.00, 75.00, 'activo', '2025-11-05 22:59:50', '2025-11-05 23:33:19'),
+('1762403322_1c7e00aa7', '1762403316_a282007f1', 1000.00, 143.00, 'activo', '2025-11-05 23:28:42', '2025-11-05 23:34:03');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `maquinas`
+--
+
+CREATE TABLE `maquinas` (
+  `id` varchar(50) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `modelo` varchar(100) DEFAULT NULL,
+  `tipo` enum('FDM','FDM_MULTICOLOR','RESINA','SLA','SLS') DEFAULT 'FDM',
+  `costo_adquisicion` decimal(10,2) NOT NULL COMMENT 'Costo de compra de la máquina',
+  `vida_util_horas` int(11) DEFAULT 5000 COMMENT 'Vida útil estimada en horas',
+  `depreciacion_por_hora` decimal(10,4) DEFAULT NULL COMMENT 'Depreciación calculada por hora de uso',
+  `volumen_construccion_x` decimal(10,2) DEFAULT NULL COMMENT 'Volumen en X (mm)',
+  `volumen_construccion_y` decimal(10,2) DEFAULT NULL COMMENT 'Volumen en Y (mm)',
+  `volumen_construccion_z` decimal(10,2) DEFAULT NULL COMMENT 'Volumen en Z (mm)',
+  `velocidad_max` decimal(10,2) DEFAULT NULL COMMENT 'Velocidad máxima (mm/s)',
+  `num_extrusores` int(11) DEFAULT 1 COMMENT 'Número de extrusores/cabezales',
+  `activa` tinyint(1) DEFAULT 1 COMMENT 'Si la máquina está disponible para uso',
+  `horas_uso_total` decimal(10,2) DEFAULT 0.00 COMMENT 'Total de horas usadas',
+  `fecha_adquisicion` date DEFAULT NULL,
+  `notas` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `maquinas`
+--
+
+INSERT INTO `maquinas` (`id`, `nombre`, `modelo`, `tipo`, `costo_adquisicion`, `vida_util_horas`, `depreciacion_por_hora`, `volumen_construccion_x`, `volumen_construccion_y`, `volumen_construccion_z`, `velocidad_max`, `num_extrusores`, `activa`, `horas_uso_total`, `fecha_adquisicion`, `notas`, `created_at`, `updated_at`) VALUES
+('MAQ_001', 'Ender 3 V3 SE #1', 'Creality Ender 3 V3 SE', 'FDM', 1400000.00, 5000, 280.0000, 220.00, 220.00, 220.00, 250.00, 1, 1, 500.00, '2025-06-10', 'Primera impresora adquirida. Uso general para PLA y PETG.\nno es tan precisa, tiende a tener avacados algo sucio, usar para piezas con pocos detalles finos, y evitar la impresión de piezas con bisagras o encajes.', '2025-11-23 04:56:36', '2025-11-23 05:23:38'),
+('MAQ_002', 'Ender 3 V3 SE #2', 'Creality Ender 3 V3 SE', 'FDM', 1400000.00, 5000, 280.0000, 220.00, 220.00, 220.00, 250.00, 1, 1, 40.00, '2025-10-18', 'Segunda impresora. Uso para producción en paralelo.', '2025-11-23 04:56:36', '2025-11-23 05:23:55'),
+('MAQ_003', 'Flashforge AD5X', 'Flashforge Adventurer 5M Pro', 'FDM_MULTICOLOR', 1900000.00, 5000, 380.0000, 220.00, 220.00, 220.00, 300.00, 1, 1, 100.00, '2025-10-06', 'Impresora multicolor para proyectos premium. Mayor costo de depreciación debido a la inversión y tecnología avanzada.', '2025-11-23 04:56:36', '2025-11-23 18:42:25');
+
+--
+-- Disparadores `maquinas`
+--
+DELIMITER $$
+CREATE TRIGGER `before_insert_maquina` BEFORE INSERT ON `maquinas` FOR EACH ROW BEGIN
+    -- Si no se proporcionó depreciación, calcularla automáticamente
+    IF NEW.depreciacion_por_hora IS NULL OR NEW.depreciacion_por_hora = 0 THEN
+        SET NEW.depreciacion_por_hora = calcular_depreciacion_maquina(
+            NEW.costo_adquisicion, 
+            NEW.vida_util_horas
+        );
+    END IF;
+    
+    -- Si no se proporcionó ID, generar uno
+    IF NEW.id IS NULL OR NEW.id = '' THEN
+        SET NEW.id = CONCAT('MAQ_', UNIX_TIMESTAMP(), '_', SUBSTRING(MD5(RAND()), 1, 8));
+    END IF;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `perfiles_filamento`
+--
+
+CREATE TABLE `perfiles_filamento` (
+  `id` varchar(50) NOT NULL,
+  `tipo` varchar(20) NOT NULL,
+  `marca` varchar(100) NOT NULL,
+  `color_nombre` varchar(50) NOT NULL,
+  `color_codigo` varchar(7) NOT NULL,
+  `peso` decimal(5,2) NOT NULL COMMENT 'Peso en kg',
+  `costo` decimal(10,2) NOT NULL COMMENT 'Costo en COP',
+  `temperatura` int(11) DEFAULT NULL COMMENT 'Temperatura en °C',
+  `calidad` tinyint(4) DEFAULT 0 COMMENT 'Calificación de 0-5 estrellas',
+  `calidad_nota` text DEFAULT NULL,
+  `fecha_compra` date DEFAULT NULL,
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  `costo_por_gramo` decimal(10,6) GENERATED ALWAYS AS (`costo` / (`peso` * 1000)) STORED
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `perfiles_filamento`
+--
+
+INSERT INTO `perfiles_filamento` (`id`, `tipo`, `marca`, `color_nombre`, `color_codigo`, `peso`, `costo`, `temperatura`, `calidad`, `calidad_nota`, `fecha_compra`, `fecha_creacion`) VALUES
+('1762401518_a4ff01eca', 'PLA', 'eSun', 'Rojo', '#FF0000', 1.00, 120000.00, 210, 5, 'Excelente calidad, muy recomendado', '2025-11-05', '2025-11-05 22:58:38'),
+('1762401542_68aa21fbf', 'ABS', 'Sunlu', 'Negro', '#000000', 1.00, 135000.00, 240, 4, 'Buena resistencia térmica', '2025-11-05', '2025-11-05 22:59:02'),
+('1762401585_b1a2ca463', 'PETG', 'Overture', 'Azul Transparente', '#0080FF', 1.00, 145000.00, 230, 5, 'Perfecto para piezas funcionales', '2025-11-05', '2025-11-05 22:59:45'),
+('1762403316_a282007f1', 'PETG', 'Fill3D', 'Rojo escarlata', '#f61e1e', 1.00, 80000.00, 240, 5, 'Presenta buena calidad', '2025-11-06', '2025-11-05 23:28:36');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `perfiles_proyecto`
+--
+
+CREATE TABLE `perfiles_proyecto` (
+  `id` varchar(50) NOT NULL,
+  `nombre` varchar(200) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `perfil_filamento_id` varchar(50) DEFAULT NULL,
+  `peso_pieza` decimal(10,2) DEFAULT NULL,
+  `tiempo_impresion` decimal(10,2) DEFAULT NULL,
+  `horas_diseno` decimal(10,2) DEFAULT NULL,
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  `fecha_modificacion` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `postprocesado_insumos`
+--
+
+CREATE TABLE `postprocesado_insumos` (
+  `id` varchar(50) NOT NULL,
+  `cotizacion_id` varchar(50) NOT NULL,
+  `suministro_id` varchar(50) NOT NULL,
+  `nombre_suministro` varchar(200) NOT NULL,
+  `cantidad_requerida` decimal(10,2) NOT NULL COMMENT 'Cantidad de unidades requeridas',
+  `porcentaje_uso` decimal(5,2) DEFAULT NULL COMMENT 'Porcentaje de uso si es menos de 1 unidad',
+  `precio_unitario` decimal(10,2) NOT NULL COMMENT 'Precio del suministro al momento de la cotización',
+  `costo_total_insumo` decimal(10,2) NOT NULL COMMENT 'Costo total de este insumo',
+  `fecha_agregado` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `suministros`
+--
+
+CREATE TABLE `suministros` (
+  `id` varchar(50) NOT NULL,
+  `nombre` varchar(200) NOT NULL,
+  `categoria` varchar(50) NOT NULL,
+  `precio` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `unidades` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `unidad_medida` varchar(20) NOT NULL DEFAULT 'unidades',
+  `descripcion` text DEFAULT NULL,
+  `marca` varchar(100) DEFAULT NULL,
+  `color_nombre` varchar(50) DEFAULT NULL,
+  `color` varchar(7) DEFAULT NULL,
+  `medidas` varchar(100) DEFAULT NULL,
+  `fecha_compra` date DEFAULT NULL,
+  `stock_minimo` decimal(10,2) DEFAULT 5.00,
+  `notas` text DEFAULT NULL,
+  `foto` text DEFAULT NULL,
+  `estado` enum('activo','inactivo') DEFAULT 'activo',
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  `fecha_modificacion` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Inventario de suministros para postprocesado, empaquetado y accesorios';
+
+--
+-- Volcado de datos para la tabla `suministros`
+--
+
+INSERT INTO `suministros` (`id`, `nombre`, `categoria`, `precio`, `unidades`, `unidad_medida`, `descripcion`, `marca`, `color_nombre`, `color`, `medidas`, `fecha_compra`, `stock_minimo`, `notas`, `foto`, `estado`, `fecha_creacion`, `fecha_modificacion`) VALUES
+('sum_001', 'Pintura Acrílica Roja', 'postprocesado', 15000.00, 5.00, 'unidades', 'Pintura acrílica de alta calidad para acabados en piezas impresas', 'Rust-Oleum', 'Rojo Mate', '#dc2626', NULL, NULL, 2.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_002', 'Pintura Acrílica Blanca', 'postprocesado', 15000.00, 8.00, 'unidades', 'Pintura acrílica blanca para primeras capas y acabados', 'Rust-Oleum', 'Blanco', '#ffffff', NULL, NULL, 2.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_003', 'Lija Grano 120', 'postprocesado', 800.00, 50.00, 'unidades', 'Lija de grano medio para lijado de superficies', NULL, NULL, NULL, NULL, NULL, 10.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_004', 'Lija Grano 220', 'postprocesado', 900.00, 45.00, 'unidades', 'Lija de grano fino para acabado suave', NULL, NULL, NULL, NULL, NULL, 10.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_005', 'Barniz Transparente Mate', 'postprocesado', 18000.00, 3.00, 'unidades', 'Barniz de acabado mate para protección de piezas', 'Pintuco', 'Transparente', NULL, NULL, NULL, 2.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_006', 'Cajas Cartón 20x15x10cm', 'paqueteria', 800.00, 50.00, 'unidades', 'Cajas de cartón corrugado resistentes para envíos', NULL, NULL, NULL, NULL, NULL, 10.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_007', 'Cajas Cartón 30x20x15cm', 'paqueteria', 1200.00, 30.00, 'unidades', 'Cajas de cartón corrugado grandes para envíos', NULL, NULL, NULL, NULL, NULL, 10.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_008', 'Bolsas Plásticas Transparentes', 'paqueteria', 200.00, 100.00, 'unidades', 'Bolsas plásticas sellables para protección de piezas', NULL, NULL, NULL, NULL, NULL, 20.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_009', 'Papel Burbuja 50cm x 10m', 'paqueteria', 8000.00, 5.00, 'rollos', 'Rollo de papel burbuja para embalaje de piezas frágiles', NULL, NULL, NULL, NULL, NULL, 2.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_010', 'Cinta Adhesiva Transparente', 'paqueteria', 3000.00, 10.00, 'unidades', 'Cinta adhesiva de 48mm x 100m para sellado de cajas', 'Scotch', NULL, NULL, NULL, NULL, 3.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_011', 'Llaveros Metálicos', 'accesorios', 500.00, 100.00, 'unidades', 'Llaveros de acero inoxidable con argolla', 'Generic', 'Plateado', '#c0c0c0', NULL, NULL, 20.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_012', 'Imanes Neodimio 10mm', 'accesorios', 300.00, 80.00, 'unidades', 'Imanes de neodimio de 10mm de diámetro', NULL, NULL, NULL, NULL, NULL, 20.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_013', 'Tornillos M3 x 10mm', 'accesorios', 100.00, 200.00, 'unidades', 'Tornillos de acero inoxidable M3 de 10mm de longitud', NULL, NULL, NULL, NULL, NULL, 30.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_014', 'Pegamento Cianocrilato', 'accesorios', 5000.00, 8.00, 'unidades', 'Pegamento instantáneo de cianocrilato para PLA/ABS', 'Loctite', NULL, NULL, NULL, NULL, 3.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18'),
+('sum_015', 'Alcohol Isopropílico 500ml', 'varios', 8000.00, 4.00, 'unidades', 'Alcohol isopropílico 99% para limpieza de camas y piezas', NULL, NULL, NULL, NULL, NULL, 2.00, NULL, NULL, 'activo', '2025-11-23 09:59:18', '2025-11-23 09:59:18');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_cotizaciones_completas`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_cotizaciones_completas` (
+`id` varchar(50)
+,`nombre_pieza` varchar(200)
+,`perfil_filamento_id` varchar(50)
+,`carrete_id` varchar(50)
+,`peso_pieza` decimal(10,2)
+,`tiempo_impresion` decimal(10,2)
+,`cantidad_piezas` int(11)
+,`piezas_por_lote` int(11)
+,`costo_carrete` decimal(10,2)
+,`peso_carrete` decimal(10,2)
+,`horas_diseno` decimal(10,2)
+,`costo_hora_diseno` decimal(10,2)
+,`factor_seguridad` decimal(5,2)
+,`uso_electricidad` decimal(10,2)
+,`gif` decimal(5,2)
+,`aiu` decimal(5,2)
+,`incluir_marca_agua` tinyint(1)
+,`porcentaje_marca_agua` decimal(5,2)
+,`margen_minorista` decimal(5,2)
+,`margen_mayorista` decimal(5,2)
+,`incluir_postprocesado` tinyint(1)
+,`nivel_dificultad_postprocesado` varchar(20)
+,`costo_mano_obra_postprocesado` decimal(10,2)
+,`fecha` date
+,`fecha_completa` datetime
+,`precio_final` decimal(10,2)
+,`precio_minorista` decimal(10,2)
+,`precio_mayorista` decimal(10,2)
+,`costo_total_pedido` decimal(10,2)
+,`tiempo_total_horas` decimal(10,2)
+,`filamento_total_gramos` decimal(10,2)
+,`costo_insumos_postprocesado` decimal(10,2)
+,`costo_total_postprocesado` decimal(10,2)
+,`tipo_filamento` varchar(20)
+,`marca_filamento` varchar(100)
+,`color_filamento` varchar(50)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_estadisticas_uso`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_estadisticas_uso` (
+`tipo` varchar(20)
+,`marca` varchar(100)
+,`color_nombre` varchar(50)
+,`carretes_usados` bigint(21)
+,`total_gramos_usados` decimal(32,2)
+,`total_usos` bigint(21)
+,`promedio_gramos_por_uso` decimal(14,6)
+,`ultimo_uso` datetime
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_inventario_detallado`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_inventario_detallado` (
+`carrete_id` varchar(50)
+,`peso_inicial` decimal(10,2)
+,`peso_usado` decimal(10,2)
+,`peso_restante` decimal(10,2)
+,`porcentaje_restante` decimal(5,2)
+,`estado` enum('activo','agotado','pausado')
+,`fecha_creacion` datetime
+,`perfil_id` varchar(50)
+,`tipo` varchar(20)
+,`marca` varchar(100)
+,`color_nombre` varchar(50)
+,`color_codigo` varchar(7)
+,`peso_carrete_kg` decimal(5,2)
+,`costo_carrete` decimal(10,2)
+,`costo_por_gramo` decimal(10,6)
+,`calidad` tinyint(4)
+,`temperatura` int(11)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_inventario_suministros`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_inventario_suministros` (
+`id` varchar(50)
+,`nombre` varchar(200)
+,`categoria` varchar(50)
+,`precio` decimal(10,2)
+,`unidades` decimal(10,2)
+,`unidad_medida` varchar(20)
+,`stock_minimo` decimal(10,2)
+,`marca` varchar(100)
+,`descripcion` text
+,`valor_total` decimal(20,4)
+,`estado_stock` varchar(10)
+,`fecha_creacion` datetime
+,`fecha_modificacion` datetime
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_maquinas_estadisticas`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_maquinas_estadisticas` (
+`id` varchar(50)
+,`nombre` varchar(100)
+,`modelo` varchar(100)
+,`tipo` enum('FDM','FDM_MULTICOLOR','RESINA','SLA','SLS')
+,`costo_adquisicion` decimal(10,2)
+,`vida_util_horas` int(11)
+,`depreciacion_por_hora` decimal(10,4)
+,`horas_uso_total` decimal(10,2)
+,`activa` tinyint(1)
+,`fecha_adquisicion` date
+,`depreciacion_acumulada` decimal(17,2)
+,`valor_actual` decimal(18,2)
+,`porcentaje_vida_usado` decimal(14,2)
+,`horas_restantes` decimal(13,2)
+,`total_cotizaciones` bigint(21)
+,`horas_cotizadas` decimal(43,2)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_stock_bajo`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_stock_bajo` (
+`id` varchar(50)
+,`nombre` varchar(200)
+,`categoria` varchar(50)
+,`unidades` decimal(10,2)
+,`unidad_medida` varchar(20)
+,`stock_minimo` decimal(10,2)
+,`precio` decimal(10,2)
+,`valor_stock` decimal(20,4)
+,`estado_stock` varchar(10)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vista_valor_por_categoria`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `vista_valor_por_categoria` (
+`categoria` varchar(50)
+,`total_suministros` bigint(21)
+,`total_unidades` decimal(32,2)
+,`valor_total` decimal(42,4)
+,`precio_promedio` decimal(14,6)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_cotizaciones_completas`
+--
+DROP TABLE IF EXISTS `vista_cotizaciones_completas`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_cotizaciones_completas`  AS SELECT `c`.`id` AS `id`, `c`.`nombre_pieza` AS `nombre_pieza`, `c`.`perfil_filamento_id` AS `perfil_filamento_id`, `c`.`carrete_id` AS `carrete_id`, `c`.`peso_pieza` AS `peso_pieza`, `c`.`tiempo_impresion` AS `tiempo_impresion`, `c`.`cantidad_piezas` AS `cantidad_piezas`, `c`.`piezas_por_lote` AS `piezas_por_lote`, `c`.`costo_carrete` AS `costo_carrete`, `c`.`peso_carrete` AS `peso_carrete`, `c`.`horas_diseno` AS `horas_diseno`, `c`.`costo_hora_diseno` AS `costo_hora_diseno`, `c`.`factor_seguridad` AS `factor_seguridad`, `c`.`uso_electricidad` AS `uso_electricidad`, `c`.`gif` AS `gif`, `c`.`aiu` AS `aiu`, `c`.`incluir_marca_agua` AS `incluir_marca_agua`, `c`.`porcentaje_marca_agua` AS `porcentaje_marca_agua`, `c`.`margen_minorista` AS `margen_minorista`, `c`.`margen_mayorista` AS `margen_mayorista`, `c`.`incluir_postprocesado` AS `incluir_postprocesado`, `c`.`nivel_dificultad_postprocesado` AS `nivel_dificultad_postprocesado`, `c`.`costo_mano_obra_postprocesado` AS `costo_mano_obra_postprocesado`, `c`.`fecha` AS `fecha`, `c`.`fecha_completa` AS `fecha_completa`, `cc`.`precio_final` AS `precio_final`, `cc`.`precio_minorista` AS `precio_minorista`, `cc`.`precio_mayorista` AS `precio_mayorista`, `cc`.`costo_total_pedido` AS `costo_total_pedido`, `cc`.`tiempo_total_horas` AS `tiempo_total_horas`, `cc`.`filamento_total_gramos` AS `filamento_total_gramos`, `cc`.`costo_insumos_postprocesado` AS `costo_insumos_postprocesado`, `cc`.`costo_total_postprocesado` AS `costo_total_postprocesado`, `pf`.`tipo` AS `tipo_filamento`, `pf`.`marca` AS `marca_filamento`, `pf`.`color_nombre` AS `color_filamento` FROM ((`cotizaciones` `c` left join `calculos_cotizacion` `cc` on(`c`.`id` = `cc`.`cotizacion_id`)) left join `perfiles_filamento` `pf` on(`c`.`perfil_filamento_id` = `pf`.`id`)) ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_estadisticas_uso`
+--
+DROP TABLE IF EXISTS `vista_estadisticas_uso`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_estadisticas_uso`  AS SELECT `pf`.`tipo` AS `tipo`, `pf`.`marca` AS `marca`, `pf`.`color_nombre` AS `color_nombre`, count(distinct `hu`.`carrete_id`) AS `carretes_usados`, sum(`hu`.`gramos_usados`) AS `total_gramos_usados`, count(`hu`.`id`) AS `total_usos`, avg(`hu`.`gramos_usados`) AS `promedio_gramos_por_uso`, max(`hu`.`fecha_hora`) AS `ultimo_uso` FROM (`historial_uso` `hu` join `perfiles_filamento` `pf` on(`hu`.`perfil_id` = `pf`.`id`)) GROUP BY `pf`.`id`, `pf`.`tipo`, `pf`.`marca`, `pf`.`color_nombre` ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_inventario_detallado`
+--
+DROP TABLE IF EXISTS `vista_inventario_detallado`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_inventario_detallado`  AS SELECT `ic`.`id` AS `carrete_id`, `ic`.`peso_inicial` AS `peso_inicial`, `ic`.`peso_usado` AS `peso_usado`, `ic`.`peso_restante` AS `peso_restante`, `ic`.`porcentaje_restante` AS `porcentaje_restante`, `ic`.`estado` AS `estado`, `ic`.`fecha_creacion` AS `fecha_creacion`, `pf`.`id` AS `perfil_id`, `pf`.`tipo` AS `tipo`, `pf`.`marca` AS `marca`, `pf`.`color_nombre` AS `color_nombre`, `pf`.`color_codigo` AS `color_codigo`, `pf`.`peso` AS `peso_carrete_kg`, `pf`.`costo` AS `costo_carrete`, `pf`.`costo_por_gramo` AS `costo_por_gramo`, `pf`.`calidad` AS `calidad`, `pf`.`temperatura` AS `temperatura` FROM (`inventario_carretes` `ic` join `perfiles_filamento` `pf` on(`ic`.`perfil_id` = `pf`.`id`)) ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_inventario_suministros`
+--
+DROP TABLE IF EXISTS `vista_inventario_suministros`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_inventario_suministros`  AS SELECT `s`.`id` AS `id`, `s`.`nombre` AS `nombre`, `s`.`categoria` AS `categoria`, `s`.`precio` AS `precio`, `s`.`unidades` AS `unidades`, `s`.`unidad_medida` AS `unidad_medida`, `s`.`stock_minimo` AS `stock_minimo`, `s`.`marca` AS `marca`, `s`.`descripcion` AS `descripcion`, `s`.`precio`* `s`.`unidades` AS `valor_total`, CASE WHEN `s`.`unidades` = 0 THEN 'agotado' WHEN `s`.`unidades` <= `s`.`stock_minimo` THEN 'bajo' ELSE 'disponible' END AS `estado_stock`, `s`.`fecha_creacion` AS `fecha_creacion`, `s`.`fecha_modificacion` AS `fecha_modificacion` FROM `suministros` AS `s` WHERE `s`.`estado` = 'activo' ORDER BY `s`.`categoria` ASC, `s`.`nombre` ASC ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_maquinas_estadisticas`
+--
+DROP TABLE IF EXISTS `vista_maquinas_estadisticas`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_maquinas_estadisticas`  AS SELECT `m`.`id` AS `id`, `m`.`nombre` AS `nombre`, `m`.`modelo` AS `modelo`, `m`.`tipo` AS `tipo`, `m`.`costo_adquisicion` AS `costo_adquisicion`, `m`.`vida_util_horas` AS `vida_util_horas`, `m`.`depreciacion_por_hora` AS `depreciacion_por_hora`, `m`.`horas_uso_total` AS `horas_uso_total`, `m`.`activa` AS `activa`, `m`.`fecha_adquisicion` AS `fecha_adquisicion`, round(`m`.`horas_uso_total` * `m`.`depreciacion_por_hora`,2) AS `depreciacion_acumulada`, round(`m`.`costo_adquisicion` - `m`.`horas_uso_total` * `m`.`depreciacion_por_hora`,2) AS `valor_actual`, round(`m`.`horas_uso_total` / `m`.`vida_util_horas` * 100,2) AS `porcentaje_vida_usado`, `m`.`vida_util_horas`- `m`.`horas_uso_total` AS `horas_restantes`, count(`c`.`id`) AS `total_cotizaciones`, round(sum(`c`.`tiempo_impresion` * `c`.`cantidad_piezas`) / 60,2) AS `horas_cotizadas` FROM (`maquinas` `m` left join `cotizaciones` `c` on(`m`.`id` = `c`.`maquina_id`)) GROUP BY `m`.`id` ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_stock_bajo`
+--
+DROP TABLE IF EXISTS `vista_stock_bajo`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_stock_bajo`  AS SELECT `suministros`.`id` AS `id`, `suministros`.`nombre` AS `nombre`, `suministros`.`categoria` AS `categoria`, `suministros`.`unidades` AS `unidades`, `suministros`.`unidad_medida` AS `unidad_medida`, `suministros`.`stock_minimo` AS `stock_minimo`, `suministros`.`precio` AS `precio`, `suministros`.`precio`* `suministros`.`unidades` AS `valor_stock`, CASE WHEN `suministros`.`unidades` = 0 THEN 'AGOTADO' WHEN `suministros`.`unidades` <= `suministros`.`stock_minimo` THEN 'STOCK BAJO' ELSE 'DISPONIBLE' END AS `estado_stock` FROM `suministros` WHERE `suministros`.`unidades` <= `suministros`.`stock_minimo` ORDER BY `suministros`.`unidades` ASC ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vista_valor_por_categoria`
+--
+DROP TABLE IF EXISTS `vista_valor_por_categoria`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_valor_por_categoria`  AS SELECT `suministros`.`categoria` AS `categoria`, count(0) AS `total_suministros`, sum(`suministros`.`unidades`) AS `total_unidades`, sum(`suministros`.`precio` * `suministros`.`unidades`) AS `valor_total`, avg(`suministros`.`precio`) AS `precio_promedio` FROM `suministros` WHERE `suministros`.`estado` = 'activo' GROUP BY `suministros`.`categoria` ORDER BY sum(`suministros`.`precio` * `suministros`.`unidades`) DESC ;
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `calculos_cotizacion`
+--
+ALTER TABLE `calculos_cotizacion`
+  ADD PRIMARY KEY (`cotizacion_id`);
+
+--
+-- Indices de la tabla `configuracion`
+--
+ALTER TABLE `configuracion`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `clave` (`clave`);
+
+--
+-- Indices de la tabla `cotizaciones`
+--
+ALTER TABLE `cotizaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `perfil_filamento_id` (`perfil_filamento_id`),
+  ADD KEY `carrete_id` (`carrete_id`),
+  ADD KEY `idx_fecha` (`fecha`),
+  ADD KEY `idx_nombre` (`nombre_pieza`),
+  ADD KEY `idx_cotizacion_fecha_nombre` (`fecha`,`nombre_pieza`),
+  ADD KEY `idx_maquina` (`maquina_id`);
+
+--
+-- Indices de la tabla `historial_uso`
+--
+ALTER TABLE `historial_uso`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_carrete` (`carrete_id`),
+  ADD KEY `idx_perfil` (`perfil_id`),
+  ADD KEY `idx_fecha` (`fecha_hora`),
+  ADD KEY `idx_uso_fecha_perfil` (`fecha_hora`,`perfil_id`);
+
+--
+-- Indices de la tabla `inventario_carretes`
+--
+ALTER TABLE `inventario_carretes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_perfil` (`perfil_id`),
+  ADD KEY `idx_estado` (`estado`),
+  ADD KEY `idx_carrete_perfil_estado` (`perfil_id`,`estado`);
+
+--
+-- Indices de la tabla `maquinas`
+--
+ALTER TABLE `maquinas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tipo` (`tipo`),
+  ADD KEY `idx_activa` (`activa`);
+
+--
+-- Indices de la tabla `perfiles_filamento`
+--
+ALTER TABLE `perfiles_filamento`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tipo` (`tipo`),
+  ADD KEY `idx_marca` (`marca`);
+
+--
+-- Indices de la tabla `perfiles_proyecto`
+--
+ALTER TABLE `perfiles_proyecto`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `perfil_filamento_id` (`perfil_filamento_id`),
+  ADD KEY `idx_nombre` (`nombre`);
+
+--
+-- Indices de la tabla `postprocesado_insumos`
+--
+ALTER TABLE `postprocesado_insumos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cotizacion` (`cotizacion_id`);
+
+--
+-- Indices de la tabla `suministros`
+--
+ALTER TABLE `suministros`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_categoria` (`categoria`),
+  ADD KEY `idx_estado` (`estado`),
+  ADD KEY `idx_stock` (`unidades`,`stock_minimo`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `configuracion`
+--
+ALTER TABLE `configuracion`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `calculos_cotizacion`
+--
+ALTER TABLE `calculos_cotizacion`
+  ADD CONSTRAINT `calculos_cotizacion_ibfk_1` FOREIGN KEY (`cotizacion_id`) REFERENCES `cotizaciones` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `cotizaciones`
+--
+ALTER TABLE `cotizaciones`
+  ADD CONSTRAINT `cotizaciones_ibfk_1` FOREIGN KEY (`perfil_filamento_id`) REFERENCES `perfiles_filamento` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `cotizaciones_ibfk_2` FOREIGN KEY (`carrete_id`) REFERENCES `inventario_carretes` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_cotizacion_maquina` FOREIGN KEY (`maquina_id`) REFERENCES `maquinas` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `historial_uso`
+--
+ALTER TABLE `historial_uso`
+  ADD CONSTRAINT `historial_uso_ibfk_1` FOREIGN KEY (`carrete_id`) REFERENCES `inventario_carretes` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `historial_uso_ibfk_2` FOREIGN KEY (`perfil_id`) REFERENCES `perfiles_filamento` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `inventario_carretes`
+--
+ALTER TABLE `inventario_carretes`
+  ADD CONSTRAINT `inventario_carretes_ibfk_1` FOREIGN KEY (`perfil_id`) REFERENCES `perfiles_filamento` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `perfiles_proyecto`
+--
+ALTER TABLE `perfiles_proyecto`
+  ADD CONSTRAINT `perfiles_proyecto_ibfk_1` FOREIGN KEY (`perfil_filamento_id`) REFERENCES `perfiles_filamento` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `postprocesado_insumos`
+--
+ALTER TABLE `postprocesado_insumos`
+  ADD CONSTRAINT `postprocesado_insumos_ibfk_1` FOREIGN KEY (`cotizacion_id`) REFERENCES `cotizaciones` (`id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

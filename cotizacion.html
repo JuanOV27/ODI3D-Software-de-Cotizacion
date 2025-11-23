@@ -191,6 +191,124 @@
                     </div>
                 </div>
 
+<!-- PASO X: Costos de Postprocesado -->
+<div class="step-container">
+    <div class="step-number">5</div>
+    <h3 class="step-title">Costos de Postprocesado</h3>
+    
+    <!-- Checkbox para activar/desactivar postprocesado -->
+    <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" 
+                   id="incluirPostprocesado" 
+                   style="width: 20px; height: 20px; cursor: pointer;">
+            <span style="font-weight: 600;">Incluir costos de postprocesado</span>
+        </label>
+        <p style="font-size: 0.85rem; color: #6b7280; margin-top: 8px;">
+            Activa esta opción si la pieza requiere acabados adicionales después de la impresión
+        </p>
+    </div>
+    
+    <!-- Contenedor que se muestra cuando se activa el checkbox -->
+    <div id="contenedorPostprocesado" style="display: none; margin-top: 20px; padding: 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+        
+        <!-- Nivel de Dificultad -->
+        <div class="form-group">
+            <label for="nivelDificultadPostprocesado">
+                🎯 Nivel de Dificultad de Acabados
+            </label>
+            <select id="nivelDificultadPostprocesado" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                <option value="">Seleccione un nivel...</option>
+                <option value="facil">Nivel 1 - Fácil (COP $15,000 - $30,000)</option>
+                <option value="intermedio">Nivel 2 - Intermedio (COP $45,000 - $60,000)</option>
+                <option value="dificil">Nivel 3 - Difícil (COP $75,000 - $90,000)</option>
+            </select>
+            <p style="font-size: 0.8rem; color: #6b7280; margin-top: 6px; font-style: italic;">
+                El nivel determina la complejidad del trabajo de acabado
+            </p>
+        </div>
+        
+        <!-- Costo de Mano de Obra -->
+        <div class="form-group">
+            <label for="costoManoObraPostprocesado">
+                💰 Costo de Mano de Obra (COP)
+            </label>
+            <input type="number" 
+                   id="costoManoObraPostprocesado" 
+                   value="0" 
+                   min="0" 
+                   step="1000"
+                   placeholder="Ej: 22500"
+                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+            <p id="infoRangoManoObra" style="font-size: 0.8rem; color: #059669; margin-top: 6px; font-weight: 600;">
+                Seleccione un nivel de dificultad para ver el rango sugerido
+            </p>
+        </div>
+        
+        <!-- Separador -->
+        <div style="border-top: 2px solid #d1d5db; margin: 25px 0;"></div>
+        
+        <!-- Insumos para Postprocesado -->
+        <div>
+            <h4 style="color: #4f46e5; margin-bottom: 12px; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                <span>🧰</span>
+                <span>Insumos para Postprocesado</span>
+            </h4>
+            <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 15px;">
+                Selecciona los materiales que se utilizarán en el proceso de acabado (pintura, lija, pegamento, etc.)
+            </p>
+            
+            <!-- Contenedor donde se renderizarán los insumos -->
+            <div id="contenedorInsumosPostprocesado">
+                <!-- Se llenará dinámicamente con JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Resumen de Costos de Postprocesado -->
+        <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <h4 style="color: #1f2937; margin: 0 0 12px 0; font-size: 0.95rem;">
+                📊 Resumen de Costos de Postprocesado
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                <div>
+                    <span style="color: #6b7280;">Mano de Obra:</span>
+                </div>
+                <div style="text-align: right;">
+                    <strong id="resumenManoObraPostprocesado" style="color: #059669;">$0</strong>
+                </div>
+                <div>
+                    <span style="color: #6b7280;">Insumos:</span>
+                </div>
+                <div style="text-align: right;">
+                    <strong id="resumenInsumosPostprocesado" style="color: #059669;">$0</strong>
+                </div>
+                <div style="border-top: 2px solid #e5e7eb; padding-top: 8px;">
+                    <strong style="color: #1f2937;">Total Postprocesado:</strong>
+                </div>
+                <div style="text-align: right; border-top: 2px solid #e5e7eb; padding-top: 8px;">
+                    <strong id="resumenTotalPostprocesado" style="color: #4f46e5; font-size: 1.1rem;">$0</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ayuda -->
+    <aside class="aside-help" style="margin-top: 20px;">
+        <h4>💡 Sobre el Postprocesado</h4>
+        <p>
+            El postprocesado incluye todos los trabajos de acabado que se realizan después de la impresión:
+        </p>
+        <ul style="margin-top: 10px; padding-left: 20px; font-size: 0.9rem;">
+            <li><strong>Nivel Fácil:</strong> Limpieza básica, retirar soportes simples</li>
+            <li><strong>Nivel Intermedio:</strong> Lijado, aplicación de primer, acabados básicos</li>
+            <li><strong>Nivel Difícil:</strong> Múltiples capas de pintura, detalles complejos, ensamblaje</li>
+        </ul>
+        <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+            Los insumos se descuentan automáticamente del inventario al confirmar la cotización.
+        </p>
+    </aside>
+</div>
+
                 <!-- PASO 5: Selección de Máquina(s) -->
 <div class="step-container">
     <div class="step-number">5</div>
@@ -678,5 +796,7 @@
     
     <!-- NUEVO: Script del módulo de selección de filamento -->
     <script src="js/cotizacion_filamento.js"></script>
+
+    <script src="js/postprocesado.js"></script>
 </body>
 </html>
