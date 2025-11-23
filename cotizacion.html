@@ -191,9 +191,142 @@
                     </div>
                 </div>
 
-                <!-- PASO 5: Cantidad y Lotes -->
+                <!-- PASO 5: Selección de Máquina(s) -->
+<div class="step-container">
+    <div class="step-number">5</div>
+    <h3 class="step-title">🏭 Selección de Máquina(s)</h3>
+    
+    <!-- Selector de Modo -->
+    <div class="form-group">
+        <label style="font-weight: 700; margin-bottom: 15px; display: block;">
+            ¿Cómo se realizará este trabajo?
+        </label>
+        
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" name="modoMaquina" value="unica" 
+                       onchange="cambiarModoMaquina('unica')" checked>
+                <div class="radio-content">
+                    <span class="radio-icon">🖨️</span>
+                    <div>
+                        <strong>Máquina Única</strong>
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">
+                            Todo el pedido se realizará en una sola impresora
+                        </p>
+                    </div>
+                </div>
+            </label>
+            
+            <label class="radio-option">
+                <input type="radio" name="modoMaquina" value="multiple" 
+                       onchange="cambiarModoMaquina('multiple')">
+                <div class="radio-content">
+                    <span class="radio-icon">🏭</span>
+                    <div>
+                        <strong>Múltiples Máquinas</strong>
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">
+                            Distribuir el pedido entre varias impresoras
+                        </p>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <!-- MODO: MÁQUINA ÚNICA -->
+    <div id="selectorMaquinaUnica" style="display: block;">
+        <div class="form-group">
+            <label for="maquinaSeleccionada">Seleccionar Máquina</label>
+            <select id="maquinaSeleccionada" onchange="actualizarInfoMaquina()">
+                <option value="">-- Seleccionar máquina --</option>
+                <!-- Se llenará dinámicamente con JavaScript -->
+            </select>
+        </div>
+
+        <!-- Info de la máquina seleccionada -->
+        <div id="infoMaquinaUnica" class="info-maquina" style="display: none;">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Modelo:</span>
+                    <span class="info-value" id="infoModelo">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Tipo:</span>
+                    <span class="info-value" id="infoTipo">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Depreciación/hora:</span>
+                    <span class="info-value" id="infoDepreciacion">$0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Horas de uso:</span>
+                    <span class="info-value" id="infoHorasUso">0h</span>
+                </div>
+            </div>
+            
+            <div class="depreciacion-estimada">
+                <span>💰 Depreciación estimada para este trabajo:</span>
+                <strong id="depreciacionEstimada">$0</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODO: MÚLTIPLES MÁQUINAS -->
+    <div id="selectorMaquinasMultiples" style="display: none;">
+        <p style="color: #6b7280; margin-bottom: 15px; font-size: 0.9rem;">
+            Distribuye las piezas entre las máquinas disponibles. El sistema calculará 
+            automáticamente el promedio ponderado de depreciación.
+        </p>
+
+        <div id="distribucionMaquinas">
+            <!-- Se llenará dinámicamente con JavaScript -->
+        </div>
+
+        <button type="button" class="btn-secondary" onclick="agregarMaquinaDistribucion()" 
+                style="margin-top: 10px; width: 100%;">
+            ➕ Agregar Máquina
+        </button>
+
+        <!-- Resumen de distribución múltiple -->
+        <div id="resumenDistribucion" class="info-maquina" style="display: none; margin-top: 15px;">
+            <h4 style="margin-bottom: 10px; color: #1f2937;">📊 Resumen de Distribución</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Total de piezas:</span>
+                    <span class="info-value" id="totalPiezasDistribucion">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Máquinas usadas:</span>
+                    <span class="info-value" id="totalMaquinasUsadas">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Depreciación promedio:</span>
+                    <span class="info-value" id="depreciacionPromedio">$0/h</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Depreciación total:</span>
+                    <span class="info-value" id="depreciacionTotalMultiple">$0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <aside class="aside-help">
+        <h4>💡 Selección de Máquinas</h4>
+        <p>
+            <strong>Máquina única:</strong> Ideal para pedidos pequeños o medianos donde 
+            toda la producción cabe en una sola impresora.<br><br>
+            <strong>Múltiples máquinas:</strong> Perfecto para pedidos grandes donde se 
+            necesita dividir el trabajo entre varias impresoras para optimizar tiempos 
+            y distribuir el desgaste.
+        </p>
+    </aside>
+</div>
+
+
+                <!-- PASO 6: Cantidad y Lotes -->
                 <div class="step-container">
-                    <div class="step-number">5</div>
+                    <div class="step-number">6</div>
                     <h3 class="step-title">Cantidad y Lotes</h3>
                     
                     <div class="form-group">
@@ -211,9 +344,9 @@
                     </div>
                 </div>
 
-                <!-- PASO 6: Márgenes de Venta -->
+                <!-- PASO 7: Márgenes de Venta -->
                 <div class="step-container">
-                    <div class="step-number">6</div>
+                    <div class="step-number">7</div>
                     <h3 class="step-title">Márgenes de Venta</h3>
                     
                     <div class="form-group">

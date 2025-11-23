@@ -1048,3 +1048,271 @@ body.resizing * {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
 }
+
+/* ============================================
+   ESTILOS ADICIONALES PARA SELECCIÓN DE MÁQUINAS
+   Agregar al final de stylecotizacion.css
+   ============================================ */
+
+/* RADIO GROUP */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-option {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.radio-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.radio-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-content {
+    border-color: #4f46e5;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(124, 58, 237, 0.05));
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.radio-content:hover {
+    border-color: #9ca3af;
+    background: white;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-content:hover {
+    border-color: #4f46e5;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(124, 58, 237, 0.08));
+}
+
+.radio-icon {
+    font-size: 2rem;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* INFO DE MÁQUINA */
+.info-maquina {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #bae6fd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.info-label {
+    font-size: 0.85rem;
+    color: #0369a1;
+    font-weight: 600;
+}
+
+.info-value {
+    font-size: 1rem;
+    color: #0c4a6e;
+    font-weight: 700;
+}
+
+.depreciacion-estimada {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: white;
+    border-radius: 8px;
+    border: 2px dashed #0ea5e9;
+    margin-top: 10px;
+}
+
+.depreciacion-estimada span {
+    color: #0369a1;
+    font-size: 0.95rem;
+}
+
+.depreciacion-estimada strong {
+    color: #0c4a6e;
+    font-size: 1.2rem;
+}
+
+/* DISTRIBUCIÓN MÚLTIPLE */
+.maquina-distribucion-item {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.maquina-distribucion-item.completa {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #86efac;
+}
+
+.distribucion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.distribucion-numero {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.btn-eliminar-maquina {
+    background: #fee2e2;
+    color: #991b1b;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-eliminar-maquina:hover {
+    background: #fecaca;
+    transform: scale(1.05);
+}
+
+.distribucion-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.distribucion-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.distribucion-info .label {
+    color: #6b7280;
+}
+
+.distribucion-info .value {
+    color: #1f2937;
+    font-weight: 700;
+}
+
+/* BOTÓN SECUNDARIO */
+.btn-secondary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+}
+
+/* ALERTA DE ERROR */
+.error-distribucion {
+    background: #fee2e2;
+    border: 2px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-top: 10px;
+    color: #991b1b;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-distribucion::before {
+    content: '⚠️';
+    font-size: 1.2rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .radio-group {
+        gap: 10px;
+    }
+
+    .radio-content {
+        padding: 12px 15px;
+        gap: 12px;
+    }
+
+    .radio-icon {
+        font-size: 1.5rem;
+        min-width: 40px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .distribucion-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .depreciacion-estimada {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

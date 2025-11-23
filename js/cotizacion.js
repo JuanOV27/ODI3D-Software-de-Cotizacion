@@ -9,9 +9,63 @@ let ultimoCalculo = null;
 // FUNCIÃ“N PRINCIPAL - DISPONIBLE GLOBALMENTE
 // ============================================
 
+
+function validarSeleccionMaquina() {
+    if (EstadoMaquinasCotizacion.modoActual === 'unica') {
+        if (!EstadoMaquinasCotizacion.maquinaSeleccionada) {
+            mostrarNotificacion('Debes seleccionar una máquina', 'warning');
+            return false;
+        }
+    } else {
+        const distribucionesValidas = EstadoMaquinasCotizacion.distribucionMaquinas.filter(
+            d => d.maquinaId && d.piezas > 0
+        );
+        
+        if (distribucionesValidas.length === 0) {
+            mostrarNotificacion('Debes distribuir las piezas entre las máquinas', 'warning');
+            return false;
+        }
+        
+        const totalDistribuido = distribucionesValidas.reduce((sum, d) => sum + d.piezas, 0);
+        const cantidadTotal = parseInt(document.getElementById('cantidadPiezas')?.value || 0);
+        
+        if (totalDistribuido !== cantidadTotal) {
+            mostrarNotificacion('La distribución de piezas no coincide con la cantidad total', 'warning');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// ============================================
+// UTILIDADES
+// ============================================
+
+function formatearNumero(numero) {
+    return parseFloat(numero).toLocaleString('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    // Implementar según tu sistema de notificaciones existente
+    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
+    alert(mensaje); // Temporal - reemplazar con tu sistema
+}
+
+console.log('✅ Módulo de selección de máquinas cargado');
+
 async function calcularPrecio() {
     console.log('ðŸŽ¯ Iniciando cÃ¡lculo de precio...');
-    
+    if (!validarSeleccionMaquina()) {
+           return;
+       }
+
+    // NUEVO: Obtener datos de máquina seleccionada
+    const datosMaquina = obtenerDatosMaquinaCotizacion();
+     console.log('🏭 Máquina seleccionada:', datosMaquina);
     // Obtener valores del formulario
     const datos = {
         nombrePieza: document.getElementById('nombrePieza').value || 'Pieza sin nombre',
@@ -30,7 +84,14 @@ async function calcularPrecio() {
         incluirMarcaAgua: document.getElementById('incluirMarcaAgua').checked,
         porcentajeMarcaAgua: parseFloat(document.getElementById('porcentajeMarcaAgua').value) || 0,
         cantidadPiezas: parseInt(document.getElementById('cantidadPiezas').value) || 1,
-        piezasPorLote: parseInt(document.getElementById('piezasPorLote').value) || 1
+        piezasPorLote: parseInt(document.getElementById('piezasPorLote').value) || 1,
+
+         // NUEVO: Datos de máquina
+        maquina_id: datosMaquina.modo === 'unica' ? datosMaquina.maquinaId : null,
+        maquinas_multiples: datosMaquina.modo === 'multiple' 
+            ? JSON.stringify(datosMaquina.maquinas) 
+            : null,
+        depreciacion_por_hora: datosMaquina.depreciacionPorHora
     };
     
     console.log('ðŸ“ Datos capturados:', datos);
@@ -514,6 +575,389 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     console.log('âœ… MÃ³dulo de cotizaciÃ³n inicializado correctamente (MySQL)');
 });
+
+// ============================================
+// ESTADO DE MÁQUINAS
+// ============================================
+
+const EstadoMaquinasCotizacion = {
+    maquinasDisponibles: [],
+    modoActual: 'unica', // 'unica' o 'multiple'
+    maquinaSeleccionada: null,
+    distribucionMaquinas: [],
+    contadorDistribucion: 0
+};
+
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+
+// Cargar máquinas al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    cargarMaquinasDisponibles();
+});
+
+// ============================================
+// CARGAR MÁQUINAS DISPONIBLES
+// ============================================
+
+async function cargarMaquinasDisponibles() {
+    try {
+        const maquinas = await apiClient.get('api_maquinas.php', { action: 'list' });
+        
+        // Filtrar solo máquinas activas
+        EstadoMaquinasCotizacion.maquinasDisponibles = maquinas.filter(m => m.activa);
+        
+        // Llenar selector
+        llenarSelectorMaquinas();
+        
+        console.log(`✅ ${EstadoMaquinasCotizacion.maquinasDisponibles.length} máquinas cargadas`);
+    } catch (error) {
+        console.error('❌ Error al cargar máquinas:', error);
+        mostrarNotificacion('Error al cargar las máquinas disponibles', 'error');
+    }
+}
+
+function llenarSelectorMaquinas() {
+    const select = document.getElementById('maquinaSeleccionada');
+    if (!select) return;
+    
+    // Limpiar opciones existentes (excepto la primera)
+    select.innerHTML = '<option value="">-- Seleccionar máquina --</option>';
+    
+    // Agregar máquinas
+    EstadoMaquinasCotizacion.maquinasDisponibles.forEach(maquina => {
+        const option = document.createElement('option');
+        option.value = maquina.id;
+        option.textContent = `${maquina.nombre} - $${formatearNumero(maquina.depreciacion_por_hora)}/h`;
+        option.dataset.maquina = JSON.stringify(maquina);
+        select.appendChild(option);
+    });
+}
+
+// ============================================
+// CAMBIAR MODO DE MÁQUINA
+// ============================================
+
+function cambiarModoMaquina(modo) {
+    EstadoMaquinasCotizacion.modoActual = modo;
+    
+    const selectorUnica = document.getElementById('selectorMaquinaUnica');
+    const selectorMultiple = document.getElementById('selectorMaquinasMultiples');
+    
+    if (modo === 'unica') {
+        selectorUnica.style.display = 'block';
+        selectorMultiple.style.display = 'none';
+        actualizarInfoMaquina();
+    } else {
+        selectorUnica.style.display = 'none';
+        selectorMultiple.style.display = 'block';
+        inicializarDistribucionMultiple();
+    }
+}
+
+// ============================================
+// MODO: MÁQUINA ÚNICA
+// ============================================
+
+function actualizarInfoMaquina() {
+    const select = document.getElementById('maquinaSeleccionada');
+    const infoDiv = document.getElementById('infoMaquinaUnica');
+    
+    if (!select.value) {
+        infoDiv.style.display = 'none';
+        EstadoMaquinasCotizacion.maquinaSeleccionada = null;
+        return;
+    }
+    
+    const option = select.options[select.selectedIndex];
+    const maquina = JSON.parse(option.dataset.maquina);
+    EstadoMaquinasCotizacion.maquinaSeleccionada = maquina;
+    
+    // Mostrar información
+    document.getElementById('infoModelo').textContent = maquina.modelo || '-';
+    document.getElementById('infoTipo').textContent = maquina.tipo;
+    document.getElementById('infoDepreciacion').textContent = `$${formatearNumero(maquina.depreciacion_por_hora)}`;
+    document.getElementById('infoHorasUso').textContent = `${parseFloat(maquina.horas_uso_total || 0).toFixed(1)}h`;
+    
+    // Calcular depreciación estimada
+    calcularDepreciacionEstimada();
+    
+    infoDiv.style.display = 'block';
+}
+
+function calcularDepreciacionEstimada() {
+    if (!EstadoMaquinasCotizacion.maquinaSeleccionada) return;
+    
+    const tiempoImpresion = parseFloat(document.getElementById('tiempoImpresion')?.value || 0);
+    const cantidadPiezas = parseFloat(document.getElementById('cantidadPiezas')?.value || 1);
+    
+    const tiempoHoras = tiempoImpresion / 60;
+    const depreciacionPorPieza = EstadoMaquinasCotizacion.maquinaSeleccionada.depreciacion_por_hora * tiempoHoras;
+    const depreciacionTotal = depreciacionPorPieza * cantidadPiezas;
+    
+    document.getElementById('depreciacionEstimada').textContent = `$${formatearNumero(depreciacionTotal)}`;
+}
+
+// Actualizar depreciación estimada cuando cambien inputs
+if (document.getElementById('tiempoImpresion')) {
+    document.getElementById('tiempoImpresion').addEventListener('change', calcularDepreciacionEstimada);
+}
+if (document.getElementById('cantidadPiezas')) {
+    document.getElementById('cantidadPiezas').addEventListener('change', function() {
+        calcularDepreciacionEstimada();
+        if (EstadoMaquinasCotizacion.modoActual === 'multiple') {
+            actualizarResumenDistribucion();
+        }
+    });
+}
+
+// ============================================
+// MODO: MÚLTIPLES MÁQUINAS
+// ============================================
+
+function inicializarDistribucionMultiple() {
+    EstadoMaquinasCotizacion.distribucionMaquinas = [];
+    EstadoMaquinasCotizacion.contadorDistribucion = 0;
+    
+    const contenedor = document.getElementById('distribucionMaquinas');
+    contenedor.innerHTML = '';
+    
+    // Agregar primera máquina automáticamente
+    agregarMaquinaDistribucion();
+}
+
+function agregarMaquinaDistribucion() {
+    if (EstadoMaquinasCotizacion.maquinasDisponibles.length === 0) {
+        mostrarNotificacion('No hay máquinas disponibles', 'warning');
+        return;
+    }
+    
+    EstadoMaquinasCotizacion.contadorDistribucion++;
+    const id = EstadoMaquinasCotizacion.contadorDistribucion;
+    
+    const contenedor = document.getElementById('distribucionMaquinas');
+    const item = document.createElement('div');
+    item.className = 'maquina-distribucion-item';
+    item.id = `distribucion-${id}`;
+    item.dataset.id = id;
+    
+    item.innerHTML = `
+        <div class="distribucion-header">
+            <div class="distribucion-numero">${id}</div>
+            <button type="button" class="btn-eliminar-maquina" onclick="eliminarMaquinaDistribucion(${id})">
+                🗑️ Eliminar
+            </button>
+        </div>
+        
+        <div class="distribucion-inputs">
+            <div class="form-group" style="margin: 0;">
+                <label for="maquina-${id}">Máquina</label>
+                <select id="maquina-${id}" onchange="actualizarDistribucionItem(${id})">
+                    <option value="">-- Seleccionar --</option>
+                    ${EstadoMaquinasCotizacion.maquinasDisponibles.map(m => 
+                        `<option value="${m.id}" data-depreciacion="${m.depreciacion_por_hora}">
+                            ${m.nombre} ($${formatearNumero(m.depreciacion_por_hora)}/h)
+                        </option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin: 0;">
+                <label for="piezas-${id}">Número de Piezas</label>
+                <input type="number" id="piezas-${id}" min="0" value="0" 
+                       onchange="actualizarDistribucionItem(${id})">
+            </div>
+        </div>
+        
+        <div class="distribucion-info" id="info-${id}" style="display: none;">
+            <div>
+                <span class="label">Depreciación:</span>
+                <span class="value" id="dep-${id}">$0</span>
+            </div>
+            <div>
+                <span class="label">Tiempo total:</span>
+                <span class="value" id="tiempo-${id}">0h</span>
+            </div>
+        </div>
+    `;
+    
+    contenedor.appendChild(item);
+    
+    // Inicializar en el estado
+    EstadoMaquinasCotizacion.distribucionMaquinas.push({
+        id: id,
+        maquinaId: null,
+        piezas: 0,
+        depreciacion: 0
+    });
+}
+
+function actualizarDistribucionItem(id) {
+    const selectMaquina = document.getElementById(`maquina-${id}`);
+    const inputPiezas = document.getElementById(`piezas-${id}`);
+    const infoDiv = document.getElementById(`info-${id}`);
+    const itemDiv = document.getElementById(`distribucion-${id}`);
+    
+    const maquinaId = selectMaquina.value;
+    const piezas = parseInt(inputPiezas.value) || 0;
+    
+    // Buscar en el estado
+    const item = EstadoMaquinasCotizacion.distribucionMaquinas.find(d => d.id === id);
+    if (!item) return;
+    
+    item.maquinaId = maquinaId;
+    item.piezas = piezas;
+    
+    if (maquinaId && piezas > 0) {
+        // Obtener depreciación de la máquina
+        const option = selectMaquina.options[selectMaquina.selectedIndex];
+        const depreciacionPorHora = parseFloat(option.dataset.depreciacion);
+        item.depreciacion = depreciacionPorHora;
+        
+        // Calcular valores
+        const tiempoImpresion = parseFloat(document.getElementById('tiempoImpresion')?.value || 0);
+        const tiempoHoras = (tiempoImpresion / 60) * piezas;
+        const costoDepreciacion = depreciacionPorHora * tiempoHoras;
+        
+        // Mostrar info
+        document.getElementById(`dep-${id}`).textContent = `$${formatearNumero(costoDepreciacion)}`;
+        document.getElementById(`tiempo-${id}`).textContent = `${tiempoHoras.toFixed(1)}h`;
+        
+        infoDiv.style.display = 'flex';
+        itemDiv.classList.add('completa');
+    } else {
+        infoDiv.style.display = 'none';
+        itemDiv.classList.remove('completa');
+    }
+    
+    actualizarResumenDistribucion();
+}
+
+function eliminarMaquinaDistribucion(id) {
+    // Remover del DOM
+    const item = document.getElementById(`distribucion-${id}`);
+    if (item) {
+        item.remove();
+    }
+    
+    // Remover del estado
+    EstadoMaquinasCotizacion.distribucionMaquinas = 
+        EstadoMaquinasCotizacion.distribucionMaquinas.filter(d => d.id !== id);
+    
+    actualizarResumenDistribucion();
+}
+
+function actualizarResumenDistribucion() {
+    const resumen = document.getElementById('resumenDistribucion');
+    const distribucionesValidas = EstadoMaquinasCotizacion.distribucionMaquinas.filter(
+        d => d.maquinaId && d.piezas > 0
+    );
+    
+    if (distribucionesValidas.length === 0) {
+        resumen.style.display = 'none';
+        return;
+    }
+    
+    // Calcular totales
+    const totalPiezas = distribucionesValidas.reduce((sum, d) => sum + d.piezas, 0);
+    const totalMaquinas = distribucionesValidas.length;
+    
+    // Calcular depreciación promedio ponderada
+    const tiempoImpresion = parseFloat(document.getElementById('tiempoImpresion')?.value || 0);
+    const tiempoHoras = tiempoImpresion / 60;
+    
+    let depreciacionTotalPonderada = 0;
+    distribucionesValidas.forEach(d => {
+        const peso = d.piezas / totalPiezas;
+        depreciacionTotalPonderada += d.depreciacion * peso;
+    });
+    
+    const depreciacionTotal = depreciacionTotalPonderada * tiempoHoras * totalPiezas;
+    
+    // Actualizar UI
+    document.getElementById('totalPiezasDistribucion').textContent = totalPiezas;
+    document.getElementById('totalMaquinasUsadas').textContent = totalMaquinas;
+    document.getElementById('depreciacionPromedio').textContent = `$${formatearNumero(depreciacionTotalPonderada)}`;
+    document.getElementById('depreciacionTotalMultiple').textContent = `$${formatearNumero(depreciacionTotal)}`;
+    
+    resumen.style.display = 'block';
+    
+    // Validar con cantidad total
+    validarDistribucionTotal(totalPiezas);
+}
+
+function validarDistribucionTotal(totalDistribuido) {
+    const cantidadTotal = parseInt(document.getElementById('cantidadPiezas')?.value || 0);
+    const errorDiv = document.getElementById('errorDistribucionMaquinas');
+    
+    // Crear div de error si no existe
+    if (!errorDiv && cantidadTotal > 0) {
+        const div = document.createElement('div');
+        div.id = 'errorDistribucionMaquinas';
+        div.className = 'error-distribucion';
+        document.getElementById('selectorMaquinasMultiples').appendChild(div);
+    }
+    
+    const errorElement = document.getElementById('errorDistribucionMaquinas');
+    
+    if (cantidadTotal > 0 && totalDistribuido !== cantidadTotal) {
+        if (errorElement) {
+            errorElement.style.display = 'flex';
+            errorElement.textContent = totalDistribuido > cantidadTotal 
+                ? `Has distribuido ${totalDistribuido} piezas, pero solo necesitas ${cantidadTotal}`
+                : `Faltan ${cantidadTotal - totalDistribuido} piezas por distribuir`;
+        }
+        return false;
+    } else {
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+        return true;
+    }
+}
+
+// ============================================
+// OBTENER DATOS DE MÁQUINA PARA COTIZACIÓN
+// ============================================
+
+function obtenerDatosMaquinaCotizacion() {
+    if (EstadoMaquinasCotizacion.modoActual === 'unica') {
+        return {
+            modo: 'unica',
+            maquinaId: EstadoMaquinasCotizacion.maquinaSeleccionada?.id || null,
+            depreciacionPorHora: EstadoMaquinasCotizacion.maquinaSeleccionada?.depreciacion_por_hora || 2.00
+        };
+    } else {
+        const distribucionesValidas = EstadoMaquinasCotizacion.distribucionMaquinas.filter(
+            d => d.maquinaId && d.piezas > 0
+        );
+        
+        const totalPiezas = distribucionesValidas.reduce((sum, d) => sum + d.piezas, 0);
+        
+        // Calcular depreciación promedio ponderada
+        let depreciacionPromedio = 0;
+        if (totalPiezas > 0) {
+            distribucionesValidas.forEach(d => {
+                const peso = d.piezas / totalPiezas;
+                depreciacionPromedio += d.depreciacion * peso;
+            });
+        } else {
+            depreciacionPromedio = 2.00; // Valor por defecto
+        }
+        
+        return {
+            modo: 'multiple',
+            maquinas: distribucionesValidas.map(d => ({
+                maquinaId: d.maquinaId,
+                piezas: d.piezas,
+                depreciacion: d.depreciacion
+            })),
+            depreciacionPorHora: depreciacionPromedio
+        };
+    }
+}
+
 
 // Exportar funciones globalmente
 window.calcularPrecio = calcularPrecio;
