@@ -113,6 +113,9 @@ async function calcularPrecio() {
         
         // Guardar Ãºltimo cÃ¡lculo
         ultimoCalculo = cotizacion;
+
+        actualizarCostosAvanzados(datos, calculos);
+
         
         // NUEVO: Verificar disponibilidad de filamento si hay uno seleccionado
         if (typeof verificarMaterialDespuesDeCalcular === 'function') {
@@ -132,6 +135,114 @@ async function calcularPrecio() {
         console.error('âŒ Error al calcular:', error);
         alert('Error al realizar el cÃ¡lculo: ' + error.message);
     }
+}
+
+// ============================================
+// FUNCIÓN: Toggle Costos Avanzados
+// ============================================
+function toggleCostosAvanzados() {
+    const content = document.getElementById('costosAvanzadosContent');
+    const icon = document.getElementById('toggleIconAvanzados');
+    
+    if (content.classList.contains('show')) {
+        content.classList.remove('show');
+        icon.classList.remove('expanded');
+        icon.classList.add('collapsed');
+    } else {
+        content.classList.add('show');
+        icon.classList.remove('collapsed');
+        icon.classList.add('expanded');
+    }
+}
+
+// ============================================
+// FUNCIÓN: Actualizar Costos Avanzados
+// ============================================
+function actualizarCostosAvanzados(datos, calculos) {
+    console.log('📊 Actualizando panel de costos avanzados...');
+    
+    try {
+        // Sección 1: Costos por Unidad
+        document.getElementById('desgloseCostoFabricacion').textContent = formatearMoneda(calculos.costoFabricacion || 0);
+        
+        const costoUnitario = (datos.costoCarrete || 0) / ((datos.pesoCarrete || 1) * 1000);
+        document.getElementById('desgloseCostoUnitario').textContent = formatearMoneda(costoUnitario) + '/g';
+        document.getElementById('desgloseFactorSeguridad').textContent = (datos.factorSeguridad || 1) + 'x';
+        
+        document.getElementById('desgloseCostoEnergia').textContent = formatearMoneda(calculos.costoEnergia || 0);
+        document.getElementById('desgloseTiempoImpresion').textContent = (datos.tiempoImpresion || 0) + ' min';
+        document.getElementById('desgloseCostoKWH').textContent = formatearMoneda(datos.usoElectricidad || 0) + '/h';
+        
+        document.getElementById('desgloseCostoDiseno').textContent = formatearMoneda(calculos.costoDiseno || 0);
+        document.getElementById('desgloseHorasDiseno').textContent = (datos.horasDiseno || 0) + 'h';
+        document.getElementById('desglosePiezasDiseno').textContent = (datos.cantidadPiezas || 1) + ' pieza' + ((datos.cantidadPiezas || 1) > 1 ? 's' : '');
+        
+        document.getElementById('desgloseDepreciacion').textContent = formatearMoneda(calculos.depreciacionMaquina || 0);
+        
+        // Sección 2: Subtotal y Gastos
+        document.getElementById('desgloseSubtotal').textContent = formatearMoneda(calculos.subtotal || 0);
+        document.getElementById('desgloseCostoGIF').textContent = formatearMoneda(calculos.costoGIF || 0);
+        document.getElementById('desglosePorcentajeGIF').textContent = (datos.gif || 0) + '%';
+        document.getElementById('desgloseCostoAIU').textContent = formatearMoneda(calculos.costoAIU || 0);
+        document.getElementById('desglosePorcentajeAIU').textContent = (datos.aiu || 0) + '%';
+        
+        // Marca de agua (mostrar/ocultar según corresponda)
+        if (datos.incluirMarcaAgua) {
+            document.getElementById('desgloseMarcaAguaItem').style.display = 'flex';
+            document.getElementById('desgloseMarcaAguaPorcentaje').style.display = 'flex';
+            document.getElementById('desgloseCostoMarcaAgua').textContent = formatearMoneda(calculos.costoMarcaAgua || 0);
+            document.getElementById('desglosePorcentajeMarcaAgua').textContent = (datos.porcentajeMarcaAgua || 0) + '%';
+        } else {
+            document.getElementById('desgloseMarcaAguaItem').style.display = 'none';
+            document.getElementById('desgloseMarcaAguaPorcentaje').style.display = 'none';
+        }
+        
+        // Sección 3: Precio Final por Unidad
+        document.getElementById('desglosePrecioBase').textContent = formatearMoneda(calculos.precioFinal || 0);
+        document.getElementById('desglosePiezasPorLote').textContent = datos.piezasPorLote || 1;
+        
+        // Sección 4: Costos por Lote
+        document.getElementById('desglosePiezasLote').textContent = datos.piezasPorLote || 1;
+        document.getElementById('desgloseCostoPorLote').textContent = formatearMoneda((calculos.precioFinal || 0) * (datos.piezasPorLote || 1));
+        
+        // Sección 5: Precios por Canal
+        document.getElementById('desglosePrecioMinorista').textContent = formatearMoneda(calculos.precioMinorista || 0);
+        document.getElementById('desgloseMargenMinorista').textContent = (datos.margenMinorista || 0) + '%';
+        document.getElementById('desglosePrecioMayorista').textContent = formatearMoneda(calculos.precioMayorista || 0);
+        document.getElementById('desgloseMargenMayorista').textContent = (datos.margenMayorista || 0) + '%';
+        
+        // Sección 6: Totales del Pedido
+        document.getElementById('desgloseCantidadTotal').textContent = datos.cantidadPiezas || 1;
+        document.getElementById('desgloseNumeroLotes').textContent = calculos.numeroLotes || 1;
+        document.getElementById('desgloseTiempoTotal').textContent = ((calculos.tiempoTotalHoras || 0).toFixed(1)) + 'h';
+        document.getElementById('desgloseFilamentoTotal').textContent = ((calculos.filamentoTotalGramos || 0).toFixed(1)) + 'g';
+        document.getElementById('desgloseCostoTotalPedido').textContent = formatearMoneda(calculos.costoTotalPedido || 0);
+        
+        // Calcular totales por canal
+        const totalMinorista = (calculos.costoTotalPedido || 0) * (1 + (datos.margenMinorista || 0) / 100);
+        const totalMayorista = (calculos.costoTotalPedido || 0) * (1 + (datos.margenMayorista || 0) / 100);
+        
+        document.getElementById('desgloseTotalMinorista').textContent = formatearMoneda(totalMinorista);
+        document.getElementById('desgloseTotalMayorista').textContent = formatearMoneda(totalMayorista);
+        
+        console.log('✅ Panel de costos avanzados actualizado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error actualizando costos avanzados:', error);
+    }
+}
+
+// ============================================
+// FUNCIÓN AUXILIAR: Formatear Moneda
+// (Solo agregar si no existe ya en tu código)
+// ============================================
+function formatearMoneda(valor) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(valor);
 }
 
 // ============================================

@@ -301,6 +301,217 @@
                     </div>
                 </div>
 
+                <div class="costos-avanzados-container">
+    <!-- Header con Toggle -->
+    <div class="costos-avanzados-header" onclick="toggleCostosAvanzados()">
+        <div class="costos-avanzados-title">
+            <span>📊</span>
+            <span>Costos Avanzados - Desglose Detallado</span>
+        </div>
+        <span class="toggle-icon collapsed" id="toggleIconAvanzados">▼</span>
+    </div>
+    
+    <!-- Contenido Desplegable -->
+    <div class="costos-avanzados-content" id="costosAvanzadosContent">
+        
+        <!-- Sección 1: Costos por Unidad Individual -->
+        <div class="desglose-section">
+            <h3 class="desglose-title">🔧 Costos por Unidad Individual</h3>
+            <div class="desglose-grid">
+                <div class="desglose-item">
+                    <span class="desglose-label">🏭 Costo Fabricación:</span>
+                    <span class="desglose-value" id="desgloseCostoFabricacion">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Costo unitario filamento:</span>
+                    <span class="desglose-value" id="desgloseCostoUnitario">$0/g</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Factor de seguridad:</span>
+                    <span class="desglose-value" id="desgloseFactorSeguridad">1.0x</span>
+                </div>
+                
+                <div class="desglose-item">
+                    <span class="desglose-label">⚡ Costo Energía:</span>
+                    <span class="desglose-value" id="desgloseCostoEnergia">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Tiempo de impresión:</span>
+                    <span class="desglose-value" id="desgloseTiempoImpresion">0 min</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Costo por hora:</span>
+                    <span class="desglose-value" id="desgloseCostoKWH">$0/h</span>
+                </div>
+                
+                <div class="desglose-item">
+                    <span class="desglose-label">🎨 Costo Diseño:</span>
+                    <span class="desglose-value" id="desgloseCostoDiseno">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Horas de diseño:</span>
+                    <span class="desglose-value" id="desgloseHorasDiseno">0h</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Distribuido entre:</span>
+                    <span class="desglose-value" id="desglosePiezasDiseno">1 pieza</span>
+                </div>
+                
+                <div class="desglose-item">
+                    <span class="desglose-label">🔧 Depreciación Máquina:</span>
+                    <span class="desglose-value" id="desgloseDepreciacion">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Valor máquina:</span>
+                    <span class="desglose-value" id="desgloseValorMaquina">$1.400.000</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Vida útil:</span>
+                    <span class="desglose-value" id="desgloseVidaUtil">3 años</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="separator-line"></div>
+        
+        <!-- Sección 2: Subtotal y Gastos -->
+        <div class="desglose-section">
+            <h3 class="desglose-title">💵 Subtotal y Gastos Adicionales</h3>
+            <div class="desglose-grid">
+                <div class="desglose-item highlight-warning">
+                    <span class="desglose-label"><strong>📊 Subtotal Base:</strong></span>
+                    <span class="desglose-value" id="desgloseSubtotal">$0</span>
+                </div>
+                
+                <div class="desglose-item">
+                    <span class="desglose-label">📈 GIF (Gastos Indirectos):</span>
+                    <span class="desglose-value" id="desgloseCostoGIF">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Porcentaje aplicado:</span>
+                    <span class="desglose-value" id="desglosePorcentajeGIF">15%</span>
+                </div>
+                
+                <div class="desglose-item">
+                    <span class="desglose-label">🏢 AIU (Admin, Imprevistos, Utilidad):</span>
+                    <span class="desglose-value" id="desgloseCostoAIU">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Porcentaje aplicado:</span>
+                    <span class="desglose-value" id="desglosePorcentajeAIU">25%</span>
+                </div>
+                
+                <div class="desglose-item" id="desgloseMarcaAguaItem" style="display: none;">
+                    <span class="desglose-label">💧 Marca de Agua:</span>
+                    <span class="desglose-value" id="desgloseCostoMarcaAgua">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub" id="desgloseMarcaAguaPorcentaje" style="display: none;">
+                    <span class="desglose-label">• Porcentaje aplicado:</span>
+                    <span class="desglose-value" id="desglosePorcentajeMarcaAgua">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="separator-line"></div>
+        
+        <!-- Sección 3: Precio Final por Unidad -->
+        <div class="desglose-section">
+            <h3 class="desglose-title">💰 Precio Final por Unidad</h3>
+            <div class="desglose-grid">
+                <div class="desglose-item highlight-primary">
+                    <span class="desglose-label"><strong>💵 Precio Base por Unidad:</strong></span>
+                    <span class="desglose-value" id="desglosePrecioBase">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Piezas por lote:</span>
+                    <span class="desglose-value" id="desglosePiezasPorLote">1</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="separator-line"></div>
+        
+        <!-- Sección 4: Costos por Lote -->
+        <div class="desglose-section">
+            <h3 class="desglose-title">📦 Costos por Lote</h3>
+            <div class="desglose-grid">
+                <div class="desglose-item">
+                    <span class="desglose-label">Piezas por lote:</span>
+                    <span class="desglose-value" id="desglosePiezasLote">1</span>
+                </div>
+                <div class="desglose-item highlight-warning">
+                    <span class="desglose-label"><strong>Costo por Lote:</strong></span>
+                    <span class="desglose-value" id="desgloseCostoPorLote">$0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="separator-line"></div>
+        
+        <!-- Sección 5: Precios por Canal -->
+        <div class="desglose-section">
+            <h3 class="desglose-title">📈 Precios por Canal de Venta</h3>
+            <div class="desglose-grid">
+                <div class="desglose-item">
+                    <span class="desglose-label">🏪 Precio Minorista:</span>
+                    <span class="desglose-value" id="desglosePrecioMinorista">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Margen aplicado:</span>
+                    <span class="desglose-value" id="desgloseMargenMinorista">30%</span>
+                </div>
+                
+                <div class="desglose-item">
+                    <span class="desglose-label">🏢 Precio Mayorista:</span>
+                    <span class="desglose-value" id="desglosePrecioMayorista">$0</span>
+                </div>
+                <div class="desglose-item desglose-sub">
+                    <span class="desglose-label">• Margen aplicado:</span>
+                    <span class="desglose-value" id="desgloseMargenMayorista">20%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="separator-line"></div>
+        
+        <!-- Sección 6: Totales del Pedido -->
+        <div class="desglose-section">
+            <h3 class="desglose-title">📦 Totales del Pedido Completo</h3>
+            <div class="desglose-grid">
+                <div class="desglose-item">
+                    <span class="desglose-label">Cantidad total de piezas:</span>
+                    <span class="desglose-value" id="desgloseCantidadTotal">1</span>
+                </div>
+                <div class="desglose-item">
+                    <span class="desglose-label">Número de lotes:</span>
+                    <span class="desglose-value" id="desgloseNumeroLotes">1</span>
+                </div>
+                <div class="desglose-item">
+                    <span class="desglose-label">Tiempo total de impresión:</span>
+                    <span class="desglose-value" id="desgloseTiempoTotal">0h</span>
+                </div>
+                <div class="desglose-item">
+                    <span class="desglose-label">Filamento total necesario:</span>
+                    <span class="desglose-value" id="desgloseFilamentoTotal">0g</span>
+                </div>
+                <div class="desglose-item highlight-success">
+                    <span class="desglose-label"><strong>💰 COSTO TOTAL DEL PEDIDO:</strong></span>
+                    <span class="desglose-value"><strong id="desgloseCostoTotalPedido">$0</strong></span>
+                </div>
+                <div class="desglose-item">
+                    <span class="desglose-label">💰 Total Minorista:</span>
+                    <span class="desglose-value" id="desgloseTotalMinorista">$0</span>
+                </div>
+                <div class="desglose-item">
+                    <span class="desglose-label">💰 Total Mayorista:</span>
+                    <span class="desglose-value" id="desgloseTotalMayorista">$0</span>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+                </div>
+
                 <!-- Resumen de Pedido -->
                 <div class="order-summary">
                     <h3>📋 Resumen del Pedido</h3>

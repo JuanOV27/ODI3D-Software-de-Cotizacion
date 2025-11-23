@@ -869,3 +869,182 @@ body.resizing * {
         gap: 5px;
     }
 }
+
+/* ============================================ */
+/* MÓDULO: COSTOS AVANZADOS - SOLO CSS         */
+/* Agregar a: stylecotizacion.css               */
+/* ============================================ */
+
+/* Contenedor principal */
+.costos-avanzados-container {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+/* Header del panel */
+.costos-avanzados-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    color: white;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.costos-avanzados-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.costos-avanzados-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Icono de toggle */
+.toggle-icon {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.toggle-icon.collapsed {
+    transform: rotate(0deg);
+}
+
+.toggle-icon.expanded {
+    transform: rotate(180deg);
+}
+
+/* Contenido desplegable */
+.costos-avanzados-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.3s ease;
+    padding: 0 15px;
+}
+
+.costos-avanzados-content.show {
+    max-height: 3000px;
+    padding: 20px 15px;
+}
+
+/* Secciones de desglose */
+.desglose-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.desglose-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Grid de items */
+.desglose-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+/* Items individuales */
+.desglose-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.desglose-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.desglose-label {
+    font-weight: 500;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.desglose-value {
+    font-weight: bold;
+    color: #1f2937;
+    font-size: 1.1rem;
+}
+
+/* Sub-items (indentados) */
+.desglose-sub {
+    border-left: 3px solid #667eea;
+    background: #f0f4ff;
+}
+
+/* Highlights para valores importantes */
+.highlight-primary {
+    background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+    border: 2px solid #667eea;
+}
+
+.highlight-success {
+    background: linear-gradient(135deg, #10b98120 0%, #059f2f20 100%);
+    border: 2px solid #10b981;
+}
+
+.highlight-warning {
+    background: linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%);
+    border: 2px solid #f59e0b;
+}
+
+/* Línea separadora */
+.separator-line {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #667eea, transparent);
+    margin: 20px 0;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .desglose-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .costos-avanzados-title {
+        font-size: 1.1rem;
+    }
+    
+    .desglose-label {
+        font-size: 0.85rem;
+    }
+    
+    .desglose-value {
+        font-size: 1rem;
+    }
+}
+
+/* Responsive para tablets */
+@media (max-width: 1024px) {
+    .desglose-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
