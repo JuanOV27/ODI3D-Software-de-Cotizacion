@@ -88,14 +88,15 @@ async function calcularPrecio() {
     const datosMaquina = obtenerDatosMaquinaCotizacion();
      console.log('🏭 Máquina seleccionada:', datosMaquina);
 
-    // NUEVO: Obtener datos de postprocesado
-const datosPostprocesado = obtenerDatosPostprocesado();
+
 
 // NUEVO: Obtener datos de paquetería
 const datosPaqueteria = obtenerDatosPaqueteria();
 
 // NUEVO: Obtener datos de delivery
 const datosDelivery = obtenerDatosDelivery();
+
+const datosPostprocesado = obtenerDatosPostprocesado();
      
     // Obtener valores del formulario
     const datos = {
@@ -137,7 +138,13 @@ const datosDelivery = obtenerDatosDelivery();
         costo_delivery: datosDelivery.costo_delivery,
         aplicar_recargo_delivery: datosDelivery.aplicar_recargo_delivery,
         porcentaje_recargo_delivery: datosDelivery.porcentaje_recargo_delivery,
-        costo_delivery_total: datosDelivery.costo_delivery_total
+        costo_delivery_total: datosDelivery.costo_delivery_total,
+
+        // NUEVO: Datos de postprocesado
+        incluir_postprocesado: datosPostprocesado.incluir_postprocesado,
+        nivel_dificultad_postprocesado: datosPostprocesado.nivel_dificultad,
+        costo_mano_obra_postprocesado: datosPostprocesado.costo_mano_obra,
+        insumos_postprocesado: datosPostprocesado.insumos
     };
  
 
@@ -525,16 +532,22 @@ function limpiarFormulario() {
 
 function toggleMarcaAgua() {
     const checkbox = document.getElementById('incluirMarcaAgua');
-    const inputPorcentaje = document.getElementById('porcentajeMarcaAgua');
+    const grupoMarcaAgua = document.getElementById('grupoMarcaAgua');
     
-    if (checkbox && inputPorcentaje) {
-        inputPorcentaje.disabled = !checkbox.checked;
-        
-        if (!checkbox.checked) {
-            inputPorcentaje.value = '0';
+    if (checkbox && grupoMarcaAgua) {
+        // Mostrar u ocultar el grupo completo
+        if (checkbox.checked) {
+            grupoMarcaAgua.style.display = 'block';
+        } else {
+            grupoMarcaAgua.style.display = 'none';
+            // Resetear valor cuando se desactiva
+            const inputPorcentaje = document.getElementById('porcentajeMarcaAgua');
+            if (inputPorcentaje) {
+                inputPorcentaje.value = '10';
+            }
         }
         
-        console.log(`ðŸŽ¨ Marca de agua: ${checkbox.checked ? 'Activada' : 'Desactivada'}`);
+        console.log(`🎨 Marca de agua: ${checkbox.checked ? 'Activada' : 'Desactivada'}`);
     }
 }
 

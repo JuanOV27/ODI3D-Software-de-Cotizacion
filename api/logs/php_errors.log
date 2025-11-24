@@ -1440,3 +1440,145 @@ Stack trace:
 [24-Nov-2025 01:40:55 America/Bogota] ✅ Cálculos insertados en BD
 [24-Nov-2025 01:40:55 America/Bogota] ✅ Transacción confirmada (COMMIT)
 [24-Nov-2025 01:42:34 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:29:41 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:34:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:34:45 America/Bogota] 📥 RAW INPUT RECIBIDO
+[24-Nov-2025 07:34:45 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[24-Nov-2025 07:34:45 America/Bogota] === CREAR COTIZACIÓN ===
+[24-Nov-2025 07:34:45 America/Bogota] Máquina ID recibida: MAQ_002
+[24-Nov-2025 07:34:45 America/Bogota] Nombre: Benchy
+[24-Nov-2025 07:34:45 America/Bogota] Peso: 3.4g
+[24-Nov-2025 07:34:45 America/Bogota] Tiempo: 39 min
+[24-Nov-2025 07:34:45 America/Bogota] 🆔 ID generado: 1763987685_5700bd535
+[24-Nov-2025 07:34:45 America/Bogota] 🔄 Transacción iniciada
+[24-Nov-2025 07:34:45 America/Bogota] ✅ Cotización insertada en BD
+[24-Nov-2025 07:34:45 America/Bogota] ✅ Depreciación calculada: 182 COP
+[24-Nov-2025 07:34:45 America/Bogota]    Máquina: Ender 3 V3 SE #2 (MAQ_002)
+[24-Nov-2025 07:34:45 America/Bogota]    Depreciación/hora: 280.0000 COP
+[24-Nov-2025 07:34:45 America/Bogota]    Tiempo: 0.65 horas
+[24-Nov-2025 07:34:45 America/Bogota] 💰 Cálculos completados
+[24-Nov-2025 07:34:45 America/Bogota] ✅ Cálculos insertados en BD
+[24-Nov-2025 07:34:45 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[24-Nov-2025 07:47:28 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:28 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:28 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:28 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:28 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:31 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:31 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:47:31 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:49:58 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:49:58 America/Bogota] 📥 RAW INPUT RECIBIDO
+[24-Nov-2025 07:49:58 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[24-Nov-2025 07:49:58 America/Bogota] === CREAR COTIZACIÓN ===
+[24-Nov-2025 07:49:58 America/Bogota] Máquina ID recibida: MAQ_002
+[24-Nov-2025 07:49:58 America/Bogota] Nombre: Llavero Dragon x 30
+[24-Nov-2025 07:49:58 America/Bogota] Peso: 50g
+[24-Nov-2025 07:49:58 America/Bogota] Tiempo: 571 min
+[24-Nov-2025 07:49:58 America/Bogota] 🆔 ID generado: 1763988598_f3344910d
+[24-Nov-2025 07:49:58 America/Bogota] 🔄 Transacción iniciada
+[24-Nov-2025 07:49:58 America/Bogota] ✅ Cotización insertada en BD
+[24-Nov-2025 07:49:58 America/Bogota] ✅ Depreciación calculada: 2664.67 COP
+[24-Nov-2025 07:49:58 America/Bogota]    Máquina: Ender 3 V3 SE #2 (MAQ_002)
+[24-Nov-2025 07:49:58 America/Bogota]    Depreciación/hora: 280.0000 COP
+[24-Nov-2025 07:49:58 America/Bogota]    Tiempo: 9.5166666666667 horas
+[24-Nov-2025 07:49:58 America/Bogota] 💰 Cálculos completados
+[24-Nov-2025 07:49:58 America/Bogota] ✅ Cálculos insertados en BD
+[24-Nov-2025 07:49:58 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[24-Nov-2025 07:51:49 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 07:51:49 America/Bogota] 📥 RAW INPUT RECIBIDO
+[24-Nov-2025 07:51:49 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[24-Nov-2025 07:51:49 America/Bogota] === CREAR COTIZACIÓN ===
+[24-Nov-2025 07:51:49 America/Bogota] Máquina ID recibida: MAQ_002
+[24-Nov-2025 07:51:49 America/Bogota] Nombre: Llavero Dragon x 30
+[24-Nov-2025 07:51:49 America/Bogota] Peso: 50g
+[24-Nov-2025 07:51:49 America/Bogota] Tiempo: 571 min
+[24-Nov-2025 07:51:49 America/Bogota] 🆔 ID generado: 1763988709_28e846023
+[24-Nov-2025 07:51:49 America/Bogota] 🔄 Transacción iniciada
+[24-Nov-2025 07:51:49 America/Bogota] ✅ Cotización insertada en BD
+[24-Nov-2025 07:51:49 America/Bogota] ✅ Depreciación calculada: 2664.67 COP
+[24-Nov-2025 07:51:49 America/Bogota]    Máquina: Ender 3 V3 SE #2 (MAQ_002)
+[24-Nov-2025 07:51:49 America/Bogota]    Depreciación/hora: 280.0000 COP
+[24-Nov-2025 07:51:49 America/Bogota]    Tiempo: 9.5166666666667 horas
+[24-Nov-2025 07:51:49 America/Bogota] 💰 Cálculos completados
+[24-Nov-2025 07:51:49 America/Bogota] ✅ Cálculos insertados en BD
+[24-Nov-2025 07:51:49 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[24-Nov-2025 08:19:18 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:43 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:43 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:43 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:43 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:43 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:19:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:47 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:47 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:47 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:47 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:47 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:49 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:49 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:20:49 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:21:19 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:21:19 America/Bogota] 📥 RAW INPUT RECIBIDO
+[24-Nov-2025 08:21:19 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[24-Nov-2025 08:21:19 America/Bogota] === CREAR COTIZACIÓN ===
+[24-Nov-2025 08:21:19 America/Bogota] Máquina ID recibida: MAQ_001
+[24-Nov-2025 08:21:19 America/Bogota] Nombre: Benchy
+[24-Nov-2025 08:21:19 America/Bogota] Peso: 50g
+[24-Nov-2025 08:21:19 America/Bogota] Tiempo: 120 min
+[24-Nov-2025 08:21:19 America/Bogota] 🆔 ID generado: 1763990479_9dffcb546
+[24-Nov-2025 08:21:19 America/Bogota] 🔄 Transacción iniciada
+[24-Nov-2025 08:21:19 America/Bogota] ✅ Cotización insertada en BD
+[24-Nov-2025 08:21:19 America/Bogota] ✅ Depreciación calculada: 560 COP
+[24-Nov-2025 08:21:19 America/Bogota]    Máquina: Ender 3 V3 SE #1 (MAQ_001)
+[24-Nov-2025 08:21:19 America/Bogota]    Depreciación/hora: 280.0000 COP
+[24-Nov-2025 08:21:19 America/Bogota]    Tiempo: 2 horas
+[24-Nov-2025 08:21:19 America/Bogota] 💰 Cálculos completados
+[24-Nov-2025 08:21:19 America/Bogota] ✅ Cálculos insertados en BD
+[24-Nov-2025 08:21:19 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[24-Nov-2025 08:22:04 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:22:04 America/Bogota] 📥 RAW INPUT RECIBIDO
+[24-Nov-2025 08:22:04 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[24-Nov-2025 08:22:04 America/Bogota] === CREAR COTIZACIÓN ===
+[24-Nov-2025 08:22:04 America/Bogota] Máquina ID recibida: MAQ_001
+[24-Nov-2025 08:22:04 America/Bogota] Nombre: Benchy
+[24-Nov-2025 08:22:04 America/Bogota] Peso: 50g
+[24-Nov-2025 08:22:04 America/Bogota] Tiempo: 120 min
+[24-Nov-2025 08:22:04 America/Bogota] 🆔 ID generado: 1763990524_7f9aded2c
+[24-Nov-2025 08:22:04 America/Bogota] 🔄 Transacción iniciada
+[24-Nov-2025 08:22:04 America/Bogota] ✅ Cotización insertada en BD
+[24-Nov-2025 08:22:04 America/Bogota] ✅ Depreciación calculada: 560 COP
+[24-Nov-2025 08:22:04 America/Bogota]    Máquina: Ender 3 V3 SE #1 (MAQ_001)
+[24-Nov-2025 08:22:04 America/Bogota]    Depreciación/hora: 280.0000 COP
+[24-Nov-2025 08:22:04 America/Bogota]    Tiempo: 2 horas
+[24-Nov-2025 08:22:04 America/Bogota] 💰 Cálculos completados
+[24-Nov-2025 08:22:04 America/Bogota] ✅ Cálculos insertados en BD
+[24-Nov-2025 08:22:04 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[24-Nov-2025 08:22:25 America/Bogota] ✓ Conexión exitosa a MySQL
+[24-Nov-2025 08:22:25 America/Bogota] 📥 RAW INPUT RECIBIDO
+[24-Nov-2025 08:22:25 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[24-Nov-2025 08:22:25 America/Bogota] === CREAR COTIZACIÓN ===
+[24-Nov-2025 08:22:25 America/Bogota] Máquina ID recibida: MAQ_001
+[24-Nov-2025 08:22:25 America/Bogota] Nombre: Benchy
+[24-Nov-2025 08:22:25 America/Bogota] Peso: 50g
+[24-Nov-2025 08:22:25 America/Bogota] Tiempo: 120 min
+[24-Nov-2025 08:22:25 America/Bogota] 🆔 ID generado: 1763990545_80d22418b
+[24-Nov-2025 08:22:25 America/Bogota] 🔄 Transacción iniciada
+[24-Nov-2025 08:22:25 America/Bogota] ✅ Cotización insertada en BD
+[24-Nov-2025 08:22:25 America/Bogota] ✅ Insumos de postprocesado guardados
+[24-Nov-2025 08:22:25 America/Bogota] ✅ Depreciación calculada: 560 COP
+[24-Nov-2025 08:22:25 America/Bogota]    Máquina: Ender 3 V3 SE #1 (MAQ_001)
+[24-Nov-2025 08:22:25 America/Bogota]    Depreciación/hora: 280.0000 COP
+[24-Nov-2025 08:22:25 America/Bogota]    Tiempo: 2 horas
+[24-Nov-2025 08:22:25 America/Bogota] 💰 Cálculos completados
+[24-Nov-2025 08:22:25 America/Bogota] ✅ Cálculos insertados en BD
+[24-Nov-2025 08:22:25 America/Bogota] ✅ Transacción confirmada (COMMIT)

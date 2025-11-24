@@ -274,13 +274,28 @@ function actualizarDatosParaAcciones(datosRespuesta) {
     // Esta función debe ser llamada después de calcular la cotización
     // Recibe los datos de la respuesta del backend
     
+    const cantidad = datosRespuesta.cantidad_piezas || 1;
+    
+    // Los precios que vienen del backend son POR PIEZA
+    const precioUnitarioMinorista = datosRespuesta.precio_minorista || 0;
+    const precioUnitarioMayorista = datosRespuesta.precio_mayorista || 0;
+    
+    // Calcular precio total del pedido (todas las piezas)
+    const precioTotalMinorista = precioUnitarioMinorista * cantidad;
+    const precioTotalMayorista = precioUnitarioMayorista * cantidad;
+    
     ultimaCotizacion.nombre_pieza = datosRespuesta.nombre_pieza || 'Pieza sin nombre';
     ultimaCotizacion.material = obtenerMaterialFilamento();
-    ultimaCotizacion.cantidad = datosRespuesta.cantidad_piezas || 1;
-    ultimaCotizacion.precio_minorista = datosRespuesta.precio_minorista || 0;
-    ultimaCotizacion.precio_mayorista = datosRespuesta.precio_mayorista || 0;
-    ultimaCotizacion.precio_unitario_minorista = datosRespuesta.precio_minorista / datosRespuesta.cantidad_piezas;
-    ultimaCotizacion.precio_unitario_mayorista = datosRespuesta.precio_mayorista / datosRespuesta.cantidad_piezas;
+    ultimaCotizacion.cantidad = cantidad;
+    
+    // Precio TOTAL del pedido (todas las piezas)
+    ultimaCotizacion.precio_minorista = precioTotalMinorista;
+    ultimaCotizacion.precio_mayorista = precioTotalMayorista;
+    
+    // Precio UNITARIO (una sola pieza)
+    ultimaCotizacion.precio_unitario_minorista = precioUnitarioMinorista;
+    ultimaCotizacion.precio_unitario_mayorista = precioUnitarioMayorista;
+    
     ultimaCotizacion.costo_delivery = datosRespuesta.costo_delivery_total || 0;
     ultimaCotizacion.tipo_delivery = datosRespuesta.tipo_delivery || '';
     ultimaCotizacion.requiere_delivery = datosRespuesta.requiere_delivery || false;
