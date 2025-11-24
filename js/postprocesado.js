@@ -15,7 +15,8 @@ const EstadoPostprocesado = {
 const NIVELES_DIFICULTAD = {
     facil: { min: 15000, max: 30000, label: 'Fácil' },
     intermedio: { min: 45000, max: 60000, label: 'Intermedio' },
-    dificil: { min: 75000, max: 90000, label: 'Difícil' }
+    dificil: { min: 75000, max: 90000, label: 'Difícil' },
+    personalizado: { min: 0, max: 0, label: 'Personalizado' }
 };
 
 // ============================================
@@ -99,12 +100,30 @@ function cambiarNivelDificultad(event) {
     const nivel = event.target.value;
     EstadoPostprocesado.nivelDificultad = nivel;
     
-    if (nivel && NIVELES_DIFICULTAD[nivel]) {
+    const inputCosto = document.getElementById('costoManoObraPostprocesado');
+    const inputPersonalizado = document.getElementById('inputCostoManoObraPersonalizado');
+    const infoRango = document.getElementById('infoRangoManoObra');
+    
+    if (nivel === 'personalizado') {
+        // Mostrar input personalizado
+        if (inputPersonalizado) inputPersonalizado.style.display = 'block';
+        if (inputCosto) inputCosto.style.display = 'none';
+        if (infoRango) {
+            infoRango.textContent = 'Ingrese el costo personalizado arriba';
+            infoRango.style.color = '#4f46e5';
+        }
+        
+        const costoPersonalizado = parseFloat(document.getElementById('costoManoObraPersonalizado')?.value) || 0;
+        EstadoPostprocesado.costoManoObra = costoPersonalizado;
+        
+    } else if (nivel && NIVELES_DIFICULTAD[nivel]) {
+        // Ocultar personalizado y mostrar normal
+        if (inputPersonalizado) inputPersonalizado.style.display = 'none';
+        if (inputCosto) inputCosto.style.display = 'block';
+        
         const rango = NIVELES_DIFICULTAD[nivel];
         const costoPromedio = (rango.min + rango.max) / 2;
         
-        // Actualizar el input de costo de mano de obra
-        const inputCosto = document.getElementById('costoManoObraPostprocesado');
         if (inputCosto) {
             inputCosto.value = costoPromedio;
             inputCosto.min = rango.min;
@@ -113,14 +132,13 @@ function cambiarNivelDificultad(event) {
         
         EstadoPostprocesado.costoManoObra = costoPromedio;
         
-        // Mostrar info del rango
-        const infoRango = document.getElementById('infoRangoManoObra');
         if (infoRango) {
             infoRango.textContent = `Rango: ${formatearMoneda(rango.min)} - ${formatearMoneda(rango.max)}`;
+            infoRango.style.color = '#059669';
         }
     }
     
-    // NO llamar a actualizarCalculos - esto se hace en cotizacion.js
+    actualizarResumenPostprocesado();
 }
 
 // ============================================
@@ -133,6 +151,34 @@ function actualizarCostoManoObra(event) {
     // NO llamar a actualizarCalculos - esto se hace en cotizacion.js
 }
 
+// ============================================
+// ACTUALIZAR RESUMEN DE POSTPROCESADO
+// ============================================
+
+function actualizarResumenPostprocesado() {
+    const costoManoObra = EstadoPostprocesado.costoManoObra || 0;
+    const costoInsumos = calcularCostoTotalInsumos();
+    const costoTotal = costoManoObra + costoInsumos;
+    
+    const elemManoObra = document.getElementById('resumenManoObraPostprocesado');
+    if (elemManoObra) elemManoObra.textContent = formatearMoneda(costoManoObra);
+    
+    const elemInsumos = document.getElementById('resumenInsumosPostprocesado');
+    if (elemInsumos) elemInsumos.textContent = formatearMoneda(costoInsumos);
+    
+    const elemTotal = document.getElementById('resumenTotalPostprocesado');
+    if (elemTotal) elemTotal.textContent = formatearMoneda(costoTotal);
+}
+
+// ============================================
+// ACTUALIZAR COSTO PERSONALIZADO
+// ============================================
+
+function actualizarCostoManoObraPersonalizado() {
+    const valor = parseFloat(document.getElementById('costoManoObraPersonalizado')?.value) || 0;
+    EstadoPostprocesado.costoManoObra = valor;
+    actualizarResumenPostprocesado();
+}
 // ============================================
 // RENDERIZAR SELECTOR DE INSUMOS
 // ============================================
@@ -548,6 +594,8 @@ window.inicializarModuloPostprocesado = inicializarModuloPostprocesado;
 window.togglePostprocesado = togglePostprocesado;
 window.cambiarNivelDificultad = cambiarNivelDificultad;
 window.actualizarCostoManoObra = actualizarCostoManoObra;
+window.actualizarCostoManoObraPersonalizado = actualizarCostoManoObraPersonalizado;
+window.actualizarResumenPostprocesado = actualizarResumenPostprocesado;
 window.mostrarModalSeleccionInsumos = mostrarModalSeleccionInsumos;
 window.cerrarModalSeleccionInsumos = cerrarModalSeleccionInsumos;
 window.agregarInsumoPostprocesado = agregarInsumoPostprocesado;

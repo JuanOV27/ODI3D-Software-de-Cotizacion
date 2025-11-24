@@ -87,6 +87,16 @@ async function calcularPrecio() {
     // NUEVO: Obtener datos de máquina seleccionada
     const datosMaquina = obtenerDatosMaquinaCotizacion();
      console.log('🏭 Máquina seleccionada:', datosMaquina);
+
+    // NUEVO: Obtener datos de postprocesado
+const datosPostprocesado = obtenerDatosPostprocesado();
+
+// NUEVO: Obtener datos de paquetería
+const datosPaqueteria = obtenerDatosPaqueteria();
+
+// NUEVO: Obtener datos de delivery
+const datosDelivery = obtenerDatosDelivery();
+     
     // Obtener valores del formulario
     const datos = {
         nombrePieza: document.getElementById('nombrePieza').value || 'Pieza sin nombre',
@@ -112,18 +122,25 @@ async function calcularPrecio() {
         maquinas_multiples: datosMaquina.modo === 'multiple' 
             ? JSON.stringify(datosMaquina.maquinas) 
             : null,
-        depreciacion_por_hora: datosMaquina.depreciacionPorHora
-    };
 
-    // NUEVO: Obtener datos de postprocesado
-    const datosPostprocesado = obtenerDatosPostprocesado();
-    
-    // Agregar los datos de postprocesado al objeto datos
-    datos.incluir_postprocesado = datosPostprocesado.incluir_postprocesado;
-    datos.nivel_dificultad_postprocesado = datosPostprocesado.nivel_dificultad;
-    datos.costo_mano_obra_postprocesado = datosPostprocesado.costo_mano_obra;
-    datos.insumos_postprocesado = datosPostprocesado.insumos;
-    
+        // NUEVO: Datos de paquetería
+        depreciacion_por_hora: datosMaquina.depreciacionPorHora,
+        incluir_paqueteria: datosPaqueteria.incluir_paqueteria,
+        suministro_paqueteria_id: datosPaqueteria.suministro_paqueteria_id,
+        unidades_por_paquete: datosPaqueteria.unidades_por_paquete,
+        cantidad_paquetes_necesarios: datosPaqueteria.cantidad_paquetes_necesarios,
+        costo_total_paqueteria: datosPaqueteria.costo_total_paqueteria,
+
+// Delivery
+        requiere_delivery: datosDelivery.requiere_delivery,
+        tipo_delivery: datosDelivery.tipo_delivery,
+        costo_delivery: datosDelivery.costo_delivery,
+        aplicar_recargo_delivery: datosDelivery.aplicar_recargo_delivery,
+        porcentaje_recargo_delivery: datosDelivery.porcentaje_recargo_delivery,
+        costo_delivery_total: datosDelivery.costo_delivery_total
+    };
+ 
+
     console.log('ðŸ“ Datos capturados:', datos);
     
     // Validar que GestionCotizaciones existe
@@ -182,6 +199,22 @@ async function calcularPrecio() {
             if (itemMarcaAgua) itemMarcaAgua.style.display = 'none';
         }
         
+        // Actualizar Paquetería
+if (datosPaqueteria.incluir_paqueteria && datosPaqueteria.costo_total_paqueteria > 0) {
+    document.getElementById('itemPaqueteria').style.display = 'flex';
+    actualizarElemento('costoPaqueteriaDisplay', datosPaqueteria.costo_total_paqueteria);
+} else {
+    document.getElementById('itemPaqueteria').style.display = 'none';
+}
+
+// Actualizar Delivery
+if (datosDelivery.requiere_delivery && datosDelivery.costo_delivery_total > 0) {
+    document.getElementById('itemDelivery').style.display = 'flex';
+    actualizarElemento('costoDeliveryDisplay', datosDelivery.costo_delivery_total);
+} else {
+    document.getElementById('itemDelivery').style.display = 'none';
+}
+
         // Actualizar resumen del pedido
         const resumenCantidad = document.getElementById('resumenCantidad');
         if (resumenCantidad) {

@@ -1227,3 +1227,150 @@ Stack trace:
 [23-Nov-2025 19:42:33 America/Bogota] 💰 Cálculos completados
 [23-Nov-2025 19:42:33 America/Bogota] ✅ Cálculos insertados en BD
 [23-Nov-2025 19:42:33 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[23-Nov-2025 22:29:00 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:00 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:05 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:05 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:13 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:13 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:13 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:13 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:15 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:15 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:15 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 22:29:57 America/Bogota] 📥 RAW INPUT RECIBIDO
+[23-Nov-2025 22:29:57 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[23-Nov-2025 22:29:57 America/Bogota] === CREAR COTIZACIÓN ===
+[23-Nov-2025 22:29:57 America/Bogota] Máquina ID recibida: MAQ_001
+[23-Nov-2025 22:29:57 America/Bogota] Nombre: Pieza sin nombre
+[23-Nov-2025 22:29:57 America/Bogota] Peso: 50g
+[23-Nov-2025 22:29:57 America/Bogota] Tiempo: 120 min
+[23-Nov-2025 22:29:57 America/Bogota] 🆔 ID generado: 1763954997_6ff90cf82
+[23-Nov-2025 22:29:57 America/Bogota] 🔄 Transacción iniciada
+[23-Nov-2025 22:29:57 America/Bogota] ✅ Cotización insertada en BD
+[23-Nov-2025 22:29:57 America/Bogota] ✅ Depreciación calculada: 560 COP
+[23-Nov-2025 22:29:57 America/Bogota]    Máquina: Ender 3 V3 SE #1 (MAQ_001)
+[23-Nov-2025 22:29:57 America/Bogota]    Depreciación/hora: 280.0000 COP
+[23-Nov-2025 22:29:57 America/Bogota]    Tiempo: 2 horas
+[23-Nov-2025 22:29:57 America/Bogota] 💰 Cálculos completados
+[23-Nov-2025 22:29:57 America/Bogota] ✅ Cálculos insertados en BD
+[23-Nov-2025 22:29:57 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[23-Nov-2025 23:03:50 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:50 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:50 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:54 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:54 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:55 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:55 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:03:57 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:35 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:05:37 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:46 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:46 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:48 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:48 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:51 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:51 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:51 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:51 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:51 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:53 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:53 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:19:53 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:23 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:23 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:23 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:23 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:23 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:27 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:30 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:33 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:33 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:24:33 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:25:09 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:25:09 America/Bogota] 📥 RAW INPUT RECIBIDO
+[23-Nov-2025 23:25:09 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[23-Nov-2025 23:25:09 America/Bogota] === CREAR COTIZACIÓN ===
+[23-Nov-2025 23:25:09 America/Bogota] Máquina ID recibida: MAQ_001
+[23-Nov-2025 23:25:09 America/Bogota] Nombre: prueba
+[23-Nov-2025 23:25:09 America/Bogota] Peso: 50g
+[23-Nov-2025 23:25:09 America/Bogota] Tiempo: 120 min
+[23-Nov-2025 23:25:09 America/Bogota] 🆔 ID generado: 1763958309_c3b89e437
+[23-Nov-2025 23:25:09 America/Bogota] 🔄 Transacción iniciada
+[23-Nov-2025 23:25:09 America/Bogota] ✅ Cotización insertada en BD
+[23-Nov-2025 23:25:09 America/Bogota] ✅ Depreciación calculada: 560 COP
+[23-Nov-2025 23:25:09 America/Bogota]    Máquina: Ender 3 V3 SE #1 (MAQ_001)
+[23-Nov-2025 23:25:09 America/Bogota]    Depreciación/hora: 280.0000 COP
+[23-Nov-2025 23:25:09 America/Bogota]    Tiempo: 2 horas
+[23-Nov-2025 23:25:09 America/Bogota] 💰 Cálculos completados
+[23-Nov-2025 23:25:09 America/Bogota] ✅ Cálculos insertados en BD
+[23-Nov-2025 23:25:09 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[23-Nov-2025 23:35:07 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:07 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:07 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:07 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:07 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:10 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:10 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:10 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:52 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:35:52 America/Bogota] 📥 RAW INPUT RECIBIDO
+[23-Nov-2025 23:35:52 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[23-Nov-2025 23:35:52 America/Bogota] === CREAR COTIZACIÓN ===
+[23-Nov-2025 23:35:52 America/Bogota] Máquina ID recibida: MAQ_001
+[23-Nov-2025 23:35:52 America/Bogota] Nombre: Pieza sin nombre
+[23-Nov-2025 23:35:52 America/Bogota] Peso: 50g
+[23-Nov-2025 23:35:52 America/Bogota] Tiempo: 120 min
+[23-Nov-2025 23:35:52 America/Bogota] 🆔 ID generado: 1763958952_eaa3cd21d
+[23-Nov-2025 23:35:52 America/Bogota] 🔄 Transacción iniciada
+[23-Nov-2025 23:35:52 America/Bogota] ✅ Cotización insertada en BD
+[23-Nov-2025 23:35:52 America/Bogota] ✅ Depreciación calculada: 560 COP
+[23-Nov-2025 23:35:52 America/Bogota]    Máquina: Ender 3 V3 SE #1 (MAQ_001)
+[23-Nov-2025 23:35:52 America/Bogota]    Depreciación/hora: 280.0000 COP
+[23-Nov-2025 23:35:52 America/Bogota]    Tiempo: 2 horas
+[23-Nov-2025 23:35:52 America/Bogota] 💰 Cálculos completados
+[23-Nov-2025 23:35:52 America/Bogota] ✅ Cálculos insertados en BD
+[23-Nov-2025 23:35:52 America/Bogota] ✅ Transacción confirmada (COMMIT)
+[23-Nov-2025 23:38:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:45 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:46 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:46 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:38:46 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:55:55 America/Bogota] ✓ Conexión exitosa a MySQL
+[23-Nov-2025 23:55:55 America/Bogota] 📥 RAW INPUT RECIBIDO
+[23-Nov-2025 23:55:55 America/Bogota] 📦 INPUT DECODIFICADO CORRECTAMENTE
+[23-Nov-2025 23:55:55 America/Bogota] === CREAR COTIZACIÓN ===
+[23-Nov-2025 23:55:55 America/Bogota] Máquina ID recibida: NULL
+[23-Nov-2025 23:55:55 America/Bogota] Nombre: Pieza sin nombre
+[23-Nov-2025 23:55:55 America/Bogota] Peso: 50g
+[23-Nov-2025 23:55:55 America/Bogota] Tiempo: 120 min
+[23-Nov-2025 23:55:55 America/Bogota] 🆔 ID generado: 1763960155_8442cf313
+[23-Nov-2025 23:55:55 America/Bogota] 🔄 Transacción iniciada
+[23-Nov-2025 23:55:55 America/Bogota] ✅ Cotización insertada en BD
+[23-Nov-2025 23:55:55 America/Bogota] ⚠️ No se seleccionó máquina, usando cálculo genérico: 8333.33 COP
+[23-Nov-2025 23:55:55 America/Bogota] 💰 Cálculos completados
+[23-Nov-2025 23:55:55 America/Bogota] ✅ Cálculos insertados en BD
+[23-Nov-2025 23:55:55 America/Bogota] ✅ Transacción confirmada (COMMIT)

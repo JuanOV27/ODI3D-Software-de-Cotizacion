@@ -100,19 +100,24 @@ try {
             
             try {
                 // 1. INSERTAR COTIZACIÓN
-                $sqlCot = "INSERT INTO cotizaciones (
-                    id, nombre_pieza, perfil_filamento_id, carrete_id,
-                    peso_pieza, tiempo_impresion, cantidad_piezas, piezas_por_lote,
-                    costo_carrete, peso_carrete, horas_diseno, costo_hora_diseno,
-                    factor_seguridad, uso_electricidad, gif, aiu,
-                    incluir_marca_agua, porcentaje_marca_agua,
-                    margen_minorista, margen_mayorista,
-                    maquina_id,
-                    incluir_postprocesado, nivel_dificultad_postprocesado, costo_mano_obra_postprocesado,
-                    fecha, fecha_completa
-                ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), NOW()
-                )";
+$sqlCot = "INSERT INTO cotizaciones (
+    id, nombre_pieza, perfil_filamento_id, carrete_id,
+    peso_pieza, tiempo_impresion, cantidad_piezas, piezas_por_lote,
+    costo_carrete, peso_carrete, horas_diseno, costo_hora_diseno,
+    factor_seguridad, uso_electricidad, gif, aiu,
+    incluir_marca_agua, porcentaje_marca_agua,
+    margen_minorista, margen_mayorista,
+    maquina_id,
+    incluir_postprocesado, nivel_dificultad_postprocesado, costo_mano_obra_postprocesado,
+    incluir_paqueteria, suministro_paqueteria_id, unidades_por_paquete, 
+    cantidad_paquetes_necesarios, costo_total_paqueteria,
+    requiere_delivery, tipo_delivery, costo_delivery, 
+    aplicar_recargo_delivery, porcentaje_recargo_delivery, costo_delivery_total,
+    fecha, fecha_completa
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), NOW()
+)";
                 
                 $stmtCot = $db->prepare($sqlCot);
                 
@@ -140,7 +145,19 @@ try {
                     $input['maquina_id'] ?? null,  // CORREGIDO: era 'maquinaId'
                     $input['incluir_postprocesado'] ?? 0,
                     $input['nivel_dificultad_postprocesado'] ?? null,
-                    $input['costo_mano_obra_postprocesado'] ?? 0
+                    $input['costo_mano_obra_postprocesado'] ?? 0,
+                    $input['incluir_paqueteria'] ?? 0,
+                    $input['suministro_paqueteria_id'] ?? null,
+                    $input['unidades_por_paquete'] ?? 1,
+                    $input['cantidad_paquetes_necesarios'] ?? 0,
+                    $input['costo_total_paqueteria'] ?? 0,
+                    // NUEVOS: Delivery
+                    $input['requiere_delivery'] ?? 0,
+                    $input['tipo_delivery'] ?? null,
+                    $input['costo_delivery'] ?? 0,
+                    $input['aplicar_recargo_delivery'] ?? 0,
+                    $input['porcentaje_recargo_delivery'] ?? 20,
+                    $input['costo_delivery_total'] ?? 0
                 ];
                 
                 $stmtCot->execute($parametros);
