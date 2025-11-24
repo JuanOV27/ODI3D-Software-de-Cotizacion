@@ -1193,6 +1193,336 @@
                         <span id="resumenCostoTotal">$0</span>
                     </div>
                 </div>
+
+                <!-- Panel de Acciones -->
+<div class="acciones-cotizacion" style="margin-top: 20px;">
+    <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 1.1rem; font-weight: 700;">
+        ⚡ Acciones Rápidas
+    </h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        
+        <!-- Botón WhatsApp -->
+        <button 
+            type="button" 
+            onclick="abrirModalWhatsApp()"
+            class="btn-accion"
+            style="
+                background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+                color: white;
+                border: none;
+                padding: 14px 20px;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3);
+                transition: all 0.3s ease;
+            "
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(37, 211, 102, 0.4)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(37, 211, 102, 0.3)'">
+            <span style="font-size: 1.3rem;">💬</span>
+            <span>Enviar Cotización por WhatsApp</span>
+        </button>
+        
+        <!-- Botón Guardar Proyecto -->
+        <button 
+            type="button" 
+            onclick="abrirModalProyecto()"
+            class="btn-accion"
+            style="
+                background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+                color: white;
+                border: none;
+                padding: 14px 20px;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+                transition: all 0.3s ease;
+            "
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(79, 70, 229, 0.4)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(79, 70, 229, 0.3)'">
+            <span style="font-size: 1.3rem;">💼</span>
+            <span>Guardar como Proyecto</span>
+        </button>
+        
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: CONFIGURACIÓN WHATSAPP -->
+<!-- ============================================ -->
+
+<div id="modalWhatsApp" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+    <div class="modal-content" style="background: white; margin: 50px auto; padding: 30px; max-width: 600px; border-radius: 16px; position: relative; animation: slideDown 0.3s ease;">
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="color: #1f2937; margin: 0; font-size: 1.4rem;">
+                💬 Configurar Mensaje de WhatsApp
+            </h2>
+            <button onclick="cerrarModalWhatsApp()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 5px 10px;">×</button>
+        </div>
+        
+        <!-- Opciones de información -->
+        <div style="background: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <h3 style="font-size: 1rem; color: #4f46e5; margin: 0 0 15px 0;">
+                📋 Información a Incluir
+            </h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                
+                <!-- Material -->
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <input type="checkbox" id="whatsapp_incluir_material" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="flex: 1; font-weight: 500;">Incluir material del filamento</span>
+                </label>
+                
+                <!-- Cantidad -->
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <input type="checkbox" id="whatsapp_incluir_cantidad" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="flex: 1; font-weight: 500;">Incluir cantidad de piezas</span>
+                </label>
+                
+                <!-- Delivery -->
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <input type="checkbox" id="whatsapp_incluir_delivery" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="flex: 1; font-weight: 500;">Incluir costo de envío/delivery</span>
+                </label>
+                
+                <!-- Costo unitario -->
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <input type="checkbox" id="whatsapp_incluir_unitario" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="flex: 1; font-weight: 500;">Incluir costo por unidad</span>
+                </label>
+                
+            </div>
+        </div>
+        
+        <!-- Selector de precio -->
+        <div style="background: #fef3c7; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+            <h3 style="font-size: 1rem; color: #92400e; margin: 0 0 15px 0;">
+                💰 Tipo de Precio
+            </h3>
+            
+            <div style="display: flex; gap: 12px;">
+                <label style="flex: 1; cursor: pointer;">
+                    <input type="radio" name="tipo_precio_whatsapp" value="minorista" checked style="display: none;">
+                    <div class="precio-option" data-tipo="minorista" style="padding: 12px; background: white; border: 2px solid #4f46e5; border-radius: 8px; text-align: center; font-weight: 600; color: #4f46e5; transition: all 0.3s;">
+                        🏪 Minorista
+                    </div>
+                </label>
+                
+                <label style="flex: 1; cursor: pointer;">
+                    <input type="radio" name="tipo_precio_whatsapp" value="mayorista" style="display: none;">
+                    <div class="precio-option" data-tipo="mayorista" style="padding: 12px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; text-align: center; font-weight: 600; color: #6b7280; transition: all 0.3s;">
+                        🏭 Mayorista
+                    </div>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Preview del mensaje -->
+        <div style="background: #f3f4f6; padding: 15px; border-radius: 12px; margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+            <h3 style="font-size: 0.9rem; color: #6b7280; margin: 0 0 10px 0;">
+                👁️ Vista Previa del Mensaje:
+            </h3>
+            <pre id="whatsapp_preview" style="white-space: pre-wrap; font-family: inherit; margin: 0; font-size: 0.9rem; color: #1f2937; line-height: 1.6;">Selecciona las opciones para ver la vista previa...</pre>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div style="display: flex; gap: 12px;">
+            <button 
+                onclick="cerrarModalWhatsApp()"
+                style="flex: 1; padding: 12px; background: #e5e7eb; color: #1f2937; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                Cancelar
+            </button>
+            <button 
+                onclick="enviarWhatsApp()"
+                style="flex: 2; padding: 12px; background: #25D366; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>📱</span>
+                <span>Abrir WhatsApp</span>
+            </button>
+        </div>
+        
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: GUARDAR PROYECTO -->
+<!-- ============================================ -->
+
+<div id="modalProyecto" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+    <div class="modal-content" style="background: white; margin: 30px auto; padding: 30px; max-width: 700px; border-radius: 16px; position: relative;">
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="color: #1f2937; margin: 0; font-size: 1.4rem;">
+                💼 Guardar como Proyecto
+            </h2>
+            <button onclick="cerrarModalProyecto()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 5px 10px;">×</button>
+        </div>
+        
+        <form id="formProyecto" onsubmit="guardarProyecto(event)" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- Información del Cliente -->
+            <div style="background: #f9fafb; padding: 20px; border-radius: 12px;">
+                <h3 style="color: #4f46e5; margin: 0 0 15px 0; font-size: 1.1rem;">
+                    👤 Información del Cliente
+                </h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <!-- Nombre completo -->
+                    <div style="grid-column: 1 / -1;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #1f2937;">
+                            Nombre Completo <span style="color: #ef4444;">*</span>
+                        </label>
+                        <input type="text" id="proyecto_nombre" required 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: Juan Pérez García">
+                    </div>
+                    
+                    <!-- Teléfono -->
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #1f2937;">
+                            Número de Teléfono <span style="color: #ef4444;">*</span>
+                        </label>
+                        <input type="tel" id="proyecto_telefono" required 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: 3001234567">
+                    </div>
+                    
+                    <!-- WhatsApp -->
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #1f2937;">
+                            Número de WhatsApp <span style="color: #ef4444;">*</span>
+                        </label>
+                        <input type="tel" id="proyecto_whatsapp" required 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: 3001234567">
+                    </div>
+                    
+                    <!-- Cédula (opcional) -->
+                    <div style="grid-column: 1 / -1;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #6b7280;">
+                            Cédula <span style="font-size: 0.85rem; font-weight: 400;">(Opcional)</span>
+                        </label>
+                        <input type="text" id="proyecto_cedula" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: 1234567890">
+                    </div>
+                    
+                    <!-- Dirección (opcional) -->
+                    <div style="grid-column: 1 / -1;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #6b7280;">
+                            Dirección <span style="font-size: 0.85rem; font-weight: 400;">(Opcional)</span>
+                        </label>
+                        <input type="text" id="proyecto_direccion" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: Calle 123 #45-67">
+                    </div>
+                    
+                    <!-- Barrio y Municipio -->
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #6b7280;">
+                            Barrio <span style="font-size: 0.85rem; font-weight: 400;">(Opcional)</span>
+                        </label>
+                        <input type="text" id="proyecto_barrio" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: Centro">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #6b7280;">
+                            Municipio <span style="font-size: 0.85rem; font-weight: 400;">(Opcional)</span>
+                        </label>
+                        <input type="text" id="proyecto_municipio" 
+                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+                               placeholder="Ej: Aguachica">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de Pago y Entrega -->
+            <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b;">
+                <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 1.1rem;">
+                    💳 Pago y Entrega
+                </h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <!-- Fecha de pago -->
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #92400e;">
+                            Fecha de Pago
+                        </label>
+                        <input type="date" id="proyecto_fecha_pago" 
+                               style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px;">
+                    </div>
+                    
+                    <!-- Fecha de entrega -->
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #92400e;">
+                            Fecha de Entrega
+                        </label>
+                        <input type="date" id="proyecto_fecha_entrega" 
+                               style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px;">
+                    </div>
+                    
+                    <!-- Imagen de pago (opcional) -->
+                    <div style="grid-column: 1 / -1;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #92400e;">
+                            Captura de Pago <span style="font-size: 0.85rem; font-weight: 400;">(Opcional)</span>
+                        </label>
+                        <input type="file" id="proyecto_imagen_pago" accept="image/*"
+                               style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px; background: white;">
+                        <p style="font-size: 0.8rem; color: #78350f; margin: 6px 0 0 0;">
+                            📸 Formatos aceptados: JPG, PNG, WEBP (Max 5MB)
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notas adicionales -->
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #1f2937;">
+                    📝 Notas Adicionales <span style="font-size: 0.85rem; font-weight: 400;">(Opcional)</span>
+                </label>
+                <textarea id="proyecto_notas" rows="3"
+                          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; resize: vertical;"
+                          placeholder="Ej: Cliente prefiere entrega en la mañana..."></textarea>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div style="display: flex; gap: 12px; margin-top: 10px;">
+                <button 
+                    type="button"
+                    onclick="cerrarModalProyecto()"
+                    style="flex: 1; padding: 14px; background: #e5e7eb; color: #1f2937; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button 
+                    type="submit"
+                    style="flex: 2; padding: 14px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>💾</span>
+                    <span>Guardar Proyecto</span>
+                </button>
+            </div>
+            
+        </form>
+        
+    </div>
+</div>
+
             </div>
         </div>
     </div>
@@ -1214,5 +1544,7 @@
     <script src="js/postprocesado.js"></script>
     <script src="js/paqueteria.js"></script>
     <script src="js/delivery.js"></script>
+    <script src="js/acciones_cotizacion.js"></script>
+
 </body>
 </html>

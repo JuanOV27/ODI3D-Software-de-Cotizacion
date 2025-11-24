@@ -289,6 +289,23 @@ if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado
             console.log('âœ… CÃ¡lculo completado exitosamente');
             mostrarNotificacionSimple('CÃ¡lculo realizado exitosamente', 'success');
         }
+
+        // ============================================
+        // NUEVO: Actualizar datos para acciones de WhatsApp y Proyecto
+        // ============================================
+        if (typeof actualizarDatosParaAcciones === 'function') {
+            actualizarDatosParaAcciones({
+                id: cotizacion.id || ultimoCalculo.id,
+                nombre_pieza: datos.nombrePieza,
+                cantidad_piezas: datos.cantidadPiezas,
+                precio_minorista: calculos.precioMinorista,
+                precio_mayorista: calculos.precioMayorista,
+                costo_delivery_total: datos.costo_delivery_total || 0,
+                tipo_delivery: datos.tipo_delivery || '',
+                requiere_delivery: datos.requiere_delivery || false
+            });
+            console.log('✅ Datos actualizados para WhatsApp y Proyecto');
+        }
         
     } catch (error) {
         console.error('âŒ Error al calcular:', error);
