@@ -1,9 +1,8 @@
 <?php
-// API_COTIZACIONES.PHP - VERSIÓN SIMPLIFICADA SIN UTILS
-// No depende de Utils::sendSuccess, usa echo json_encode directamente
+// API_COTIZACIONES.PHP - VERSIÓN CORREGIDA CON MEJOR DEBUG
 require_once 'api_postprocesado_functions.php';
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // No mostrar errores en output, solo en log
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
 header('Content-Type: application/json; charset=utf-8');
@@ -26,13 +25,24 @@ function sendSuccess($data, $message = '') {
     exit;
 }
 
-// Función para enviar error
-function sendError($message) {
+// Función para enviar error MEJORADA
+function sendError($message, $details = null) {
     http_response_code(400);
-    echo json_encode([
+    $response = [
         'success' => false,
         'error' => $message
-    ]);
+    ];
+    
+    if ($details !== null) {
+        $response['details'] = $details;
+    }
+    
+    error_log("❌ ERROR API: " . $message);
+    if ($details) {
+        error_log("   Detalles: " . print_r($details, true));
+    }
+    
+    echo json_encode($response);
     exit;
 }
 
@@ -46,214 +56,291 @@ try {
         case 'create':
             // Obtener datos del POST
             $rawInput = file_get_contents('php://input');
+            error_log("📥 RAW INPUT RECIBIDO");
+            
             $input = json_decode($rawInput, true);
             
             if (!$input) {
-                sendError('No se recibieron datos válidos');
+                $jsonError = json_last_error_msg();
+                sendError('No se recibieron datos válidos', [
+                    'json_error' => $jsonError,
+                    'raw_input_length' => strlen($rawInput)
+                ]);
             }
             
+            error_log("📦 INPUT DECODIFICADO CORRECTAMENTE");
+            
+            // Debug logging MEJORADO
+            error_log("=== CREAR COTIZACIÓN ===");
+            error_log("Máquina ID recibida: " . ($input['maquina_id'] ?? 'NULL'));
+            error_log("Nombre: " . ($input['nombrePieza'] ?? 'NULL'));
+            error_log("Peso: " . ($input['pesoPieza'] ?? 'NULL') . 'g');
+            error_log("Tiempo: " . ($input['tiempoImpresion'] ?? 'NULL') . ' min');
+            
             // Validar campos requeridos
-            if (!isset($input['nombrePieza']) || !isset($input['pesoPieza']) || !isset($input['tiempoImpresion'])) {
-                sendError('Campos requeridos faltantes');
+            $camposFaltantes = [];
+            if (!isset($input['nombrePieza'])) $camposFaltantes[] = 'nombrePieza';
+            if (!isset($input['pesoPieza'])) $camposFaltantes[] = 'pesoPieza';
+            if (!isset($input['tiempoImpresion'])) $camposFaltantes[] = 'tiempoImpresion';
+            
+            if (!empty($camposFaltantes)) {
+                sendError('Campos requeridos faltantes', [
+                    'campos_faltantes' => $camposFaltantes,
+                    'campos_recibidos' => array_keys($input)
+                ]);
             }
             
             // Generar ID único
             $id = time() . '_' . substr(md5(rand()), 0, 9);
+            error_log("🆔 ID generado: " . $id);
             
             // Iniciar transacción
             $db->beginTransaction();
+            error_log("🔄 Transacción iniciada");
             
-            // 1. INSERTAR COTIZACIÓN
-            $sqlCot = "INSERT INTO cotizaciones (
-                id, nombre_pieza, perfil_filamento_id, carrete_id,
-                peso_pieza, tiempo_impresion, cantidad_piezas, piezas_por_lote,
-                costo_carrete, peso_carrete, horas_diseno, costo_hora_diseno,
-                factor_seguridad, uso_electricidad, gif, aiu,
-                incluir_marca_agua, porcentaje_marca_agua,
-                margen_minorista, margen_mayorista,
-                maquina_id,
-                incluir_postprocesado, nivel_dificultad_postprocesado, costo_mano_obra_postprocesado,
-                fecha, fecha_completa
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()
-            )";
-            
-            $stmtCot = $db->prepare($sqlCot);
-            $stmtCot->execute([
-                $id,
-                $input['nombrePieza'],
-                $input['perfilFilamentoId'] ?? null,
-                $input['carreteId'] ?? null,
-                $input['pesoPieza'],
-                $input['tiempoImpresion'],
-                $input['cantidadPiezas'] ?? 1,
-                $input['piezasPorLote'] ?? 1,
-                $input['costoCarrete'] ?? 0,  // FALTABA
-                $input['pesoCarrete'] ?? 1,   // FALTABA
-                $input['horasDiseno'] ?? 0,
-                $input['costoHoraDiseno'] ?? 0,
-                $input['factorSeguridad'] ?? 1,
-                $input['usoElectricidad'] ?? 0,
-                $input['gif'] ?? 0,
-                $input['aiu'] ?? 0,
-                $input['incluirMarcaAgua'] ?? 0,
-                $input['porcentajeMarcaAgua'] ?? 0,
-                $input['margenMinorista'] ?? 0,
-                $input['margenMayorista'] ?? 0,
-                $input['maquinaId'] ?? null,
-                $input['incluir_postprocesado'] ?? 0,
-                $input['nivel_dificultad_postprocesado'] ?? null,
-                $input['costo_mano_obra_postprocesado'] ?? 0
-            ]);
-            
-            // 2. CALCULAR PRECIOS
-            $costoCarrete = $input['costoCarrete'] ?? 0;
-            $pesoCarrete = $input['pesoCarrete'] ?? 1;
-            
-
-
-            // Obtener datos del perfil si existe
-            if (!empty($input['perfilFilamentoId'])) {
-                $stmtPerfil = $db->prepare("SELECT costo, peso FROM perfiles_filamento WHERE id = ?");
-                $stmtPerfil->execute([$input['perfilFilamentoId']]);
-                $perfil = $stmtPerfil->fetch(PDO::FETCH_ASSOC);
+            try {
+                // 1. INSERTAR COTIZACIÓN
+                $sqlCot = "INSERT INTO cotizaciones (
+                    id, nombre_pieza, perfil_filamento_id, carrete_id,
+                    peso_pieza, tiempo_impresion, cantidad_piezas, piezas_por_lote,
+                    costo_carrete, peso_carrete, horas_diseno, costo_hora_diseno,
+                    factor_seguridad, uso_electricidad, gif, aiu,
+                    incluir_marca_agua, porcentaje_marca_agua,
+                    margen_minorista, margen_mayorista,
+                    maquina_id,
+                    incluir_postprocesado, nivel_dificultad_postprocesado, costo_mano_obra_postprocesado,
+                    fecha, fecha_completa
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), NOW()
+                )";
                 
-                if ($perfil) {
-                    $costoCarrete = $perfil['costo'];
-                    $pesoCarrete = $perfil['peso'];
+                $stmtCot = $db->prepare($sqlCot);
+                
+                $parametros = [
+                    $id,
+                    $input['nombrePieza'],
+                    $input['perfilFilamentoId'] ?? null,
+                    $input['carreteId'] ?? null,
+                    $input['pesoPieza'],
+                    $input['tiempoImpresion'],
+                    $input['cantidadPiezas'] ?? 1,
+                    $input['piezasPorLote'] ?? 1,
+                    $input['costoCarrete'] ?? 0,
+                    $input['pesoCarrete'] ?? 1,
+                    $input['horasDiseno'] ?? 0,
+                    $input['costoHoraDiseno'] ?? 0,
+                    $input['factorSeguridad'] ?? 1,
+                    $input['usoElectricidad'] ?? 0,
+                    $input['gif'] ?? 0,
+                    $input['aiu'] ?? 0,
+                    $input['incluirMarcaAgua'] ?? 0,
+                    $input['porcentajeMarcaAgua'] ?? 0,
+                    $input['margenMinorista'] ?? 0,
+                    $input['margenMayorista'] ?? 0,
+                    $input['maquina_id'] ?? null,  // CORREGIDO: era 'maquinaId'
+                    $input['incluir_postprocesado'] ?? 0,
+                    $input['nivel_dificultad_postprocesado'] ?? null,
+                    $input['costo_mano_obra_postprocesado'] ?? 0
+                ];
+                
+                $stmtCot->execute($parametros);
+                error_log("✅ Cotización insertada en BD");
+                
+                // 2. CALCULAR PRECIOS
+                $costoCarrete = $input['costoCarrete'] ?? 0;
+                $pesoCarrete = $input['pesoCarrete'] ?? 1;
+                
+                // Obtener datos del perfil si existe
+                if (!empty($input['perfilFilamentoId'])) {
+                    $stmtPerfil = $db->prepare("SELECT costo, peso FROM perfiles_filamento WHERE id = ?");
+                    $stmtPerfil->execute([$input['perfilFilamentoId']]);
+                    $perfil = $stmtPerfil->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($perfil) {
+                        $costoCarrete = $perfil['costo'];
+                        $pesoCarrete = $perfil['peso'];
+                        error_log("📋 Perfil filamento cargado: Costo={$costoCarrete}, Peso={$pesoCarrete}");
+                    }
                 }
+
+                if (!empty($input['insumos_postprocesado'])) {
+                    guardarInsumosPostprocesado($db, $id, $input['insumos_postprocesado']);
+                    error_log("✅ Insumos de postprocesado guardados");
+                }
+                
+                // Variables
+                $pesoPieza = floatval($input['pesoPieza']);
+                $tiempoImpresion = floatval($input['tiempoImpresion']);
+                $cantidadPiezas = intval($input['cantidadPiezas'] ?? 1);
+                $piezasPorLote = intval($input['piezasPorLote'] ?? 1);
+                $factorSeguridad = floatval($input['factorSeguridad'] ?? 1);
+                $horasDiseno = floatval($input['horasDiseno'] ?? 0);
+                $costoHoraDiseno = floatval($input['costoHoraDiseno'] ?? 0);
+                $usoElectricidad = floatval($input['usoElectricidad'] ?? 0);
+                $gif = floatval($input['gif'] ?? 0);
+                $aiu = floatval($input['aiu'] ?? 0);
+                $margenMinorista = floatval($input['margenMinorista'] ?? 0);
+                $margenMayorista = floatval($input['margenMayorista'] ?? 0);
+                $incluirMarcaAgua = intval($input['incluirMarcaAgua'] ?? 0);
+                $porcentajeMarcaAgua = floatval($input['porcentajeMarcaAgua'] ?? 0);
+                
+                // Cálculos
+                $costoUnitario = $costoCarrete / ($pesoCarrete * 1000);
+                $costoFabricacion = $factorSeguridad * $costoUnitario * $pesoPieza;
+                
+                $tiempoHoras = $tiempoImpresion / 60;
+                $costoEnergia = $factorSeguridad * $usoElectricidad * $tiempoHoras;
+                
+                $costoDiseno = ($costoHoraDiseno * $horasDiseno) / $cantidadPiezas;
+                
+                $costosPostprocesado = calcularCostosPostprocesado(
+                    $input['costo_mano_obra_postprocesado'] ?? 0,
+                    $input['insumos_postprocesado'] ?? []
+                );
+
+                // ============================================
+                // DEPRECIACIÓN - CÁLCULO CORREGIDO
+                // ============================================
+                $depreciacionMaquina = 0;
+                $maquinaId = $input['maquina_id'] ?? null;
+
+                if ($maquinaId) {
+                    // Consultar depreciación de la máquina seleccionada
+                    $stmtMaquina = $db->prepare("SELECT depreciacion_por_hora, nombre FROM maquinas WHERE id = ? AND activa = 1");
+                    $stmtMaquina->execute([$maquinaId]);
+                    $maquina = $stmtMaquina->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($maquina) {
+                        // Calcular depreciación: tiempo en horas × depreciación por hora
+                        $tiempoHoras = $tiempoImpresion / 60;
+                        $depreciacionMaquina = $tiempoHoras * $maquina['depreciacion_por_hora'];
+                        
+                        error_log("✅ Depreciación calculada: " . round($depreciacionMaquina, 2) . " COP");
+                        error_log("   Máquina: {$maquina['nombre']} ({$maquinaId})");
+                        error_log("   Depreciación/hora: {$maquina['depreciacion_por_hora']} COP");
+                        error_log("   Tiempo: {$tiempoHoras} horas");
+                    } else {
+                        // Si no se encuentra la máquina, usar valor por defecto
+                        $depreciacionMaquina = ($tiempoImpresion / 60) * 280; // 280 COP/hora por defecto
+                        error_log("⚠️ Máquina no encontrada (ID: {$maquinaId}), usando depreciación por defecto: " . round($depreciacionMaquina, 2) . " COP");
+                    }
+                } else {
+                    // Si no se seleccionó máquina, usar cálculo genérico (backward compatibility)
+                    $depreciacionMaquina = (1400000 * 0.9 / (3 * 12 * 210)) * $pesoPieza;
+                    error_log("⚠️ No se seleccionó máquina, usando cálculo genérico: " . round($depreciacionMaquina, 2) . " COP");
+                }
+                // ============================================
+                
+                $subtotal = $costoFabricacion + $costoEnergia + $costoDiseno + $depreciacionMaquina;
+                
+                $costoGIF = $subtotal * ($gif / 100);
+                $costoAIU = ($subtotal + $costoGIF) * ($aiu / 100);
+                
+                $costoMarcaAgua = $incluirMarcaAgua ? ($subtotal + $costoGIF + $costoAIU) * ($porcentajeMarcaAgua / 100) : 0;
+                
+                $costoTotalPostprocesado = $costosPostprocesado['costo_total'];
+
+                $precioFinal = ($subtotal + $costoGIF + $costoAIU + $costoMarcaAgua + $costoTotalPostprocesado) / $piezasPorLote;
+                
+                $precioMinorista = $precioFinal * (1 + $margenMinorista / 100);
+                $precioMayorista = $precioFinal * (1 + $margenMayorista / 100);
+                
+                $numeroLotes = ceil($cantidadPiezas / $piezasPorLote);
+                $costoPorLote = $precioFinal * $piezasPorLote;
+                $costoTotalPedido = $precioFinal * $cantidadPiezas;
+                $tiempoTotalMinutos = $numeroLotes * $tiempoImpresion;
+                $tiempoTotalHoras = $tiempoTotalMinutos / 60;
+                
+                $filamentoTotalGramos = ($pesoPieza / $piezasPorLote) * $cantidadPiezas;
+                $costoElectricoTotal = $usoElectricidad * $tiempoTotalHoras;
+                
+                $costoTotalPedidoMinorista = $costoTotalPedido * (1 + $margenMinorista / 100);
+                $costoTotalPedidoMayorista = $costoTotalPedido * (1 + $margenMayorista / 100);
+                
+                error_log("💰 Cálculos completados");
+                
+                // 3. INSERTAR CÁLCULOS
+                $sqlCalc = "INSERT INTO calculos_cotizacion (
+                    cotizacion_id, costo_fabricacion, costo_energia, costo_diseno,
+                    depreciacion_maquina, subtotal, costo_gif, costo_aiu, costo_marca_agua,
+                    precio_final, precio_minorista, precio_mayorista,
+                    numero_lotes, costo_por_lote, costo_total_pedido,
+                    tiempo_total_minutos, tiempo_total_horas, filamento_total_gramos,
+                    costo_electrico_total, costo_total_pedido_minorista, costo_total_pedido_mayorista,
+                    costo_mano_obra_postprocesado, costo_insumos_postprocesado, costo_total_postprocesado
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )";
+                
+                $stmtCalc = $db->prepare($sqlCalc);
+                $stmtCalc->execute([
+                    $id,
+                    round($costoFabricacion, 2),
+                    round($costoEnergia, 2),
+                    round($costoDiseno, 2),
+                    round($depreciacionMaquina, 2),
+                    round($subtotal, 2),
+                    round($costoGIF, 2),
+                    round($costoAIU, 2),
+                    round($costoMarcaAgua, 2),
+                    round($precioFinal, 2),
+                    round($precioMinorista, 2),
+                    round($precioMayorista, 2),
+                    $numeroLotes,
+                    round($costoPorLote, 2),
+                    round($costoTotalPedido, 2),
+                    round($tiempoTotalMinutos, 2),
+                    round($tiempoTotalHoras, 2),
+                    round($filamentoTotalGramos, 2),
+                    round($costoElectricoTotal, 2),
+                    round($costoTotalPedidoMinorista, 2),
+                    round($costoTotalPedidoMayorista, 2),
+                    $costosPostprocesado['costo_mano_obra'],
+                    $costosPostprocesado['costo_insumos'],
+                    $costosPostprocesado['costo_total']
+                ]);
+                
+                error_log("✅ Cálculos insertados en BD");
+                
+                $db->commit();
+                error_log("✅ Transacción confirmada (COMMIT)");
+                
+                // Respuesta
+                sendSuccess([
+                    'id' => $id,
+                    'nombre_pieza' => $input['nombrePieza'],
+                    'peso_pieza' => $pesoPieza,
+                    'tiempo_impresion' => $tiempoImpresion,
+                    'cantidad_piezas' => $cantidadPiezas,
+                    'costo_fabricacion' => round($costoFabricacion, 2),
+                    'costo_energia' => round($costoEnergia, 2),
+                    'costo_diseno' => round($costoDiseno, 2),
+                    'depreciacion_maquina' => round($depreciacionMaquina, 2),
+                    'subtotal' => round($subtotal, 2),
+                    'costo_gif' => round($costoGIF, 2),
+                    'costo_aiu' => round($costoAIU, 2),
+                    'costo_marca_agua' => round($costoMarcaAgua, 2),
+                    'precio_final' => round($precioFinal, 2),
+                    'precio_minorista' => round($precioMinorista, 2),
+                    'precio_mayorista' => round($precioMayorista, 2),
+                    'numero_lotes' => $numeroLotes,
+                    'costo_por_lote' => round($costoPorLote, 2),
+                    'costo_total_pedido' => round($costoTotalPedido, 2),
+                    'tiempo_total_horas' => round($tiempoTotalHoras, 2),
+                    'filamento_total_gramos' => round($filamentoTotalGramos, 2),
+                    'costo_mano_obra_postprocesado' => $costosPostprocesado['costo_mano_obra'],
+                    'costo_insumos_postprocesado' => $costosPostprocesado['costo_insumos'],
+                    'costo_total_postprocesado' => $costosPostprocesado['costo_total']
+                ], 'Cotización creada exitosamente');
+                
+            } catch (PDOException $e) {
+                $db->rollBack();
+                error_log("❌ Error PDO: " . $e->getMessage());
+                sendError('Error en la base de datos', [
+                    'pdo_error' => $e->getMessage(),
+                    'pdo_code' => $e->getCode()
+                ]);
             }
-
-            if (!empty($input['insumos_postprocesado'])) {
-            guardarInsumosPostprocesado($db, $id, $input['insumos_postprocesado']);
-}
-            
-            // Variables
-            $pesoPieza = floatval($input['pesoPieza']);
-            $tiempoImpresion = floatval($input['tiempoImpresion']);
-            $cantidadPiezas = intval($input['cantidadPiezas'] ?? 1);
-            $piezasPorLote = intval($input['piezasPorLote'] ?? 1);
-            $factorSeguridad = floatval($input['factorSeguridad'] ?? 1);
-            $horasDiseno = floatval($input['horasDiseno'] ?? 0);
-            $costoHoraDiseno = floatval($input['costoHoraDiseno'] ?? 0);
-            $usoElectricidad = floatval($input['usoElectricidad'] ?? 0);
-            $gif = floatval($input['gif'] ?? 0);
-            $aiu = floatval($input['aiu'] ?? 0);
-            $margenMinorista = floatval($input['margenMinorista'] ?? 0);
-            $margenMayorista = floatval($input['margenMayorista'] ?? 0);
-            $incluirMarcaAgua = intval($input['incluirMarcaAgua'] ?? 0);
-            $porcentajeMarcaAgua = floatval($input['porcentajeMarcaAgua'] ?? 0);
-            
-            // Cálculos
-            $costoUnitario = $costoCarrete / ($pesoCarrete * 1000);
-            $costoFabricacion = $factorSeguridad * $costoUnitario * $pesoPieza;
-            
-            $tiempoHoras = $tiempoImpresion / 60;
-            $costoEnergia = $factorSeguridad * $usoElectricidad * $tiempoHoras;
-            
-            $costoDiseno = ($costoHoraDiseno * $horasDiseno) / $cantidadPiezas;
-            
-            $costosPostprocesado = calcularCostosPostprocesado(
-            $input['costo_mano_obra_postprocesado'] ?? 0,
-            $input['insumos_postprocesado'] ?? []
-            );
-
-            // Depreciación
-            $depreciacionMaquina = (1400000 * 0.9 / (3 * 12 * 210)) * $pesoPieza;
-            
-            $subtotal = $costoFabricacion + $costoEnergia + $costoDiseno + $depreciacionMaquina;
-            
-            $costoGIF = $subtotal * ($gif / 100);
-            $costoAIU = ($subtotal + $costoGIF) * ($aiu / 100);
-            
-            $costoMarcaAgua = $incluirMarcaAgua ? ($subtotal + $costoGIF + $costoAIU) * ($porcentajeMarcaAgua / 100) : 0;
-            
-            $costoTotalPostprocesado = $costosPostprocesado['costo_total'];
-
-            $precioFinal = ($subtotal + $costoGIF + $costoAIU + $costoMarcaAgua + $costoTotalPostprocesado) / $piezasPorLote;
-            
-            $precioMinorista = $precioFinal * (1 + $margenMinorista / 100);
-            $precioMayorista = $precioFinal * (1 + $margenMayorista / 100);
-            
-            $numeroLotes = ceil($cantidadPiezas / $piezasPorLote);
-            $costoPorLote = $precioFinal * $piezasPorLote;
-            $costoTotalPedido = $precioFinal * $cantidadPiezas;
-            $tiempoTotalMinutos = $numeroLotes * $tiempoImpresion;
-            $tiempoTotalHoras = $tiempoTotalMinutos / 60;
-            
-            $filamentoTotalGramos = ($pesoPieza / $piezasPorLote) * $cantidadPiezas;
-            $costoElectricoTotal = $usoElectricidad * $tiempoTotalHoras;
-            
-            $costoTotalPedidoMinorista = $costoTotalPedido * (1 + $margenMinorista / 100);
-            $costoTotalPedidoMayorista = $costoTotalPedido * (1 + $margenMayorista / 100);
-            
-            // 3. INSERTAR CÁLCULOS
-            $sqlCalc = "INSERT INTO calculos_cotizacion (
-                cotizacion_id, costo_fabricacion, costo_energia, costo_diseno,
-    depreciacion_maquina, subtotal, costo_gif, costo_aiu, costo_marca_agua,
-    precio_final, precio_minorista, precio_mayorista,
-    numero_lotes, costo_por_lote, costo_total_pedido,
-    tiempo_total_minutos, tiempo_total_horas, filamento_total_gramos,
-    costo_electrico_total, costo_total_pedido_minorista, costo_total_pedido_mayorista,
-    costo_mano_obra_postprocesado, costo_insumos_postprocesado, costo_total_postprocesado  // NUEVO
-) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-)";
-            
-            $stmtCalc = $db->prepare($sqlCalc);
-            $stmtCalc->execute([
-                $id,
-                round($costoFabricacion, 2),
-                round($costoEnergia, 2),
-                round($costoDiseno, 2),
-                round($depreciacionMaquina, 2),
-                round($subtotal, 2),
-                round($costoGIF, 2),
-                round($costoAIU, 2),
-                round($costoMarcaAgua, 2),
-                round($precioFinal, 2),
-                round($precioMinorista, 2),
-                round($precioMayorista, 2),
-                $numeroLotes,
-                round($costoPorLote, 2),
-                round($costoTotalPedido, 2),
-                round($tiempoTotalMinutos, 2),
-                round($tiempoTotalHoras, 2),
-                round($filamentoTotalGramos, 2),
-                round($costoElectricoTotal, 2),
-                round($costoTotalPedidoMinorista, 2),
-                round($costoTotalPedidoMayorista, 2),
-                $costosPostprocesado['costo_mano_obra'],      // NUEVO
-    $costosPostprocesado['costo_insumos'],        // NUEVO
-    $costosPostprocesado['costo_total']           // NUEVO
-            ]);
-            
-            $db->commit();
-            
-            // Respuesta
-            sendSuccess([
-                'id' => $id,
-                'nombre_pieza' => $input['nombrePieza'],
-                'peso_pieza' => $pesoPieza,
-                'tiempo_impresion' => $tiempoImpresion,
-                'cantidad_piezas' => $cantidadPiezas,
-                'costo_fabricacion' => round($costoFabricacion, 2),
-                'costo_energia' => round($costoEnergia, 2),
-                'costo_diseno' => round($costoDiseno, 2),
-                'depreciacion_maquina' => round($depreciacionMaquina, 2),
-                'subtotal' => round($subtotal, 2),
-                'costo_gif' => round($costoGIF, 2),
-                'costo_aiu' => round($costoAIU, 2),
-                'costo_marca_agua' => round($costoMarcaAgua, 2),
-                'precio_final' => round($precioFinal, 2),
-                'precio_minorista' => round($precioMinorista, 2),
-                'precio_mayorista' => round($precioMayorista, 2),
-                'numero_lotes' => $numeroLotes,
-                'costo_por_lote' => round($costoPorLote, 2),
-                'costo_total_pedido' => round($costoTotalPedido, 2),
-                'tiempo_total_horas' => round($tiempoTotalHoras, 2),
-                'filamento_total_gramos' => round($filamentoTotalGramos, 2)
-            ], 'Cotización creada exitosamente');
             break;
             
         case 'list':
@@ -317,9 +404,14 @@ try {
         $db->rollBack();
     }
     
-    error_log("ERROR en api_cotizaciones: " . $e->getMessage());
+    error_log("ERROR GENERAL en api_cotizaciones: " . $e->getMessage());
     error_log("Archivo: " . $e->getFile() . " Línea: " . $e->getLine());
+    error_log("Stack trace: " . $e->getTraceAsString());
     
-    sendError($e->getMessage());
+    sendError('Error del servidor', [
+        'message' => $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 }
 ?>

@@ -195,7 +195,38 @@ async function calcularPrecio() {
         
         actualizarElemento('resumenCostoTotal', calculos.costoTotalPedido);
         
-        // Actualizar informaciÃ³n adicional
+        const datosPostprocesado = obtenerDatosPostprocesado();
+
+if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado > 0) {
+    // Mostrar mano de obra
+    const itemManoObra = document.getElementById('itemManoObraPostprocesado');
+    if (itemManoObra) {
+        itemManoObra.style.display = 'flex';
+        actualizarElemento('costoManoObraPostprocesadoDisplay', calculos.costoManoObraPostprocesado);
+    }
+    
+    // Mostrar insumos
+    const itemInsumos = document.getElementById('itemInsumosPostprocesado');
+    if (itemInsumos) {
+        itemInsumos.style.display = 'flex';
+        actualizarElemento('costoInsumosPostprocesadoDisplay', calculos.costoInsumosPostprocesado);
+    }
+    
+    // Actualizar sección detallada
+    actualizarSeccionPostprocesadoDetallado(datosPostprocesado, calculos);
+    
+} else {
+    // Ocultar si no hay postprocesado
+    const itemManoObra = document.getElementById('itemManoObraPostprocesado');
+    const itemInsumos = document.getElementById('itemInsumosPostprocesado');
+    const seccionDetallada = document.getElementById('seccionPostprocesadoDetallado');
+    
+    if (itemManoObra) itemManoObra.style.display = 'none';
+    if (itemInsumos) itemInsumos.style.display = 'none';
+    if (seccionDetallada) seccionDetallada.style.display = 'none';
+}
+
+        // Actualizar informacion adicional
         const resumenTiempo = document.getElementById('resumenTiempo');
         if (resumenTiempo) {
             resumenTiempo.textContent = calculos.tiempoTotalHoras + ' horas';
@@ -992,6 +1023,100 @@ function obtenerDatosMaquinaCotizacion() {
     }
 }
 
+/**
+ * Actualiza la sección detallada de postprocesado
+ */
+function actualizarSeccionPostprocesadoDetallado(datosPostprocesado, calculos) {
+    const seccion = document.getElementById('seccionPostprocesadoDetallado');
+    if (!seccion) return;
+    
+    seccion.style.display = 'block';
+    
+    // Nivel de dificultad
+    const nivelesLabels = {
+        'facil': 'Nivel 1 - Fácil',
+        'intermedio': 'Nivel 2 - Intermedio',
+        'dificil': 'Nivel 3 - Difícil'
+    };
+    
+    const nivelLabel = nivelesLabels[datosPostprocesado.nivel_dificultad] || 'Sin especificar';
+    const nivelElemento = document.getElementById('detalleNivelDificultad');
+    if (nivelElemento) nivelElemento.textContent = nivelLabel;
+    
+    // Tiempo estimado
+    const tiemposEstimados = {
+        'facil': '~30 minutos',
+        'intermedio': '~60 minutos',
+        'dificil': '~120 minutos'
+    };
+    
+    const tiempoEstimado = tiemposEstimados[datosPostprocesado.nivel_dificultad] || '-';
+    const tiempoElemento = document.getElementById('detalleTiempoEstimado');
+    if (tiempoElemento) tiempoElemento.textContent = tiempoEstimado;
+    
+    // Mano de obra
+    const manoObraElemento = document.getElementById('detalleManoObraPostprocesado');
+    if (manoObraElemento) {
+        manoObraElemento.textContent = formatearMoneda(calculos.costoManoObraPostprocesado);
+    }
+    
+    // Lista de insumos
+    const listaInsumos = document.getElementById('listaInsumosDetallada');
+    if (listaInsumos) {
+        if (datosPostprocesado.insumos && datosPostprocesado.insumos.length > 0) {
+            let htmlInsumos = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+            
+            datosPostprocesado.insumos.forEach(insumo => {
+                const cantidad = insumo.cantidad_requerida;
+                const porcentaje = insumo.porcentaje_uso ? ` (${insumo.porcentaje_uso}%)` : '';
+                const costoTotal = insumo.costo_total;
+                
+                htmlInsumos += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">
+                                ${insumo.nombre}
+                            </div>
+                            <div style="font-size: 0.85rem; color: #6b7280;">
+                                Cantidad: <strong>${cantidad}</strong> ${insumo.unidad_medida || 'unidades'}${porcentaje}
+                                <span style="margin-left: 10px;">•</span>
+                                <span style="margin-left: 10px;">Precio unitario: ${formatearMoneda(insumo.precio_unitario)}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: #059669; font-size: 1.05rem;">
+                                ${formatearMoneda(costoTotal)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            htmlInsumos += '</div>';
+            listaInsumos.innerHTML = htmlInsumos;
+        } else {
+            listaInsumos.innerHTML = '<p style="color: #9ca3af; font-style: italic; text-align: center; padding: 20px;">No hay insumos seleccionados</p>';
+        }
+    }
+    
+    // Total
+    const totalElemento = document.getElementById('detalleTotalPostprocesado');
+    if (totalElemento) {
+        totalElemento.textContent = formatearMoneda(calculos.costoTotalPostprocesado);
+    }
+}
+
+/**
+ * Formatea valores a moneda colombiana
+ */
+function formatearMoneda(valor) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(valor);
+}
 
 // Exportar funciones globalmente
 window.calcularPrecio = calcularPrecio;

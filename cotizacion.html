@@ -535,6 +535,18 @@
                         <span class="result-label">🛡️ AIU:</span>
                         <span class="result-value" id="costoAIU">$0</span>
                     </div>
+
+                    <!-- NUEVO: Costos de Postprocesado -->
+                    <div class="result-item" id="itemManoObraPostprocesado">
+                        <span class="result-label">👷 Mano de Obra Postprocesado:</span>
+                        <span class="result-value" id="costoManoObraPostprocesadoDisplay">$0</span>
+                    </div>
+
+                    <div class="result-item" id="itemInsumosPostprocesado">
+                        <span class="result-label">🧪 Insumos Postprocesado:</span>
+                        <span class="result-value" id="costoInsumosPostprocesadoDisplay">$0</span>
+                    </div>
+
                     
                     <div class="result-item" id="itemMarcaAgua" style="display: none;">
                         <span class="result-label">🏷️ Marca de Agua:</span>
@@ -652,6 +664,58 @@
                     <span class="desglose-value" id="desglosePorcentajeAIU">25%</span>
                 </div>
                 
+                <!-- NUEVO: Sección Detallada de Postprocesado -->
+<div id="seccionPostprocesadoDetallado" style="display: none;">
+    <div class="separator-line"></div>
+    
+    <div class="desglose-section">
+        <h3 class="desglose-title">🎨 Detalle de Postprocesado</h3>
+        
+        <!-- Resumen del nivel -->
+        <div style="margin-bottom: 20px; padding: 12px; background: #f3f4f6; border-radius: 8px; border-left: 4px solid #4f46e5;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <strong style="color: #1f2937; font-size: 0.95rem;">Nivel:</strong>
+                    <span id="detalleNivelDificultad" style="margin-left: 8px; color: #4f46e5; font-weight: 600;">-</span>
+                </div>
+                <div>
+                    <strong style="color: #1f2937; font-size: 0.95rem;">Tiempo:</strong>
+                    <span id="detalleTiempoEstimado" style="margin-left: 8px; color: #059669; font-weight: 600;">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mano de Obra -->
+        <div class="desglose-grid">
+            <div class="desglose-item">
+                <span class="desglose-label">👷 Mano de Obra:</span>
+                <span class="desglose-value" id="detalleManoObraPostprocesado">$0</span>
+            </div>
+        </div>
+        
+        <!-- Lista de Insumos -->
+        <div style="margin-top: 20px;">
+            <h4 style="color: #1f2937; margin-bottom: 12px; font-size: 0.95rem; font-weight: 600;">
+                🧪 Insumos Utilizados:
+            </h4>
+            
+            <div id="listaInsumosDetallada" style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <p style="color: #9ca3af; font-style: italic; text-align: center;">
+                    No hay insumos seleccionados
+                </p>
+            </div>
+        </div>
+        
+        <!-- Total -->
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #d1d5db;">
+            <div class="desglose-item highlight-primary">
+                <span class="desglose-label"><strong>💰 Total Postprocesado:</strong></span>
+                <span class="desglose-value" id="detalleTotalPostprocesado">$0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
                 <div class="desglose-item" id="desgloseMarcaAguaItem" style="display: none;">
                     <span class="desglose-label">💧 Marca de Agua:</span>
                     <span class="desglose-value" id="desgloseCostoMarcaAgua">$0</span>
