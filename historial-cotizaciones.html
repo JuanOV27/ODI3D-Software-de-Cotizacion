@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Cotizaciones - Sistema de Gestión 3D</title>
+    <link rel="stylesheet" href="css/stylehistorial.css">
+</head>
+<body>
+    <div class="container">
+
+        <!-- ============================================
+             HEADER
+             ============================================ -->
+        <div class="header">
+            <a href="index.html" class="nav-back">← Volver al Menú</a>
+            <h1>📋 Historial de Cotizaciones</h1>
+            <p>Consulta, gestiona y exporta todas las cotizaciones realizadas</p>
+        </div>
+
+        <!-- ============================================
+             DASHBOARD DE ESTADÍSTICAS
+             ============================================ -->
+        <div class="dashboard">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Total de Cotizaciones</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statValorTotal">$0</div>
+                    <div class="stat-label">Valor Total Cotizado</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statReciente">—</div>
+                    <div class="stat-label">Última Cotización</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statPromedio">$0</div>
+                    <div class="stat-label">Precio Promedio</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             BOTONES DE ACCIÓN
+             ============================================ -->
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="exportarTodoCSV()">
+                📤 Exportar CSV
+            </button>
+            <button class="btn btn-outline" onclick="cargarCotizaciones()">
+                🔄 Actualizar Lista
+            </button>
+        </div>
+
+        <!-- ============================================
+             FILTROS Y BÚSQUEDA
+             ============================================ -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="filtroBusqueda">🔍 Buscar pieza</label>
+                <input type="text" id="filtroBusqueda" placeholder="Nombre de la pieza..."
+                       oninput="aplicarFiltros()">
+            </div>
+            <div class="filter-group">
+                <label for="filtroDesde">📅 Desde</label>
+                <input type="date" id="filtroDesde" onchange="aplicarFiltros()">
+            </div>
+            <div class="filter-group">
+                <label for="filtroHasta">📅 Hasta</label>
+                <input type="date" id="filtroHasta" onchange="aplicarFiltros()">
+            </div>
+            <div class="filter-group">
+                <label for="filtroPrecioMin">💵 Precio mínimo</label>
+                <input type="number" id="filtroPrecioMin" placeholder="0" min="0"
+                       oninput="aplicarFiltros()">
+            </div>
+            <div class="filter-group">
+                <label for="filtroPrecioMax">💵 Precio máximo</label>
+                <input type="number" id="filtroPrecioMax" placeholder="Sin límite" min="0"
+                       oninput="aplicarFiltros()">
+            </div>
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-outline" onclick="limpiarFiltros()" style="padding:10px 20px;">
+                    ✕ Limpiar filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             TABLA DEL HISTORIAL
+             ============================================ -->
+        <div class="table-section">
+            <div class="section-title">📋 Cotizaciones registradas</div>
+            <div class="table-responsive">
+                <table id="tablaHistorial">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Pieza</th>
+                            <th>Fecha</th>
+                            <th>Cantidad</th>
+                            <th>Precio Final</th>
+                            <th>P. Minorista</th>
+                            <th>P. Mayorista</th>
+                            <th>Postprocesado</th>
+                            <th>Delivery</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaHistorial">
+                        <tr>
+                            <td colspan="10" class="estado-vacio">
+                                <span class="estado-vacio-icono">⏳</span>
+                                Cargando cotizaciones...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- fin .container -->
+
+    <!-- ============================================
+         MODAL: DETALLE DE COTIZACIÓN
+         ============================================ -->
+    <div id="modalDetalle" class="modal" style="display:none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>👁 Detalle de Cotización</h2>
+                <button class="modal-close" onclick="cerrarModalDetalle()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="contenidoDetalle"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModalDetalle()">Cerrar</button>
+                <button class="btn btn-primary" onclick="duplicarDesdeDetalle()">📋 Duplicar</button>
+                <button class="btn" style="background:#f59e0b;color:white;" onclick="facturaDesdeDetalle()">🧾 Generar Factura</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL: CONFIRMAR ELIMINACIÓN
+         ============================================ -->
+    <div id="modalEliminar" class="modal" style="display:none;">
+        <div class="modal-content modal-eliminar-content">
+            <div class="modal-header">
+                <h2>🗑 Confirmar Eliminación</h2>
+                <button class="modal-close" onclick="cerrarModalEliminar()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="eliminar-icono">⚠️</div>
+                <p class="eliminar-texto">
+                    ¿Estás seguro de que deseas eliminar la cotización<br>
+                    <span class="eliminar-nombre" id="eliminarNombre"></span>?<br><br>
+                    Esta acción <strong>no se puede deshacer</strong>.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModalEliminar()">Cancelar</button>
+                <button class="btn btn-danger" id="btnConfirmarEliminar" onclick="ejecutarEliminar()">
+                    🗑 Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL: FACTURA
+         ============================================ -->
+    <div id="modalFactura" class="modal" style="display:none;">
+        <div class="modal-content modal-factura-size">
+            <div class="modal-header">
+                <h2>🧾 Generar Factura / Cotización</h2>
+                <button class="modal-close" onclick="cerrarModalFactura()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="contenidoFactura"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModalFactura()">Cancelar</button>
+                <button class="btn btn-primary" onclick="imprimirFactura()">🖨 Imprimir / PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         CONTENEDOR DE NOTIFICACIONES
+         ============================================ -->
+    <div id="notificaciones" class="notificaciones-container"></div>
+
+    <!-- ============================================
+         SCRIPTS
+         ============================================ -->
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/historial-cotizaciones.js"></script>
+</body>
+</html>

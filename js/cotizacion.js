@@ -38,8 +38,130 @@ function validarSeleccionMaquina() {
     return true;
 }
 
+// ============================================
+// HELPER: asignar valor a un input por ID de forma segura
+// ============================================
+function setVal(id, value) {
+    const el = document.getElementById(id);
+    if (el && value !== null && value !== undefined) {
+        el.value = value;
+    }
+}
+
+// ============================================
+// CARGAR COTIZACIÓN PARA DUPLICAR (desde URL ?duplicar=ID)
+// ============================================
+async function cargarCotizacionParaDuplicar(id) {
+    try {
+        mostrarNotificacionSimple('Cargando cotización para duplicar...', 'info');
+
+        const baseURL = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+        const resp = await fetch(baseURL + '/api_cotizaciones.php?action=get&id=' + encodeURIComponent(id));
+        const texto = await resp.text();
+
+        let datos;
+        try {
+            datos = JSON.parse(texto);
+        } catch (e) {
+            throw new Error('Respuesta inválida del servidor');
+        }
+
+        if (!datos.success || !datos.data) {
+            throw new Error(datos.message || 'Cotización no encontrada');
+        }
+
+        const c = datos.data;
+
+        // Datos de la pieza
+        setVal('nombrePieza',    (c.nombre_pieza || '') + ' (copia)');
+        setVal('pesoPieza',       c.peso_pieza);
+        setVal('tiempoImpresion', c.tiempo_impresion);
+
+        // Costos de insumos y diseño
+        setVal('costoCarrete',    c.costo_carrete);
+        setVal('pesoCarrete',     c.peso_carrete);
+        setVal('horasDiseno',     c.horas_diseno);
+        setVal('costoHoraDiseno', c.costo_hora_diseno);
+
+        // Factores de cálculo
+        setVal('factorSeguridad',  c.factor_seguridad);
+        setVal('usoElectricidad',  c.uso_electricidad);
+        setVal('gif',              c.gif);
+        setVal('aiu',              c.aiu);
+
+        // Márgenes y cantidades
+        setVal('margenMinorista', c.margen_minorista);
+        setVal('margenMayorista', c.margen_mayorista);
+        setVal('cantidadPiezas',  c.cantidad_piezas);
+        setVal('piezasPorLote',   c.piezas_por_lote);
+
+        // Marca de agua
+        const chkMarcaAgua = document.getElementById('incluirMarcaAgua');
+        if (chkMarcaAgua) {
+            chkMarcaAgua.checked = !!parseInt(c.incluir_marca_agua);
+            chkMarcaAgua.dispatchEvent(new Event('change'));
+        }
+        setVal('porcentajeMarcaAgua', c.porcentaje_marca_agua);
+
+        // Postprocesado
+        if (parseInt(c.incluir_postprocesado)) {
+            const chkPost = document.getElementById('activarPostprocesado')
+                || document.querySelector('[id*="postprocesado" i][type="checkbox"]');
+            if (chkPost) {
+                chkPost.checked = true;
+                chkPost.dispatchEvent(new Event('change'));
+            }
+            setVal('costoManoObraPostprocesado', c.costo_mano_obra_postprocesado);
+        }
+
+        // Paquetería
+        if (parseInt(c.incluir_paqueteria)) {
+            const chkPaq = document.getElementById('activarPaqueteria')
+                || document.querySelector('[id*="paqueteria" i][type="checkbox"]');
+            if (chkPaq) {
+                chkPaq.checked = true;
+                chkPaq.dispatchEvent(new Event('change'));
+            }
+            setVal('unidadesPorPaquete', c.unidades_por_paquete);
+        }
+
+        // Delivery
+        if (parseInt(c.requiere_delivery)) {
+            const chkDel = document.getElementById('activarDelivery')
+                || document.querySelector('[id*="delivery" i][type="checkbox"]');
+            if (chkDel) {
+                chkDel.checked = true;
+                chkDel.dispatchEvent(new Event('change'));
+            }
+            setVal('costoDelivery', c.costo_delivery);
+        }
+
+        // Indicar visualmente que es una duplicación
+        const headerH1 = document.querySelector('.header h1');
+        if (headerH1) {
+            headerH1.textContent = '📋 Duplicando — ' + (c.nombre_pieza || 'cotización');
+        }
+
+        // Limpiar URL para evitar re-carga al refrescar
+        window.history.replaceState({}, '', 'cotizacion.html');
+
+        mostrarNotificacionSimple('Cotización cargada. Revisa los datos y pulsa Calcular.', 'success');
+
+    } catch (error) {
+        console.error('Error al duplicar cotización:', error);
+        mostrarNotificacionSimple('Error al cargar la cotización: ' + error.message, 'error');
+    }
+}
+
 // Inicializar el módulo cuando se cargue la página
     document.addEventListener('DOMContentLoaded', function() {
+        // Detectar modo duplicar desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const duplicarId = urlParams.get('duplicar');
+        if (duplicarId) {
+            cargarCotizacionParaDuplicar(duplicarId);
+        }
+
         inicializarModuloPostprocesado();
         renderizarSelectorInsumos();
         
@@ -148,20 +270,20 @@ const datosPostprocesado = obtenerDatosPostprocesado();
     };
  
 
-    console.log('ðŸ“ Datos capturados:', datos);
+    console.log('✓ Datos capturados:', datos);
     
     // Validar que GestionCotizaciones existe
     if (typeof GestionCotizaciones === 'undefined') {
-        console.error('âŒ GestionCotizaciones no estÃ¡ definido. AsegÃºrate de cargar main.js primero.');
-        alert('Error: El sistema de cotizaciones no estÃ¡ cargado correctamente. Por favor, recarga la pÃ¡gina.');
+        console.error('✖ GestionCotizaciones no está definido. Asegúrate de cargar main.js primero.');
+        alert('Error: El sistema de cotizaciones no está cargado correctamente. Por favor, recarga la página.');
         return;
     }
     
     try {
-        // Crear cotizaciÃ³n usando el sistema central (ahora es async)
+        // Crear cotización usando el sistema central (ahora es async)
         const cotizacion = await GestionCotizaciones.crearCotizacion(datos);
         
-        // Los cÃ¡lculos vienen en diferentes formatos segÃºn la BD
+        // Los cálculos vienen en diferentes formatos según la BD
         const calculos = {
             costoFabricacion: cotizacion.costo_fabricacion || 0,
             costoEnergia: cotizacion.costo_energia || 0,
@@ -176,14 +298,13 @@ const datosPostprocesado = obtenerDatosPostprocesado();
             numeroLotes: cotizacion.numero_lotes || 1,
             costoTotalPedido: cotizacion.costo_total_pedido || 0,
             tiempoTotalHoras: cotizacion.tiempo_total_horas || 0,
-            filamentoTotalGramos: cotizacion.filamento_total_gramos || 0,
-            
+            filamentoTotalGramos: cotizacion.filamento_total_gramos || 0,      
             costoManoObraPostprocesado: cotizacion.costo_mano_obra_postprocesado || 0,
             costoInsumosPostprocesado: cotizacion.costo_insumos_postprocesado || 0,
             costoTotalPostprocesado: cotizacion.costo_total_postprocesado || 0
         };
         
-        console.log('âœ… CÃ¡lculos realizados:', calculos);
+        console.log('Calculos realizados:', calculos);
         
         // Actualizar interfaz - Solo elementos que existen
         actualizarElemento('costoFabricacion', calculos.costoFabricacion);
@@ -289,12 +410,12 @@ if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado
             verificarMaterialDespuesDeCalcular(gramosNecesarios);
         }
         
-        // Mostrar notificaciÃ³n de Ã©xito
+        // Mostrar notificación de éxito
         if (typeof Utilidades !== 'undefined' && Utilidades.mostrarNotificacion) {
-            Utilidades.mostrarNotificacion('âœ… CÃ¡lculo realizado y guardado en MySQL', 'success');
+            Utilidades.mostrarNotificacion('Calculo realizado y guardado en MySQL', 'success');
         } else {
-            console.log('âœ… CÃ¡lculo completado exitosamente');
-            mostrarNotificacionSimple('CÃ¡lculo realizado exitosamente', 'success');
+            console.log('✓ Cálculo completado exitosamente');
+            mostrarNotificacionSimple('Cálculo realizado exitosamente', 'success');
         }
 
         // ============================================
@@ -315,8 +436,8 @@ if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado
         }
         
     } catch (error) {
-        console.error('âŒ Error al calcular:', error);
-        alert('Error al realizar el cÃ¡lculo: ' + error.message);
+        console.error('✖ Error al calcular:', error);
+        alert('Error al realizar el cálculo: ' + error.message);
     }
 }
 
@@ -441,18 +562,18 @@ function actualizarElemento(id, valor) {
             // Fallback si Utilidades no estÃ¡ disponible
             elemento.textContent = '$' + Math.round(valor).toLocaleString('es-CO');
         }
-        console.log(`âœ” Actualizado ${id}: ${elemento.textContent}`);
+        console.log(`✓ Actualizado ${id}: ${elemento.textContent}`);
     } else {
-        console.warn(`âš ï¸ Elemento con ID '${id}' no encontrado en el DOM`);
+        console.warn(`⚠️ Elemento con ID '${id}' no encontrado en el DOM`);
     }
 }
 
 // ============================================
-// NOTIFICACIÃ“N SIMPLE (FALLBACK)
+// NOTIFICACIÓN SIMPLE (FALLBACK)
 // ============================================
 
 function mostrarNotificacionSimple(mensaje, tipo = 'success') {
-    // Crear elemento de notificaciÃ³n si no existe el sistema de Utilidades
+    // Crear elemento de notificación si no existe el sistema de Utilidades
     const notif = document.createElement('div');
     notif.style.cssText = `
         position: fixed;
@@ -576,7 +697,7 @@ async function cargarHistorial() {
     const container = document.getElementById('historialCotizaciones');
     if (!container) return;
     
-    container.innerHTML = '<p style="text-align: center; padding: 20px;">â³ Cargando historial...</p>';
+    container.innerHTML = '<p style="text-align: center; padding: 20px;">⏳ Cargando historial...</p>';
     
     try {
         const cotizaciones = await GestionCotizaciones.obtenerHistorial();
@@ -636,7 +757,7 @@ async function cargarHistorial() {
 // ============================================
 
 async function eliminarCotizacion(id) {
-    if (!confirm('Â¿EstÃ¡s seguro de que quieres eliminar esta cotizaciÃ³n?')) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta cotización?')) {
         return;
     }
     
@@ -681,19 +802,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (incluirMarcaAgua) {
         incluirMarcaAgua.addEventListener('change', toggleMarcaAgua);
         toggleMarcaAgua(); // Inicializar estado
-        console.log('âœ“ Event listener para marca de agua configurado');
+        console.log('✓ Event listener para marca de agua configurado');
     }
     
     const cantidadPiezas = document.getElementById('cantidadPiezas');
     if (cantidadPiezas) {
         cantidadPiezas.addEventListener('change', validarLote);
-        console.log('âœ“ Event listener para cantidad de piezas configurado');
+        console.log('✓ Event listener para cantidad de piezas configurado');
     }
     
     const piezasPorLote = document.getElementById('piezasPorLote');
     if (piezasPorLote) {
         piezasPorLote.addEventListener('change', validarLote);
-        console.log('âœ“ Event listener para piezas por lote configurado');
+        console.log('✓ Event listener para piezas por lote configurado');
     }
     
     // Cargar historial si existe el contenedor
@@ -701,7 +822,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         await cargarHistorial();
     }
     
-    console.log('âœ… MÃ³dulo de cotizaciÃ³n inicializado correctamente (MySQL)');
+    console.log('✓ Módulo de cotización inicializado correctamente (MySQL)');
 });
 
 // ============================================

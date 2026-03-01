@@ -124,7 +124,7 @@ body {
 }
 
 .resizer::before {
-    content: 'â‹®';
+    content: '<>';
     position: absolute;
     color: #9ca3af;
     font-size: 1.5rem;

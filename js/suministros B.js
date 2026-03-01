@@ -285,7 +285,7 @@ async function guardarSuministro(event) {
     };
     
     try {
-        const action = EstadoSuministros.suministroEditando ? 'actualizar' : 'crear';
+        const action = EstadoSuministros.suministroEditando ? 'update' : 'create';
         const response = await fetch(`${API_CONFIG.baseURL}/api_suministros.php?action=${action}`, {
             method: 'POST',
             headers: {
@@ -346,7 +346,7 @@ async function eliminarSuministro(id) {
     }
     
     try {
-        const response = await fetch(`${API_CONFIG.baseURL}/api_suministros.php?action=eliminar`, {
+        const response = await fetch(`${API_CONFIG.baseURL}/api_suministros.php?action=delete`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -1,0 +1,960 @@
+/* ============================================
+   HISTORIAL DE COTIZACIONES - ESTILOS
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 30px 40px;
+    position: relative;
+}
+
+.nav-back {
+    display: inline-block;
+    color: white;
+    text-decoration: none;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.nav-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-5px);
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header p {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+/* ============================================
+   DASHBOARD DE ESTADÍSTICAS
+   ============================================ */
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 30px 40px;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1f2937;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* ============================================
+   BOTONES DE ACCIÓN
+   ============================================ */
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    padding: 30px 40px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-secondary {
+    background: #10b981;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-outline {
+    background: white;
+    color: #6366f1;
+    border: 2px solid #6366f1;
+}
+
+.btn-outline:hover {
+    background: #6366f1;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   FILTROS Y BÚSQUEDA
+   ============================================ */
+
+.filters-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 30px 40px;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.filter-group select,
+.filter-group input[type="text"],
+.filter-group input[type="date"],
+.filter-group input[type="number"] {
+    padding: 10px 15px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    width: 100%;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filters-actions {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    padding-bottom: 2px;
+}
+
+/* ============================================
+   TABLA DEL HISTORIAL
+   ============================================ */
+
+.table-section {
+    padding: 30px 40px;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    color: #1f2937;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+#tablaHistorial {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+#tablaHistorial thead {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+#tablaHistorial th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+#tablaHistorial tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+#tablaHistorial tbody tr:hover {
+    background: #f9fafb;
+}
+
+#tablaHistorial td {
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.pieza-nombre {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+
+.badge-si {
+    background: #d1fae5;
+    color: #065f46;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-no {
+    background: #f3f4f6;
+    color: #9ca3af;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* ============================================
+   BOTONES DE ACCIONES EN CADA FILA
+   ============================================ */
+
+.acciones-fila {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    min-width: 200px;
+}
+
+.btn-accion {
+    padding: 5px 9px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.btn-accion-ver      { background: #3b82f6; color: white; }
+.btn-accion-duplicar { background: #8b5cf6; color: white; }
+.btn-accion-eliminar { background: #ef4444; color: white; }
+.btn-accion-csv      { background: #10b981; color: white; }
+.btn-accion-factura  { background: #f59e0b; color: white; }
+
+.btn-accion:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.12);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* ============================================
+   MODAL BASE
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-large {
+    max-width: 1000px;
+}
+
+.modal-factura-size {
+    max-width: 920px;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.4rem;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    background: #f9fafb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 2px solid #e5e7eb;
+    border-radius: 0 0 16px 16px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   MODAL DETALLE - DOS COLUMNAS
+   ============================================ */
+
+.detalle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.detalle-seccion {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.detalle-seccion h4 {
+    color: #4f46e5;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 700;
+}
+
+.detalle-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.88rem;
+    gap: 10px;
+}
+
+.detalle-fila:last-child {
+    border-bottom: none;
+}
+
+.detalle-label {
+    color: #6b7280;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.detalle-valor {
+    color: #1f2937;
+    font-weight: 600;
+    text-align: right;
+}
+
+.detalle-valor-destacado {
+    color: #10b981;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.detalle-valor-minorista {
+    color: #3b82f6;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.detalle-valor-mayorista {
+    color: #8b5cf6;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+/* ============================================
+   MODAL ELIMINAR
+   ============================================ */
+
+.modal-eliminar-content {
+    max-width: 480px;
+}
+
+.eliminar-icono {
+    font-size: 4rem;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.eliminar-texto {
+    text-align: center;
+    color: #374151;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.eliminar-nombre {
+    font-weight: 700;
+    color: #ef4444;
+}
+
+/* ============================================
+   MODAL FACTURA
+   ============================================ */
+
+#contenidoFactura {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1f2937;
+}
+
+.factura-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid #4f46e5;
+    gap: 20px;
+}
+
+.empresa-info {
+    flex: 1;
+}
+
+.empresa-logo {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.empresa-nombre-input {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1f2937;
+    border: 1px dashed #d1d5db;
+    border-radius: 4px;
+    padding: 4px 8px;
+    width: 100%;
+    margin-bottom: 5px;
+    font-family: inherit;
+    background: transparent;
+}
+
+.empresa-dato-input {
+    font-size: 0.88rem;
+    color: #6b7280;
+    border: 1px dashed #d1d5db;
+    border-radius: 4px;
+    padding: 3px 6px;
+    width: 100%;
+    margin-bottom: 4px;
+    font-family: inherit;
+    background: transparent;
+}
+
+.factura-meta {
+    text-align: right;
+    min-width: 200px;
+}
+
+.factura-numero {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #4f46e5;
+    margin-bottom: 6px;
+}
+
+.factura-meta-dato {
+    font-size: 0.88rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.factura-estado-badge {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.cliente-section {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 22px;
+}
+
+.cliente-section h4 {
+    color: #4f46e5;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+
+.cliente-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+}
+
+.cliente-fila label {
+    color: #6b7280;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.cliente-input {
+    flex: 1;
+    border: 1px dashed #d1d5db;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    background: transparent;
+}
+
+.factura-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.factura-tabla thead {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+}
+
+.factura-tabla th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.factura-tabla td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.88rem;
+}
+
+.factura-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.factura-tabla tbody tr:hover {
+    background: #f9fafb;
+}
+
+.factura-totales {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 22px;
+}
+
+.totales-box {
+    min-width: 320px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.total-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.88rem;
+}
+
+.total-fila:last-child {
+    border-bottom: none;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.total-label { color: #6b7280; }
+.total-fila:last-child .total-label { color: white; }
+
+.factura-notas {
+    margin-bottom: 20px;
+}
+
+.factura-notas h4 {
+    color: #4f46e5;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.factura-notas textarea {
+    width: 100%;
+    min-height: 70px;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.85rem;
+    color: #6b7280;
+    resize: vertical;
+    font-family: inherit;
+    background: transparent;
+}
+
+.factura-footer-text {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 2px solid #e5e7eb;
+    color: #9ca3af;
+    font-size: 0.88rem;
+    font-style: italic;
+}
+
+/* ============================================
+   ESTADO VACÍO
+   ============================================ */
+
+.estado-vacio {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+    font-size: 1rem;
+}
+
+.estado-vacio-icono {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 15px;
+}
+
+/* ============================================
+   NOTIFICACIONES
+   ============================================ */
+
+.notificaciones-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notificacion {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    animation: slideInRight 0.3s ease;
+    font-size: 0.9rem;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(400px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+.notificacion-exito   { border-left: 4px solid #10b981; }
+.notificacion-error   { border-left: 4px solid #ef4444; }
+.notificacion-warning { border-left: 4px solid #f59e0b; }
+.notificacion-info    { border-left: 4px solid #3b82f6; }
+
+/* ============================================
+   ESTILOS DE IMPRESIÓN
+   ============================================ */
+
+@media print {
+    body > * {
+        display: none !important;
+    }
+
+    #modalFactura {
+        display: block !important;
+        position: static !important;
+        background: none !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    #modalFactura .modal-content {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        animation: none !important;
+    }
+
+    #modalFactura .modal-header,
+    #modalFactura .modal-footer {
+        display: none !important;
+    }
+
+    #modalFactura .modal-body {
+        padding: 10px !important;
+    }
+
+    .empresa-nombre-input,
+    .empresa-dato-input,
+    .cliente-input {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    .factura-notas textarea {
+        border: none !important;
+        background: transparent !important;
+        resize: none !important;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    body { padding: 10px; }
+
+    .header {
+        padding: 20px;
+    }
+
+    .header h1 {
+        font-size: 1.8rem;
+    }
+
+    .dashboard {
+        padding: 20px;
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        padding: 20px;
+        flex-direction: column;
+    }
+
+    .filters-section {
+        padding: 20px;
+        grid-template-columns: 1fr;
+    }
+
+    .table-section {
+        padding: 20px;
+    }
+
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .detalle-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .acciones-fila {
+        min-width: unset;
+    }
+
+    .factura-header {
+        flex-direction: column;
+    }
+
+    .factura-meta {
+        text-align: left;
+        min-width: unset;
+    }
+
+    .factura-totales {
+        justify-content: stretch;
+    }
+
+    .totales-box {
+        min-width: unset;
+        width: 100%;
+    }
+}
