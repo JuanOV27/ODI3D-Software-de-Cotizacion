@@ -1,0 +1,20 @@
+# Logs
+api/logs/*.log
+api/logs/*.txt
+
+# Uploads de usuarios
+uploads/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# XAMPP / PHP
+*.bak
