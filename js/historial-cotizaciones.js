@@ -42,8 +42,10 @@ async function cargarCotizaciones() {
         '<tr><td colspan="10" class="estado-vacio"><span class="estado-vacio-icono">⏳</span>Cargando cotizaciones...</td></tr>';
 
     try {
-        const url = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api')
-            + '/api_cotizaciones.php?action=list';
+        const _apiBase = typeof API_CONFIG !== 'undefined'
+            ? API_CONFIG.baseURL
+            : window.location.pathname.replace(/\/[^\/]+$/, '') + '/api';
+        const url = _apiBase + '/api_cotizaciones.php?action=list';
 
         const respuesta = await fetch(url);
         const texto = await respuesta.text();
@@ -342,8 +344,10 @@ async function ejecutarEliminar() {
     if (!id) return;
 
     try {
-        const url = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api')
-            + '/api_cotizaciones.php?action=delete&id=' + encodeURIComponent(id);
+        const _apiBase = typeof API_CONFIG !== 'undefined'
+            ? API_CONFIG.baseURL
+            : window.location.pathname.replace(/\/[^\/]+$/, '') + '/api';
+        const url = _apiBase + '/api_cotizaciones.php?action=delete&id=' + encodeURIComponent(id);
 
         const respuesta = await fetch(url);
         const texto     = await respuesta.text();

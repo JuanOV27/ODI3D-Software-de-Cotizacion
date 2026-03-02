@@ -233,7 +233,8 @@ async function guardarProyecto(event) {
         btnSubmit.disabled = true;
         
         // Enviar al backend
-        const response = await fetch('/gestion3d/api/api_proyectos.php', {
+        const _apiBase = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+        const response = await fetch(_apiBase + '/api_proyectos.php', {
             method: 'POST',
             body: formData
         });

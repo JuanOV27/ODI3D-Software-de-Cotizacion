@@ -136,3 +136,4 @@ await apiClient.post('api_cotizaciones.php', { action: 'create' }, bodyData);
 - Los archivos se sirven desde `C:\xampp\htdocs\gestion3d\`.
 - No hay sistema de autenticación — es un sistema de uso interno/local.
 - Los uploads de imágenes van a `uploads/pagos/`.
+- Siempre responde en español sin importar que te escriban en ingles

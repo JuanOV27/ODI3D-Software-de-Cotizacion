@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function cargarSuministrosPaqueteria() {
     try {
-        const response = await fetch('/gestion3d/api/api_suministros.php?action=listar');
+        const _apiBase = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+        const response = await fetch(_apiBase + '/api_suministros.php?action=listar');
         const data = await response.json();
         
         if (data.success) {

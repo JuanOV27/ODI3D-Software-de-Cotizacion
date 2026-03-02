@@ -2,9 +2,19 @@
 // CONFIG.JS - Cliente API para Sistema de Gestión 3D
 // ============================================
 
+// Detectar la ruta base del proyecto automáticamente a partir del src de este script.
+// Esto permite que el sistema funcione sin importar el nombre de la carpeta o
+// si el proyecto se mueve a otra ubicación dentro de htdocs.
+const _configScript = document.currentScript;
+const _projectPath = _configScript
+    ? _configScript.src
+        .replace(window.location.origin, '')   // Quita el origen: http://localhost
+        .replace(/\/js\/config\.js(\?.*)?$/, '') // Quita /js/config.js del final
+    : '/gestion3d'; // Fallback si currentScript no está disponible
+
 // Configuración de la API
 const API_CONFIG = {
-    baseURL: '/gestion3d/api',
+    baseURL: _projectPath + '/api',
     endpoints: {
         perfiles: 'api_perfiles.php',
         inventario: 'api_inventario.php',

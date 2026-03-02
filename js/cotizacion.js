@@ -56,7 +56,9 @@ async function cargarCotizacionParaDuplicar(id) {
     try {
         mostrarNotificacionSimple('Cargando cotización para duplicar...', 'info');
 
-        const baseURL = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+        const baseURL = typeof API_CONFIG !== 'undefined'
+            ? API_CONFIG.baseURL
+            : window.location.pathname.replace(/\/[^\/]+$/, '') + '/api';
         const resp = await fetch(baseURL + '/api_cotizaciones.php?action=get&id=' + encodeURIComponent(id));
         const texto = await resp.text();
 
@@ -287,7 +289,9 @@ const datosPostprocesado = obtenerDatosPostprocesado();
 
     try {
         // Calcular sin guardar en la BD (acción 'calcular')
-        const baseURL = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+        const baseURL = typeof API_CONFIG !== 'undefined'
+            ? API_CONFIG.baseURL
+            : window.location.pathname.replace(/\/[^\/]+$/, '') + '/api';
         const resp = await fetch(baseURL + '/api_cotizaciones.php?action=calcular', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
