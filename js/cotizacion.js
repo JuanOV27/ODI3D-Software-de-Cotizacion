@@ -4,6 +4,7 @@
 
 // Variables locales
 let ultimoCalculo = null;
+let pendingFormData = null; // datos del último cálculo, listos para guardar cuando el usuario quiera
 
 // ============================================
 // FUNCIÃ“N PRINCIPAL - DISPONIBLE GLOBALMENTE
@@ -262,11 +263,13 @@ const datosPostprocesado = obtenerDatosPostprocesado();
         porcentaje_recargo_delivery: datosDelivery.porcentaje_recargo_delivery,
         costo_delivery_total: datosDelivery.costo_delivery_total,
 
-        // NUEVO: Datos de postprocesado
+        // Datos de postprocesado
         incluir_postprocesado: datosPostprocesado.incluir_postprocesado,
         nivel_dificultad_postprocesado: datosPostprocesado.nivel_dificultad,
         costo_mano_obra_postprocesado: datosPostprocesado.costo_mano_obra,
-        insumos_postprocesado: datosPostprocesado.insumos
+        insumos_postprocesado: datosPostprocesado.insumos,
+        // Alcance del postprocesado: 'por_pieza' o 'todo_el_lote'
+        alcance_postprocesado: document.querySelector('input[name="alcancePostprocesado"]:checked')?.value || 'por_pieza'
     };
  
 
@@ -279,9 +282,22 @@ const datosPostprocesado = obtenerDatosPostprocesado();
         return;
     }
     
+    // Guardar los datos del formulario para usar al guardar manualmente
+    pendingFormData = { ...datos };
+
     try {
-        // Crear cotización usando el sistema central (ahora es async)
-        const cotizacion = await GestionCotizaciones.crearCotizacion(datos);
+        // Calcular sin guardar en la BD (acción 'calcular')
+        const baseURL = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+        const resp = await fetch(baseURL + '/api_cotizaciones.php?action=calcular', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+        const texto = await resp.text();
+        let parsed;
+        try { parsed = JSON.parse(texto); } catch(e) { throw new Error('Respuesta inválida del servidor'); }
+        if (!parsed.success) throw new Error(parsed.error || 'Error al calcular');
+        const cotizacion = parsed.data;
         
         // Los cálculos vienen en diferentes formatos según la BD
         const calculos = {
@@ -411,28 +427,25 @@ if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado
         }
         
         // Mostrar notificación de éxito
-        if (typeof Utilidades !== 'undefined' && Utilidades.mostrarNotificacion) {
-            Utilidades.mostrarNotificacion('Calculo realizado y guardado en MySQL', 'success');
-        } else {
-            console.log('✓ Cálculo completado exitosamente');
-            mostrarNotificacionSimple('Cálculo realizado exitosamente', 'success');
-        }
+        mostrarNotificacionSimple('Cálculo completado. Revisa los resultados y guarda si todo está bien.', 'success');
 
-        // ============================================
-        // NUEVO: Actualizar datos para acciones de WhatsApp y Proyecto
-        // ============================================
-        if (typeof actualizarDatosParaAcciones === 'function') {
-            actualizarDatosParaAcciones({
-                id: cotizacion.id || ultimoCalculo.id,
-                nombre_pieza: datos.nombrePieza,
-                cantidad_piezas: datos.cantidadPiezas,
-                precio_minorista: calculos.precioMinorista,
-                precio_mayorista: calculos.precioMayorista,
-                costo_delivery_total: datos.costo_delivery_total || 0,
-                tipo_delivery: datos.tipo_delivery || '',
-                requiere_delivery: datos.requiere_delivery || false
-            });
-            console.log('✅ Datos actualizados para WhatsApp y Proyecto');
+        // Mostrar panel de guardado manual
+        const panelGuardar = document.getElementById('panelGuardarCotizacion');
+        if (panelGuardar) {
+            panelGuardar.style.display = 'block';
+            // Restaurar el botón si había sido reemplazado por el mensaje de confirmación
+            panelGuardar.innerHTML = `
+                <h3 style="color: #15803d; margin: 0 0 8px 0; font-size: 1rem; font-weight: 700;">💾 Guardar esta Cotización</h3>
+                <p id="textoGuardarCotizacion" style="font-size: 0.85rem; color: #166534; margin: 0 0 14px 0;">
+                    Para guardar en el historial, el <strong>nombre de la pieza</strong> (Paso 1) es obligatorio.
+                </p>
+                <button onclick="guardarCotizacion()" id="btnGuardarCotizacion"
+                        style="width: 100%; padding: 13px; background: linear-gradient(135deg, #16a34a, #15803d); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer;"
+                        onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                    💾 Guardar en Historial
+                </button>
+            `;
+            panelGuardar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
     } catch (error) {
@@ -645,6 +658,93 @@ function limpiarFormulario() {
     ultimoCalculo = null;
     
     console.log('ðŸ§¹ Formulario limpiado');
+}
+
+// ============================================
+// GUARDAR COTIZACIÓN MANUALMENTE
+// ============================================
+
+async function guardarCotizacion() {
+    const nombreInput = document.getElementById('nombrePieza');
+    const nombre = nombreInput ? nombreInput.value.trim() : '';
+
+    if (!nombre) {
+        mostrarNotificacionSimple('Debes escribir un nombre para la pieza antes de guardar', 'error');
+        if (nombreInput) {
+            nombreInput.style.borderColor = '#ef4444';
+            nombreInput.focus();
+            nombreInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+    if (nombreInput) nombreInput.style.borderColor = '';
+
+    if (!pendingFormData) {
+        mostrarNotificacionSimple('Primero debes calcular la cotización', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('btnGuardarCotizacion');
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+    try {
+        const cotizacion = await GestionCotizaciones.crearCotizacion(pendingFormData);
+
+        // Activar botones de WhatsApp / Proyecto con el ID guardado
+        if (typeof actualizarDatosParaAcciones === 'function') {
+            actualizarDatosParaAcciones({
+                id: cotizacion.id,
+                nombre_pieza: pendingFormData.nombrePieza,
+                cantidad_piezas: pendingFormData.cantidadPiezas,
+                precio_minorista: cotizacion.precio_minorista,
+                precio_mayorista: cotizacion.precio_mayorista,
+                costo_delivery_total: pendingFormData.costo_delivery_total || 0,
+                tipo_delivery: pendingFormData.tipo_delivery || '',
+                requiere_delivery: pendingFormData.requiere_delivery || false
+            });
+        }
+
+        ultimoCalculo = cotizacion;
+        pendingFormData = null; // limpiar para no guardar dos veces
+
+        // Mostrar confirmación en el panel
+        const panel = document.getElementById('panelGuardarCotizacion');
+        if (panel) {
+            panel.style.background = '#dcfce7';
+            panel.style.borderColor = '#15803d';
+            panel.innerHTML = `<p style="color: #15803d; font-weight: 700; text-align: center; margin: 0;">
+                ✅ ¡Cotización guardada correctamente en el historial!
+            </p>`;
+        }
+        mostrarNotificacionSimple('¡Cotización guardada exitosamente!', 'success');
+
+    } catch (error) {
+        console.error('Error al guardar:', error);
+        mostrarNotificacionSimple('Error al guardar: ' + error.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar en Historial'; }
+    }
+}
+
+// ============================================
+// SELECTOR MODO CANTIDAD (una / múltiples piezas)
+// ============================================
+
+function cambiarModoCantidad(modo) {
+    const campos = document.getElementById('camposCantidadMultiple');
+    const grupoAlcance = document.getElementById('grupoAlcancePostprocesado');
+
+    if (modo === 'multiples') {
+        if (campos) campos.style.display = 'block';
+        if (grupoAlcance) grupoAlcance.style.display = 'block';
+    } else {
+        if (campos) campos.style.display = 'none';
+        if (grupoAlcance) grupoAlcance.style.display = 'none';
+        // Restablecer a 1 pieza / 1 lote
+        const inpCantidad = document.getElementById('cantidadPiezas');
+        const inpLote     = document.getElementById('piezasPorLote');
+        if (inpCantidad) inpCantidad.value = 1;
+        if (inpLote)     inpLote.value = 1;
+    }
 }
 
 // ============================================

@@ -46,9 +46,139 @@ function sendError($message, $details = null) {
     exit;
 }
 
+// ============================================
+// HELPER: Realiza todos los cálculos de precio
+// ============================================
+function calcularPrecios($input, $db) {
+    $costoCarrete = floatval($input['costoCarrete'] ?? 0);
+    $pesoCarrete  = max(0.001, floatval($input['pesoCarrete'] ?? 1));
+
+    // Cargar costos desde el perfil si existe
+    if (!empty($input['perfilFilamentoId'])) {
+        $stmt = $db->prepare("SELECT costo, peso FROM perfiles_filamento WHERE id = ?");
+        $stmt->execute([$input['perfilFilamentoId']]);
+        $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($perfil) {
+            $costoCarrete = $perfil['costo'];
+            $pesoCarrete  = $perfil['peso'];
+        }
+    }
+
+    $pesoPieza      = floatval($input['pesoPieza'] ?? 0);
+    $tiempoImpresion = floatval($input['tiempoImpresion'] ?? 0);
+    $cantidadPiezas  = max(1, intval($input['cantidadPiezas'] ?? 1));
+    $piezasPorLote   = max(1, intval($input['piezasPorLote'] ?? 1));
+    $factorSeguridad = floatval($input['factorSeguridad'] ?? 1);
+    $horasDiseno     = floatval($input['horasDiseno'] ?? 0);
+    $costoHoraDiseno = floatval($input['costoHoraDiseno'] ?? 0);
+    $usoElectricidad = floatval($input['usoElectricidad'] ?? 0);
+    $gif             = floatval($input['gif'] ?? 0);
+    $aiu             = floatval($input['aiu'] ?? 0);
+    $margenMinorista = floatval($input['margenMinorista'] ?? 0);
+    $margenMayorista = floatval($input['margenMayorista'] ?? 0);
+    $incluirMarcaAgua    = intval($input['incluirMarcaAgua'] ?? 0);
+    $porcentajeMarcaAgua = floatval($input['porcentajeMarcaAgua'] ?? 0);
+
+    $tiempoHoras = $tiempoImpresion / 60;
+
+    // ── Costos POR PIEZA ──────────────────────────────────────────────────
+    // Filamento: costo por gramo × peso de la pieza
+    $costoUnitario   = $costoCarrete / ($pesoCarrete * 1000); // COP/g
+    $costoFabricacion = $factorSeguridad * $costoUnitario * $pesoPieza;
+
+    // Energía: el lote completo consume la misma energía; se reparte entre
+    // las piezas del lote.
+    $costoEnergia = ($factorSeguridad * $usoElectricidad * $tiempoHoras) / $piezasPorLote;
+
+    // Diseño: costo total dividido entre todas las piezas del pedido
+    $costoDiseno = ($costoHoraDiseno * $horasDiseno) / $cantidadPiezas;
+
+    // Depreciación: el lote usa la máquina durante tiempoHoras; se reparte
+    // entre las piezas del lote.
+    $depreciacionBatch = 0;
+    $maquinaId = $input['maquina_id'] ?? null;
+    if ($maquinaId) {
+        $stmtMaq = $db->prepare("SELECT depreciacion_por_hora FROM maquinas WHERE id = ? AND activa = 1");
+        $stmtMaq->execute([$maquinaId]);
+        $maquina = $stmtMaq->fetch(PDO::FETCH_ASSOC);
+        $depreciacionBatch = $maquina
+            ? $tiempoHoras * floatval($maquina['depreciacion_por_hora'])
+            : $tiempoHoras * 280;
+    } else {
+        // Genérico: depreciación basada en tiempo de uso
+        $depreciacionBatch = (1400000 * 0.9 / (3 * 12 * 210)) * $tiempoHoras;
+    }
+    $depreciacionMaquina = $depreciacionBatch / $piezasPorLote;
+
+    // ── Subtotal y gastos ─────────────────────────────────────────────────
+    $subtotal    = $costoFabricacion + $costoEnergia + $costoDiseno + $depreciacionMaquina;
+    $costoGIF    = $subtotal * ($gif / 100);
+    $costoAIU    = ($subtotal + $costoGIF) * ($aiu / 100);
+    $costoMarcaAgua = $incluirMarcaAgua
+        ? ($subtotal + $costoGIF + $costoAIU) * ($porcentajeMarcaAgua / 100)
+        : 0;
+
+    // ── Postprocesado ─────────────────────────────────────────────────────
+    $costosPost = calcularCostosPostprocesado(
+        $input['costo_mano_obra_postprocesado'] ?? 0,
+        $input['insumos_postprocesado'] ?? []
+    );
+    // alcance: 'por_pieza' → el costo ingresado es por cada pieza
+    //          'todo_el_lote' → el costo ingresado cubre todo el pedido
+    $alcance = $input['alcance_postprocesado'] ?? 'por_pieza';
+    $costoPostPorPieza = ($alcance === 'todo_el_lote' && $cantidadPiezas > 1)
+        ? $costosPost['costo_total'] / $cantidadPiezas
+        : $costosPost['costo_total'];
+
+    // ── Precio final por pieza ────────────────────────────────────────────
+    $precioFinal     = $subtotal + $costoGIF + $costoAIU + $costoMarcaAgua + $costoPostPorPieza;
+    $precioMinorista = $precioFinal * (1 + $margenMinorista / 100);
+    $precioMayorista = $precioFinal * (1 + $margenMayorista / 100);
+
+    // ── Totales del pedido ────────────────────────────────────────────────
+    $numeroLotes        = (int) ceil($cantidadPiezas / $piezasPorLote);
+    $costoTotalPedido   = $precioFinal * $cantidadPiezas;
+    $tiempoTotalMinutos = $numeroLotes * $tiempoImpresion;
+    $tiempoTotalHoras   = $tiempoTotalMinutos / 60;
+    $filamentoTotalGramos = $pesoPieza * $cantidadPiezas; // CORREGIDO: gramos totales reales
+
+    return [
+        'costo_fabricacion'            => round($costoFabricacion, 2),
+        'costo_energia'                => round($costoEnergia, 2),
+        'costo_diseno'                 => round($costoDiseno, 2),
+        'depreciacion_maquina'         => round($depreciacionMaquina, 2),
+        'subtotal'                     => round($subtotal, 2),
+        'costo_gif'                    => round($costoGIF, 2),
+        'costo_aiu'                    => round($costoAIU, 2),
+        'costo_marca_agua'             => round($costoMarcaAgua, 2),
+        'precio_final'                 => round($precioFinal, 2),
+        'precio_minorista'             => round($precioMinorista, 2),
+        'precio_mayorista'             => round($precioMayorista, 2),
+        'numero_lotes'                 => $numeroLotes,
+        'costo_por_lote'               => round($precioFinal * $piezasPorLote, 2),
+        'costo_total_pedido'           => round($costoTotalPedido, 2),
+        'tiempo_total_minutos'         => round($tiempoTotalMinutos, 2),
+        'tiempo_total_horas'           => round($tiempoTotalHoras, 2),
+        'filamento_total_gramos'       => round($filamentoTotalGramos, 2),
+        'costo_electrico_total'        => round($usoElectricidad * $tiempoTotalHoras, 2),
+        'costo_total_pedido_minorista' => round($costoTotalPedido * (1 + $margenMinorista / 100), 2),
+        'costo_total_pedido_mayorista' => round($costoTotalPedido * (1 + $margenMayorista / 100), 2),
+        'costo_mano_obra_postprocesado' => $costosPost['costo_mano_obra'],
+        'costo_insumos_postprocesado'   => $costosPost['costo_insumos'],
+        'costo_total_postprocesado'     => round($costoPostPorPieza, 2),
+        // Para el INSERT en calculos_cotizacion
+        '_costoCarrete'    => $costoCarrete,
+        '_pesoCarrete'     => $pesoCarrete,
+        '_cantidadPiezas'  => $cantidadPiezas,
+        '_piezasPorLote'   => $piezasPorLote,
+        '_margenMinorista' => $margenMinorista,
+        '_margenMayorista' => $margenMayorista,
+    ];
+}
+
 try {
     require_once 'config.php';
-    
+
     $db = Database::getInstance()->getConnection();
     $action = $_GET['action'] ?? $_POST['action'] ?? 'list';
     
@@ -184,97 +314,37 @@ $sqlCot = "INSERT INTO cotizaciones (
                     guardarInsumosPostprocesado($db, $id, $input['insumos_postprocesado']);
                     error_log("✅ Insumos de postprocesado guardados");
                 }
-                
-                // Variables
-                $pesoPieza = floatval($input['pesoPieza']);
-                $tiempoImpresion = floatval($input['tiempoImpresion']);
-                $cantidadPiezas = intval($input['cantidadPiezas'] ?? 1);
-                $piezasPorLote = intval($input['piezasPorLote'] ?? 1);
-                $factorSeguridad = floatval($input['factorSeguridad'] ?? 1);
-                $horasDiseno = floatval($input['horasDiseno'] ?? 0);
-                $costoHoraDiseno = floatval($input['costoHoraDiseno'] ?? 0);
-                $usoElectricidad = floatval($input['usoElectricidad'] ?? 0);
-                $gif = floatval($input['gif'] ?? 0);
-                $aiu = floatval($input['aiu'] ?? 0);
-                $margenMinorista = floatval($input['margenMinorista'] ?? 0);
-                $margenMayorista = floatval($input['margenMayorista'] ?? 0);
-                $incluirMarcaAgua = intval($input['incluirMarcaAgua'] ?? 0);
-                $porcentajeMarcaAgua = floatval($input['porcentajeMarcaAgua'] ?? 0);
-                
-                // Cálculos
-                $costoUnitario = $costoCarrete / ($pesoCarrete * 1000);
-                $costoFabricacion = $factorSeguridad * $costoUnitario * $pesoPieza;
-                
-                $tiempoHoras = $tiempoImpresion / 60;
-                $costoEnergia = $factorSeguridad * $usoElectricidad * $tiempoHoras;
-                
-                $costoDiseno = ($costoHoraDiseno * $horasDiseno) / $cantidadPiezas;
-                
-                $costosPostprocesado = calcularCostosPostprocesado(
-                    $input['costo_mano_obra_postprocesado'] ?? 0,
-                    $input['insumos_postprocesado'] ?? []
-                );
 
-                // ============================================
-                // DEPRECIACIÓN - CÁLCULO CORREGIDO
-                // ============================================
-                $depreciacionMaquina = 0;
-                $maquinaId = $input['maquina_id'] ?? null;
+                // Calcular precios usando la función helper
+                $c = calcularPrecios($input, $db);
+                error_log("💰 Cálculos completados — precio/pieza: " . $c['precio_final']);
 
-                if ($maquinaId) {
-                    // Consultar depreciación de la máquina seleccionada
-                    $stmtMaquina = $db->prepare("SELECT depreciacion_por_hora, nombre FROM maquinas WHERE id = ? AND activa = 1");
-                    $stmtMaquina->execute([$maquinaId]);
-                    $maquina = $stmtMaquina->fetch(PDO::FETCH_ASSOC);
-                    
-                    if ($maquina) {
-                        // Calcular depreciación: tiempo en horas × depreciación por hora
-                        $tiempoHoras = $tiempoImpresion / 60;
-                        $depreciacionMaquina = $tiempoHoras * $maquina['depreciacion_por_hora'];
-                        
-                        error_log("✅ Depreciación calculada: " . round($depreciacionMaquina, 2) . " COP");
-                        error_log("   Máquina: {$maquina['nombre']} ({$maquinaId})");
-                        error_log("   Depreciación/hora: {$maquina['depreciacion_por_hora']} COP");
-                        error_log("   Tiempo: {$tiempoHoras} horas");
-                    } else {
-                        // Si no se encuentra la máquina, usar valor por defecto
-                        $depreciacionMaquina = ($tiempoImpresion / 60) * 280; // 280 COP/hora por defecto
-                        error_log("⚠️ Máquina no encontrada (ID: {$maquinaId}), usando depreciación por defecto: " . round($depreciacionMaquina, 2) . " COP");
-                    }
-                } else {
-                    // Si no se seleccionó máquina, usar cálculo genérico (backward compatibility)
-                    $depreciacionMaquina = (1400000 * 0.9 / (3 * 12 * 210)) * $pesoPieza;
-                    error_log("⚠️ No se seleccionó máquina, usando cálculo genérico: " . round($depreciacionMaquina, 2) . " COP");
-                }
-                // ============================================
-                
-                $subtotal = $costoFabricacion + $costoEnergia + $costoDiseno + $depreciacionMaquina;
-                
-                $costoGIF = $subtotal * ($gif / 100);
-                $costoAIU = ($subtotal + $costoGIF) * ($aiu / 100);
-                
-                $costoMarcaAgua = $incluirMarcaAgua ? ($subtotal + $costoGIF + $costoAIU) * ($porcentajeMarcaAgua / 100) : 0;
-                
-                $costoTotalPostprocesado = $costosPostprocesado['costo_total'];
-
-                $precioFinal = ($subtotal + $costoGIF + $costoAIU + $costoMarcaAgua + $costoTotalPostprocesado) / $piezasPorLote;
-                
-                $precioMinorista = $precioFinal * (1 + $margenMinorista / 100);
-                $precioMayorista = $precioFinal * (1 + $margenMayorista / 100);
-                
-                $numeroLotes = ceil($cantidadPiezas / $piezasPorLote);
-                $costoPorLote = $precioFinal * $piezasPorLote;
-                $costoTotalPedido = $precioFinal * $cantidadPiezas;
-                $tiempoTotalMinutos = $numeroLotes * $tiempoImpresion;
-                $tiempoTotalHoras = $tiempoTotalMinutos / 60;
-                
-                $filamentoTotalGramos = ($pesoPieza / $piezasPorLote) * $cantidadPiezas;
-                $costoElectricoTotal = $usoElectricidad * $tiempoTotalHoras;
-                
-                $costoTotalPedidoMinorista = $costoTotalPedido * (1 + $margenMinorista / 100);
-                $costoTotalPedidoMayorista = $costoTotalPedido * (1 + $margenMayorista / 100);
-                
-                error_log("💰 Cálculos completados");
+                // Alias para el INSERT
+                $costoFabricacion  = $c['costo_fabricacion'];
+                $costoEnergia      = $c['costo_energia'];
+                $costoDiseno       = $c['costo_diseno'];
+                $depreciacionMaquina = $c['depreciacion_maquina'];
+                $subtotal          = $c['subtotal'];
+                $costoGIF          = $c['costo_gif'];
+                $costoAIU          = $c['costo_aiu'];
+                $costoMarcaAgua    = $c['costo_marca_agua'];
+                $precioFinal       = $c['precio_final'];
+                $precioMinorista   = $c['precio_minorista'];
+                $precioMayorista   = $c['precio_mayorista'];
+                $numeroLotes       = $c['numero_lotes'];
+                $costoPorLote      = $c['costo_por_lote'];
+                $costoTotalPedido  = $c['costo_total_pedido'];
+                $tiempoTotalMinutos = $c['tiempo_total_minutos'];
+                $tiempoTotalHoras  = $c['tiempo_total_horas'];
+                $filamentoTotalGramos = $c['filamento_total_gramos'];
+                $costoElectricoTotal  = $c['costo_electrico_total'];
+                $costoTotalPedidoMinorista = $c['costo_total_pedido_minorista'];
+                $costoTotalPedidoMayorista = $c['costo_total_pedido_mayorista'];
+                $costosPostprocesado = [
+                    'costo_mano_obra' => $c['costo_mano_obra_postprocesado'],
+                    'costo_insumos'   => $c['costo_insumos_postprocesado'],
+                    'costo_total'     => $c['costo_total_postprocesado'],
+                ];
                 
                 // 3. INSERTAR CÁLCULOS
                 $sqlCalc = "INSERT INTO calculos_cotizacion (
@@ -360,8 +430,28 @@ $sqlCot = "INSERT INTO cotizaciones (
             }
             break;
             
+        case 'calcular':
+            // Calcula precios sin guardar en la base de datos
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true);
+            if (!$input) sendError('No se recibieron datos válidos');
+
+            if (!isset($input['pesoPieza']) || !isset($input['tiempoImpresion'])) {
+                sendError('Campos requeridos: pesoPieza, tiempoImpresion');
+            }
+
+            $resultado = calcularPrecios($input, $db);
+
+            // Quitar claves internas antes de enviar
+            unset($resultado['_costoCarrete'], $resultado['_pesoCarrete'],
+                  $resultado['_cantidadPiezas'], $resultado['_piezasPorLote'],
+                  $resultado['_margenMinorista'], $resultado['_margenMayorista']);
+
+            sendSuccess($resultado, 'Cálculo realizado');
+            break;
+
         case 'list':
-            $sql = "SELECT c.*, cc.* 
+            $sql = "SELECT c.*, cc.*
                     FROM cotizaciones c
                     LEFT JOIN calculos_cotizacion cc ON c.id = cc.cotizacion_id
                     ORDER BY c.fecha DESC";

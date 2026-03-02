@@ -263,9 +263,34 @@
             </p>
         </div>
         
+        <!-- Alcance del postprocesado (visible solo en modo múltiples piezas) -->
+        <div id="grupoAlcancePostprocesado" style="display: none; margin-top: 15px; padding: 15px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <label style="font-weight: 700; display: block; margin-bottom: 10px; color: #1e40af;">
+                🔢 ¿A cuántas piezas aplica este postprocesado?
+            </label>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: white; border-radius: 6px; border: 2px solid #e5e7eb;">
+                    <input type="radio" name="alcancePostprocesado" value="por_pieza" checked
+                           style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                    <div>
+                        <strong style="color: #1f2937;">A cada pieza individualmente</strong>
+                        <p style="font-size: 0.82rem; color: #6b7280; margin: 3px 0 0 0;">El costo ingresado se aplica a cada pieza del pedido</p>
+                    </div>
+                </label>
+                <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: white; border-radius: 6px; border: 2px solid #e5e7eb;">
+                    <input type="radio" name="alcancePostprocesado" value="todo_el_lote"
+                           style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+                    <div>
+                        <strong style="color: #1f2937;">A todo el pedido completo</strong>
+                        <p style="font-size: 0.82rem; color: #6b7280; margin: 3px 0 0 0;">El costo cubre todas las piezas y se distribuye entre ellas</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+
         <!-- Separador -->
         <div style="border-top: 2px solid #d1d5db; margin: 25px 0;"></div>
-        
+
         <!-- Insumos para Postprocesado -->
         <div>
             <h4 style="color: #4f46e5; margin-bottom: 12px; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
@@ -464,20 +489,56 @@
                 <div class="step-container">
                     <div class="step-number">7</div>
                     <h3 class="step-title">Cantidad y Lotes</h3>
-                    
+
+                    <!-- Selector: una pieza vs múltiples -->
                     <div class="form-group">
-                        <label for="cantidadPiezas">Cantidad Total de Piezas</label>
-                        <input type="number" id="cantidadPiezas" value="1" min="1">
+                        <label style="font-weight: 700; display: block; margin-bottom: 12px;">¿Cuántas piezas necesitas?</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="modoCantidad" value="una"
+                                       onchange="cambiarModoCantidad('una')" checked>
+                                <div class="radio-content">
+                                    <span class="radio-icon">1️⃣</span>
+                                    <div>
+                                        <strong>Una sola pieza</strong>
+                                        <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Se cotiza una unidad</p>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="modoCantidad" value="multiples"
+                                       onchange="cambiarModoCantidad('multiples')">
+                                <div class="radio-content">
+                                    <span class="radio-icon">📦</span>
+                                    <div>
+                                        <strong>Múltiples piezas</strong>
+                                        <p style="font-size: 0.85rem; color: #6b7280; margin-top: 4px;">Pedido de varias unidades</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="piezasPorLote">Piezas por Lote de Impresión</label>
-                        <input type="number" id="piezasPorLote" value="1" min="1">
+                    <!-- Campos ocultos cuando es una sola pieza -->
+                    <div id="camposCantidadMultiple" style="display: none;">
+                        <div class="form-group">
+                            <label for="cantidadPiezas">Cantidad Total de Piezas</label>
+                            <input type="number" id="cantidadPiezas" value="1" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="piezasPorLote">Piezas por Lote de Impresión</label>
+                            <input type="number" id="piezasPorLote" value="1" min="1">
+                            <p style="font-size: 0.8rem; color: #6b7280; margin-top: 6px; font-style: italic;">
+                                💡 ¿Cuántas piezas caben en la cama de impresión al mismo tiempo? Comparten el tiempo de impresión y los costos de energía.
+                            </p>
+                        </div>
+
+                        <div id="errorLote" class="error-message" style="display: none;">
+                            ⚠️ El número de piezas por lote no puede ser mayor que la cantidad total
+                        </div>
                     </div>
 
-                    <div id="errorLote" class="error-message" style="display: none;">
-                        ⚠️ El número de piezas por lote no puede ser mayor que la cantidad total
-                    </div>
                 </div>
 
                 <div class="step-container">
@@ -1194,7 +1255,22 @@
                     </div>
                 </div>
 
-                <!-- Panel de Acciones -->
+                <!-- Panel Guardar Cotización (aparece después de calcular) -->
+<div id="panelGuardarCotizacion" style="display: none; margin-top: 20px; padding: 20px; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px;">
+    <h3 style="color: #15803d; margin: 0 0 8px 0; font-size: 1rem; font-weight: 700;">
+        💾 Guardar esta Cotización
+    </h3>
+    <p id="textoGuardarCotizacion" style="font-size: 0.85rem; color: #166534; margin: 0 0 14px 0;">
+        Para guardar en el historial, el <strong>nombre de la pieza</strong> (Paso 1) es obligatorio.
+    </p>
+    <button onclick="guardarCotizacion()" id="btnGuardarCotizacion"
+            style="width: 100%; padding: 13px; background: linear-gradient(135deg, #16a34a, #15803d); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: opacity 0.2s;"
+            onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+        💾 Guardar en Historial
+    </button>
+</div>
+
+<!-- Panel de Acciones -->
 <div class="acciones-cotizacion" style="margin-top: 20px;">
     <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 1.1rem; font-weight: 700;">
         ⚡ Acciones Rápidas
