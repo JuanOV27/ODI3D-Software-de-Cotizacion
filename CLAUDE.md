@@ -9,6 +9,7 @@ URL local: `http://localhost/gestion3d/`
 ## Stack Tecnológico
 
 - **Frontend**: HTML + CSS + Vanilla JavaScript (sin frameworks, sin bundler)
+
 - **Backend**: PHP 8+ con PDO
 - **Base de datos**: MySQL en XAMPP
 - **Servidor local**: Apache (XAMPP)
@@ -137,3 +138,9 @@ await apiClient.post('api_cotizaciones.php', { action: 'create' }, bodyData);
 - No hay sistema de autenticación — es un sistema de uso interno/local.
 - Los uploads de imágenes van a `uploads/pagos/`.
 - Siempre responde en español sin importar que te escriban en ingles
+
+### Frontend Design Standards
+- **Typography**: Avoid Inter/Roboto. Use distinctive pairings (e.g., a serif for headings, high-contrast sans-serif for body).
+- **Color**: No more "AI purple" or generic blues. Use deep saturation or sophisticated neutrals with one sharp accent color.
+- **Layout**: Avoid perfectly centered, symmetrical containers. Use bento-grids, overlapping elements, and generous white space.
+- **Motion**: Every interactive element must have a subtle transition (0.2s ease-out).

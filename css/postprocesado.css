@@ -1,8 +1,6 @@
 /* ============================================
    ESTILOS PARA MÓDULO DE POSTPROCESADO
-   ============================================
-   Agregar estos estilos al archivo CSS principal
-   o crear un archivo separado postprocesado.css
+   ODI3D — Identidad Visual v2
    ============================================ */
 
 /* Contenedor principal del módulo */
@@ -11,18 +9,13 @@
 }
 
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0);     }
 }
 
 /* Selector de nivel de dificultad */
 #nivelDificultadPostprocesado {
+    font-family: 'Inter', sans-serif;
     font-weight: 500;
     cursor: pointer;
     transition: border-color 0.2s;
@@ -30,33 +23,34 @@
 
 #nivelDificultadPostprocesado:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
 }
 
 /* Input de costo de mano de obra */
 #costoManoObraPostprocesado {
+    font-family: 'Space Mono', monospace;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 400;
     transition: border-color 0.2s;
 }
 
 #costoManoObraPostprocesado:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
 }
 
 /* Lista de insumos seleccionados */
 .insumos-seleccionados-lista {
     min-height: 60px;
-    margin-top: 15px;
+    margin-top: 14px;
 }
 
 .lista-insumos {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 9px;
 }
 
 .insumo-item {
@@ -65,7 +59,7 @@
 
 .insumo-item:hover {
     transform: translateX(2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Botón de eliminar insumo */
@@ -76,7 +70,7 @@
 }
 
 .btn-eliminar-mini:hover {
-    background: #dc2626 !important;
+    background: #C0392B !important;
     transform: scale(1.1);
 }
 
@@ -86,9 +80,9 @@
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    0%, 100% { transform: translateX(0);  }
+    25%       { transform: translateX(-5px); }
+    75%       { transform: translateX(5px);  }
 }
 
 .lista-faltantes > div {
@@ -96,7 +90,7 @@
 }
 
 .lista-faltantes > div:hover {
-    background-color: #fef3c7 !important;
+    background-color: #FEF9E7 !important;
 }
 
 /* Modal de selección de insumos */
@@ -105,29 +99,18 @@
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .modal-content {
     animation: slideUp 0.3s ease-in-out;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
-                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
 }
 
 @keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0);     }
 }
 
 /* Input de búsqueda en modal */
@@ -137,8 +120,8 @@
 
 #buscarInsumoPostprocesado:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
 }
 
 /* Items del modal */
@@ -148,7 +131,7 @@
 }
 
 .insumo-modal-item:hover {
-    background-color: #f9fafb !important;
+    background-color: #EBF4F9 !important;
     transform: translateX(4px);
 }
 
@@ -157,39 +140,41 @@
 }
 
 .insumo-modal-item button:not(:disabled):hover {
-    background-color: #4338ca !important;
+    background-color: #1B5E7B !important;
     transform: scale(1.05);
 }
 
 /* Botones generales */
 .btn-small {
-    background: #4f46e5;
-    color: white;
+    background: #1A2E3C;
+    color: #FFFFFF;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    font-weight: 500;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
 }
 
 .btn-small:hover {
-    background: #4338ca;
+    background: #1B5E7B;
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(26, 46, 60, 0.2);
 }
 
 .btn-secondary {
-    background: #6b7280;
-    color: white;
+    background: #4A4A4A;
+    color: #FFFFFF;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    font-weight: 500;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
 }
 
 .btn-secondary:hover {
-    background: #4b5563;
+    background: #2C2C2C;
 }
 
 /* Resumen de costos */
@@ -198,44 +183,45 @@
 }
 
 .resultado-seccion:hover {
-    background-color: #f9fafb;
-    padding: 15px;
-    border-radius: 8px;
-    margin: -15px;
-    margin-top: 15px;
+    background-color: #F5F5F5;
+    padding: 14px;
+    border-radius: 6px;
+    margin: -14px;
+    margin-top: 14px;
 }
 
 /* Iconos y badges */
 .badge-nivel {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 4px 11px;
     border-radius: 12px;
-    font-size: 0.85rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.82rem;
     font-weight: 600;
 }
 
 .badge-facil {
-    background: #d1fae5;
-    color: #065f46;
+    background: #D5F5E3;
+    color: #1D6A3D;
 }
 
 .badge-intermedio {
-    background: #fef3c7;
-    color: #92400e;
+    background: #FEF9E7;
+    color: #7D6608;
 }
 
 .badge-dificil {
-    background: #fee2e2;
-    color: #991b1b;
+    background: #FADBD8;
+    color: #922B21;
 }
 
-/* Loading spinner (para cuando se cargan suministros) */
+/* Loading spinner */
 .loading-spinner {
     display: inline-block;
     width: 20px;
     height: 20px;
-    border: 3px solid #f3f4f6;
-    border-top-color: #4f46e5;
+    border: 3px solid #CCCCCC;
+    border-top-color: #1A2E3C;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -244,7 +230,7 @@
     to { transform: rotate(360deg); }
 }
 
-/* Inputs numéricos - ocultar spinners en algunos navegadores */
+/* Inputs numéricos — ocultar spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
     opacity: 0.5;
@@ -258,11 +244,11 @@ input[type="number"]:hover::-webkit-outer-spin-button {
 
 /* Checkbox personalizado */
 #incluirPostprocesado {
-    accent-color: #4f46e5;
+    accent-color: #1A2E3C;
     cursor: pointer;
 }
 
-/* Tooltip style (para mostrar info adicional) */
+/* Tooltip style */
 .tooltip-postprocesado {
     position: relative;
     display: inline-block;
@@ -271,8 +257,8 @@ input[type="number"]:hover::-webkit-outer-spin-button {
 .tooltip-postprocesado .tooltiptext {
     visibility: hidden;
     width: 200px;
-    background-color: #1f2937;
-    color: #fff;
+    background-color: #1A2E3C;
+    color: #FFFFFF;
     text-align: center;
     border-radius: 6px;
     padding: 8px;
@@ -283,7 +269,8 @@ input[type="number"]:hover::-webkit-outer-spin-button {
     margin-left: -100px;
     opacity: 0;
     transition: opacity 0.3s;
-    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
 }
 
 .tooltip-postprocesado:hover .tooltiptext {
@@ -291,29 +278,28 @@ input[type="number"]:hover::-webkit-outer-spin-button {
     opacity: 1;
 }
 
-/* Responsive - Móvil */
+/* Responsive — Móvil */
 @media (max-width: 768px) {
     .modal-content {
         max-width: 95%;
         max-height: 90vh;
         padding: 16px;
     }
-    
+
     .insumo-item {
         padding: 10px !important;
     }
-    
+
     .insumo-item > div:first-child {
         flex-direction: column !important;
         align-items: flex-start !important;
     }
-    
+
     .btn-eliminar-mini {
         margin-top: 8px;
         align-self: flex-end;
     }
-    
-    /* Grid de cantidad/porcentaje en móvil */
+
     .insumo-item > div[style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
     }
@@ -331,56 +317,39 @@ button, input, select {
 
 /* Estados de error */
 .input-error {
-    border-color: #dc2626 !important;
-    background-color: #fef2f2 !important;
+    border-color: #E74C3C !important;
+    background-color: #FDF2F0 !important;
 }
 
 .input-error:focus {
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.12) !important;
 }
 
 /* Estados de éxito */
 .input-success {
-    border-color: #059669 !important;
-    background-color: #f0fdf4 !important;
+    border-color: #27AE60 !important;
+    background-color: #F0FDF4 !important;
 }
 
 /* Scrollbar personalizado para el modal */
-#listaInsumosModal::-webkit-scrollbar {
-    width: 8px;
-}
+#listaInsumosModal::-webkit-scrollbar { width: 6px; }
+#listaInsumosModal::-webkit-scrollbar-track { background: #F5F5F5; border-radius: 4px; }
+#listaInsumosModal::-webkit-scrollbar-thumb { background: #AAAAAA; border-radius: 4px; }
+#listaInsumosModal::-webkit-scrollbar-thumb:hover { background: #1B5E7B; }
 
-#listaInsumosModal::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-#listaInsumosModal::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-#listaInsumosModal::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Animación de carga */
+/* Animación de carga skeleton */
 .skeleton-loading {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background: linear-gradient(90deg, #F5F5F5 25%, #EEEEEE 50%, #F5F5F5 75%);
     background-size: 200% 100%;
     animation: loading 1.5s ease-in-out infinite;
 }
 
 @keyframes loading {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
+    0%   { background-position: 200% 0;  }
+    100% { background-position: -200% 0; }
 }
 
-/* Estado disabled para elementos */
+/* Estado disabled */
 .disabled-overlay {
     position: relative;
     pointer-events: none;
@@ -398,7 +367,7 @@ button, input, select {
     cursor: not-allowed;
 }
 
-/* Print styles - ocultar en impresión elementos innecesarios */
+/* Print styles */
 @media print {
     .modal-overlay,
     .btn-small,
@@ -406,32 +375,32 @@ button, input, select {
     .btn-eliminar-mini {
         display: none !important;
     }
-    
+
     .insumo-item {
         page-break-inside: avoid;
     }
 }
 
-/* Accesibilidad - focus visible para teclado */
+/* Accesibilidad — focus visible */
 *:focus-visible {
-    outline: 2px solid #4f46e5;
+    outline: 2px solid #1B5E7B;
     outline-offset: 2px;
 }
 
-/* Dark mode support (opcional) */
+/* Dark mode support */
 @media (prefers-color-scheme: dark) {
     #contenedorPostprocesado {
-        background: #1f2937 !important;
-        color: #f9fafb;
+        background: #1A2E3C !important;
+        color: #F5F5F5;
     }
-    
+
     .insumo-item {
-        background: #374151 !important;
-        border-color: #4b5563 !important;
+        background: #1B5E7B !important;
+        border-color: #2980B9 !important;
     }
-    
+
     .modal-content {
-        background: #1f2937 !important;
-        color: #f9fafb;
+        background: #1A2E3C !important;
+        color: #F5F5F5;
     }
 }
