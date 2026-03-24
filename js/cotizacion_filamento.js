@@ -38,11 +38,21 @@ async function cargarPerfilesEnCotizacion() {
         
         // Obtener también los carretes del inventario
         carretesDisponibles = await GestionInventario.obtenerCarretesDisponibles();
-        
+
+        // Filtrar perfiles para mostrar solo los que tienen un carrete activo en inventario.
+        // Si la petición de carretes falló y retornó vacío, mostramos todos (fallback).
+        const hayCarretes = Array.isArray(carretesDisponibles) && carretesDisponibles.length > 0;
+        const perfilesConCarrete = hayCarretes
+            ? new Set(carretesDisponibles.map(c => c.perfil_id))
+            : null;
+
         perfiles.forEach((perfil) => {
+            // Omitir perfiles que no tienen carretes activos en inventario
+            if (perfilesConCarrete && !perfilesConCarrete.has(perfil.id)) return;
+
             const option = document.createElement('option');
             option.value = perfil.id;
-            
+
             // Buscar si hay carretes de este perfil
             const carrete = carretesDisponibles.find(c => c.perfil_id === perfil.id);
             

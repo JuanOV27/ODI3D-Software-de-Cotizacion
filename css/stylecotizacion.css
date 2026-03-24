@@ -1382,3 +1382,332 @@ body.resizing * {
 .modal-content::-webkit-scrollbar-track { background: #F5F5F5; border-radius: 10px; }
 .modal-content::-webkit-scrollbar-thumb { background: #AAAAAA; border-radius: 10px; }
 .modal-content::-webkit-scrollbar-thumb:hover { background: #1B5E7B; }
+
+/* ============================================
+   MINI CALCULADORA / CONVERSOR DE TIEMPOS
+   ============================================ */
+
+.calc-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 52px;
+    height: 52px;
+    background: #1A2E3C;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 900;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.calc-fab:hover {
+    background: #1B5E7B;
+    transform: scale(1.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.calc-panel {
+    position: fixed;
+    bottom: 92px;
+    right: 28px;
+    width: 310px;
+    background: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+    z-index: 899;
+    flex-direction: column;
+    overflow: hidden;
+    animation: calcSlideIn 0.2s ease;
+}
+
+@keyframes calcSlideIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.calc-panel-header {
+    background: #1A2E3C;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    gap: 8px;
+}
+
+.calc-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.calc-tab {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calc-tab.active {
+    background: rgba(255,255,255,0.25);
+    color: #FFFFFF;
+}
+
+.calc-tab:hover { background: rgba(255,255,255,0.2); color: #FFFFFF; }
+
+.calc-close {
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: rgba(255,255,255,0.7);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.calc-close:hover { background: rgba(255,255,255,0.25); color: #FFFFFF; }
+
+.calc-panel-body { padding: 14px; }
+
+/* Display */
+.calc-display-wrap { margin-bottom: 10px; }
+
+.calc-display-expr {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: #6B7280;
+    min-height: 18px;
+    text-align: right;
+    padding: 0 4px;
+}
+
+.calc-display {
+    width: 100%;
+    padding: 10px 12px;
+    background: #F5F5F5;
+    border: 1px solid #CCCCCC;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 1.4rem;
+    text-align: right;
+    color: #000000;
+    cursor: default;
+}
+
+/* Grid de botones 4x5 */
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.calc-btn {
+    padding: 12px 6px;
+    border: 1px solid #CCCCCC;
+    border-radius: 6px;
+    background: #FFFFFF;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #000000;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.calc-btn:hover { background: #F5F5F5; border-color: #1B5E7B; }
+.calc-btn:active { transform: scale(0.95); }
+
+.calc-btn-wide { grid-column: span 2; }
+.calc-btn-tall { grid-row: span 2; }
+
+.calc-btn-op {
+    background: #EBF4F9;
+    color: #1B5E7B;
+    border-color: #C8DDE8;
+}
+
+.calc-btn-op:hover { background: #D0E8F2; }
+
+.calc-btn-clear {
+    background: #FADBD8;
+    color: #922B21;
+    border-color: #E8C0BB;
+}
+
+.calc-btn-clear:hover { background: #F5B7B1; }
+
+.calc-btn-equals {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    border-color: #1A2E3C;
+}
+
+.calc-btn-equals:hover { background: #1B5E7B; }
+
+/* ---- Pestaña Tiempos ---- */
+.time-add-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.time-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-input {
+    width: 62px;
+    padding: 9px 8px;
+    border: 1px solid #CCCCCC;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    color: #000000;
+}
+
+.time-input:focus {
+    outline: none;
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27,94,123,0.12);
+}
+
+.time-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6B7280;
+}
+
+.btn-add-block {
+    width: 100%;
+    padding: 9px 14px;
+    background: #1A2E3C;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-block:hover { background: #1B5E7B; }
+
+.bloques-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 140px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.bloque-tiempo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F5F5F5;
+    border: 1px solid #CCCCCC;
+    border-radius: 6px;
+    padding: 7px 10px;
+    gap: 8px;
+}
+
+.bloque-tiempo-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: #6B7280;
+    flex: 1;
+}
+
+.bloque-tiempo-val {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #000000;
+}
+
+.bloque-tiempo-del {
+    background: none;
+    border: none;
+    color: #E74C3C;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+}
+
+.bloque-tiempo-del:hover { background: #FADBD8; }
+
+.time-total-box {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+}
+
+.time-total-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.time-total-valor {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+.time-total-decimal {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-bottom: 12px;
+}
+
+.btn-usar-tiempo {
+    width: 100%;
+    padding: 9px 14px;
+    background: #27AE60;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-usar-tiempo:hover { background: #1E8449; transform: translateY(-1px); }

@@ -20,12 +20,13 @@ No hay `npm`, `composer`, ni proceso de build. Los cambios en HTML/CSS/JS se ref
 
 ```
 /
-├── index.html                  # Dashboard principal
-├── cotizacion.html             # Módulo de cotización
-├── inventario.html             # Inventario de filamentos
-├── suministros.html            # Inventario de suministros
-├── perfiles.html               # Perfiles de filamento
-├── centro-fabricacion.html     # Centro de fabricación
+├── index.html                      # Dashboard principal
+├── cotizacion.html                 # Módulo de cotización (incluye mini calculadora)
+├── historial-cotizaciones.html     # Historial de cotizaciones
+├── inventario.html                 # Inventario de filamentos
+├── suministros.html                # Inventario de suministros (tabla + vista cards)
+├── perfiles.html                   # Perfiles de filamento
+├── centro-fabricacion.html         # Centro de fabricación
 │
 ├── api/
 │   ├── config.php              # Conexión DB + clases base (Database, BaseModel, Utils)
@@ -34,32 +35,34 @@ No hay `npm`, `composer`, ni proceso de build. Los cambios en HTML/CSS/JS se ref
 │   ├── api_maquinas.php        # CRUD máquinas
 │   ├── api_perfiles.php        # CRUD perfiles de filamento
 │   ├── api_proyectos.php       # CRUD proyectos/órdenes
-│   ├── api_suministros.php     # CRUD suministros
+│   ├── api_suministros.php     # CRUD suministros (campo `foto` para base64)
 │   └── api_postprocesado_functions.php
 │
 ├── js/
-│   ├── config.js               # APIClient global (baseURL: /gestion3d/api)
-│   ├── main.js                 # Página principal
-│   ├── cotizacion.js           # Lógica de cotización
-│   ├── cotizacion_filamento.js # Cálculos de filamento
-│   ├── acciones_cotizacion.js  # Acciones (guardar, WhatsApp, etc.)
-│   ├── inventario.js           # Gestión de inventario
-│   ├── maquinas.js             # Gestión de máquinas
-│   ├── perfiles.js             # Gestión de perfiles
-│   ├── suministros.js          # Gestión de suministros
-│   ├── postprocesado.js        # Módulo de postprocesado
-│   ├── delivery.js             # Cálculo de delivery
-│   ├── paqueteria.js           # Empaquetado
-│   ├── resizer.js              # Redimensionador de paneles
-│   └── Kirimoto-integration.js # Integración con Kiri:Moto (carga STL)
+│   ├── config.js                   # APIClient global (baseURL: /gestion3d/api)
+│   ├── main.js                     # Página principal
+│   ├── cotizacion.js               # Lógica de cotización
+│   ├── cotizacion_filamento.js     # Selección de filamento en cotizador
+│   ├── historial-cotizaciones.js   # Historial: filtros, exportar, detalle, factura
+│   ├── acciones_cotizacion.js      # Acciones (guardar, WhatsApp, etc.)
+│   ├── inventario.js               # Gestión de inventario
+│   ├── maquinas.js                 # Gestión de máquinas
+│   ├── perfiles.js                 # Gestión de perfiles
+│   ├── suministros.js              # Gestión de suministros
+│   ├── postprocesado.js            # Módulo de postprocesado
+│   ├── delivery.js                 # Cálculo de delivery
+│   ├── paqueteria.js               # Empaquetado
+│   ├── resizer.js                  # Redimensionador de paneles
+│   └── Kirimoto-integration.js     # Integración con Kiri:Moto (carga STL)
 │
 ├── css/                        # Estilos por módulo
 │   ├── styleprincipal.css
-│   ├── stylecotizacion.css
+│   ├── stylecotizacion.css     # Incluye estilos de mini calculadora (.calc-fab, .calc-panel)
+│   ├── stylehistorial.css      # Historial — diseño ODI3D navy/teal
 │   ├── styleinventario.css
 │   ├── styleperfiles.css
 │   ├── stylemaquinas.css
-│   ├── stylesuministros.css
+│   ├── stylesuministros.css    # Incluye estilos de card view (.cards-grid, .supply-card)
 │   ├── postprocesado.css
 │   └── kirimoto-styles.css
 │
@@ -117,9 +120,14 @@ await apiClient.post('api_cotizaciones.php', { action: 'create' }, bodyData);
 ## Funcionalidades Clave
 
 - **Cotización**: Cálculo de costos por peso de filamento, tiempo de impresión, costo de máquina, postprocesado, empaquetado y delivery. Soporta modo de máquina única o distribución multi-máquina.
+- **Mini Calculadora**: Widget flotante en cotización (`🧮`, esquina inferior-derecha). Dos pestañas: calculadora básica y conversor de tiempos. Permite sumar bloques de tiempo (bandejas) y aplicar el total directamente al campo `tiempoImpresion`. El `MiniCalculadora` object está inlineado al final de `cotizacion.html`.
+- **Historial de cotizaciones**: `historial-cotizaciones.html` + `js/historial-cotizaciones.js` + `css/stylehistorial.css`. Filtros por nombre, fecha y precio. Detalle completo, duplicar en formulario y generación de factura imprimible.
 - **Kiri:Moto**: Integración con el slicer online Kiri:Moto para cargar archivos STL y obtener automáticamente peso y tiempo de impresión.
 - **WhatsApp**: Botón para enviar cotización por WhatsApp directamente.
 - **Proyectos**: Al guardar una cotización se crea un proyecto con datos del cliente (nombre, teléfono, WhatsApp, cédula, dirección).
+- **Suministros — fotos**: El campo `foto` en la tabla `suministros` almacena la imagen como base64. La variable `fotoBase64` en `suministros.js` persiste la imagen entre la previsualización y el guardado. Al editar, se pre-carga la foto existente.
+- **Suministros — vista cards**: Botones `📋 Tabla` / `🃏 Tarjetas` en la sección de listado. `toggleVista()` conmuta entre la tabla y el grid de cards. `renderizarCards()` genera las tarjetas con imagen, nombre, categoría, precio, stock y acciones.
+- **Inventario filamentos → cotizador**: `cotizacion_filamento.js` filtra los perfiles de filamento para mostrar únicamente aquellos que tienen al menos un carrete activo en `inventario_carretes`. Si la API de carretes retorna vacío (error de red), se muestran todos como fallback.
 
 ## Convenciones de Código
 

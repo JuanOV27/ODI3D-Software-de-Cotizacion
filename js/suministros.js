@@ -15,6 +15,12 @@ const EstadoSuministros = {
     suministroEditando: null
 };
 
+// Estado de la foto activa en el modal
+let fotoBase64 = null;
+
+// Vista activa: 'tabla' o 'cards'
+let vistaActual = 'tabla';
+
 // ============================================
 // INICIALIZACIÓN
 // ============================================
@@ -116,7 +122,7 @@ function cargarDatosEjemplo() {
 
 function renderizarSuministros() {
     const tbody = document.getElementById('listaSuministros');
-    
+
     if (EstadoSuministros.suministros.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -125,6 +131,7 @@ function renderizarSuministros() {
                 </td>
             </tr>
         `;
+        renderizarCards();
         return;
     }
 
@@ -172,6 +179,87 @@ function renderizarSuministros() {
                     </div>
                 </td>
             </tr>
+        `;
+    }).join('');
+
+    renderizarCards();
+}
+
+// ============================================
+// VISTA DE TARJETAS (CARD VIEW)
+// ============================================
+
+function toggleVista(modo) {
+    vistaActual = modo;
+    const tableWrapper = document.getElementById('tablaWrapper');
+    const cardsWrapper = document.getElementById('cardsWrapper');
+    const btnTabla = document.getElementById('btnVistaTabla');
+    const btnCards = document.getElementById('btnVistaCards');
+
+    if (modo === 'tabla') {
+        tableWrapper.style.display = 'block';
+        cardsWrapper.style.display = 'none';
+        btnTabla.classList.add('btn-primary');
+        btnTabla.classList.remove('btn-outline');
+        btnCards.classList.add('btn-outline');
+        btnCards.classList.remove('btn-primary');
+    } else {
+        tableWrapper.style.display = 'none';
+        cardsWrapper.style.display = 'grid';
+        btnTabla.classList.add('btn-outline');
+        btnTabla.classList.remove('btn-primary');
+        btnCards.classList.add('btn-primary');
+        btnCards.classList.remove('btn-outline');
+    }
+}
+
+function renderizarCards(suministrosParam) {
+    const cardsWrapper = document.getElementById('cardsWrapper');
+    if (!cardsWrapper) return;
+
+    const lista = suministrosParam || EstadoSuministros.suministros;
+
+    if (lista.length === 0) {
+        cardsWrapper.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #6B7280;">
+                <div style="font-size: 3.5rem; margin-bottom: 12px;">🧰</div>
+                <p style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">No hay suministros registrados</p>
+            </div>`;
+        return;
+    }
+
+    cardsWrapper.innerHTML = lista.map(suministro => {
+        const categoria = EstadoSuministros.categorias.find(c => c.id === suministro.categoria);
+        const estadoStock = obtenerEstadoStock(suministro);
+
+        const imgHTML = suministro.foto
+            ? `<img src="${suministro.foto}" alt="${suministro.nombre}" class="supply-card-img-photo">`
+            : `<div class="supply-card-img-placeholder">${categoria ? categoria.icono : '📦'}</div>`;
+
+        return `
+            <div class="supply-card">
+                <div class="supply-card-img">${imgHTML}</div>
+                <div class="supply-card-body">
+                    <div class="supply-card-categoria">
+                        <span class="categoria-badge categoria-${suministro.categoria}">
+                            ${categoria ? categoria.icono + ' ' + categoria.nombre : suministro.categoria}
+                        </span>
+                    </div>
+                    <h4 class="supply-card-nombre">${suministro.nombre}</h4>
+                    ${suministro.marca ? `<p class="supply-card-marca">${suministro.marca}</p>` : ''}
+                    <div class="supply-card-precio">$${formatearNumero(suministro.precio)}</div>
+                    <div class="supply-card-stock">
+                        <span class="estado-badge estado-${estadoStock.clase}">
+                            ${estadoStock.icono} ${suministro.unidades} ${suministro.unidadMedida || 'u'}
+                        </span>
+                    </div>
+                    <div class="supply-card-acciones">
+                        <button class="btn btn-view" onclick="verDetallesSuministro('${suministro.id}')" title="Ver detalles">👁️</button>
+                        <button class="btn btn-edit" onclick="editarSuministro('${suministro.id}')" title="Editar">✏️</button>
+                        <button class="btn btn-danger" onclick="eliminarSuministro('${suministro.id}')" title="Eliminar" style="padding:7px 12px;">🗑️</button>
+                    </div>
+                </div>
+            </div>
         `;
     }).join('');
 }
@@ -240,13 +328,24 @@ function mostrarModalSuministro(id = null) {
         document.getElementById('fechaCompra').value = suministro.fechaCompra || '';
         document.getElementById('stockMinimo').value = suministro.stockMinimo || 5;
         document.getElementById('notasSuministro').value = suministro.notas || '';
+
+        // Pre-cargar foto existente
+        fotoBase64 = suministro.foto || null;
+        if (fotoBase64) {
+            document.getElementById('imgPreview').src = fotoBase64;
+            document.getElementById('previewFoto').style.display = 'block';
+        } else {
+            document.getElementById('previewFoto').style.display = 'none';
+        }
     } else {
         // Modo creación
         titulo.textContent = '➕ Agregar Nuevo Suministro';
         EstadoSuministros.suministroEditando = null;
+        fotoBase64 = null;
         form.reset();
+        document.getElementById('previewFoto').style.display = 'none';
     }
-    
+
     modal.style.display = 'flex';
 }
 
@@ -255,6 +354,7 @@ function cerrarModalSuministro() {
     document.getElementById('formSuministro').reset();
     document.getElementById('previewFoto').style.display = 'none';
     EstadoSuministros.suministroEditando = null;
+    fotoBase64 = null;
 }
 
 async function guardarSuministro(event) {
@@ -278,7 +378,8 @@ async function guardarSuministro(event) {
         fechaCompra: document.getElementById('fechaCompra').value,
         stockMinimo: parseFloat(document.getElementById('stockMinimo').value) || 5,
         notas: document.getElementById('notasSuministro').value,
-        fechaCreacion: EstadoSuministros.suministroEditando ? 
+        foto: fotoBase64,
+        fechaCreacion: EstadoSuministros.suministroEditando ?
             EstadoSuministros.suministros.find(s => s.id === EstadoSuministros.suministroEditando).fechaCreacion :
             new Date().toISOString(),
         fechaModificacion: new Date().toISOString()
@@ -501,6 +602,7 @@ function filtrarSuministros() {
     const suministrosOriginales = EstadoSuministros.suministros;
     EstadoSuministros.suministros = suministrosFiltrados;
     renderizarSuministros();
+    renderizarCards(suministrosFiltrados);
     EstadoSuministros.suministros = suministrosOriginales;
 }
 
@@ -609,10 +711,11 @@ function exportarInventario() {
 function previsualizarFoto(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = function(e) {
-        document.getElementById('imgPreview').src = e.target.result;
+        fotoBase64 = e.target.result;
+        document.getElementById('imgPreview').src = fotoBase64;
         document.getElementById('previewFoto').style.display = 'block';
     };
     reader.readAsDataURL(file);

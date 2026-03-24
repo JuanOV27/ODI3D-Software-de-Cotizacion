@@ -8,15 +8,15 @@
     <!-- NUEVO: Estilos de Kiri:Moto -->
     <link rel="stylesheet" href="css/kirimoto-styles.css">
 </head>
-<body>
+<body class="kiri-panel-open">
     <div class="container">
         <div class="header">
             <a href="index.html" class="nav-back">← Volver al Menú</a>
             <h1>💰 Cotización de Proyectos 3D</h1>
             <p>Ahora con integración de Kiri:Moto - Carga tus modelos STL directamente</p>
-            <!-- <button class="calc-toggle-btn" onclick="toggleMobileCalc()">
-                🧮 Calculadora Básica
-            </button> -->
+            <button class="calc-toggle-btn" onclick="KiriMotoIntegration.togglePanel()" id="kiriHeaderToggle" title="Mostrar/Ocultar Kiri:Moto">
+                🖨️ Kiri:Moto
+            </button>
         </div>
 
         <div class="main-content">
@@ -1603,6 +1603,47 @@
         </div>
     </div>
 
+    <!-- ==========================================
+         PANEL LATERAL KIRI:MOTO LOCAL
+         Requiere: cd grid-apps && npm run dev  (puerto 8080)
+         ========================================== -->
+    <div id="kiriSidePanel" class="kiri-side-panel kiri-panel-open">
+
+        <!-- Tab de toggle (siempre visible en el borde izquierdo del panel) -->
+        <div class="kiri-panel-tab" onclick="KiriMotoIntegration.togglePanel()" title="Mostrar/Ocultar Kiri:Moto">
+            <span class="kiri-tab-icon">🖨️</span>
+            <span class="kiri-tab-text">Kirimoto — ODI3D</span>
+            <span class="kiri-tab-arrow" id="kiriTabArrow">◀</span>
+        </div>
+
+        <!-- Cuerpo del panel (oculto cuando está colapsado) -->
+        <div class="kiri-panel-body">
+
+            <!-- Header del panel -->
+            <div class="kiri-panel-header">
+                <div class="kiri-panel-title">🖨️ Kiri:Moto — Laminador Local</div>
+                <div class="kiri-panel-controls">
+                    <button class="kiri-ctrl-btn"
+                            id="kiriExpandBtn"
+                            onclick="KiriMotoIntegration.expandPanel()"
+                            title="Expandir a 70%">⊞</button>
+                    <button class="kiri-ctrl-btn"
+                            onclick="KiriMotoIntegration.togglePanel()"
+                            title="Contraer panel">✕</button>
+                </div>
+            </div>
+
+            <!-- iFrame del laminador local (puerto 8080) -->
+            <iframe
+                id="kiriFrame"
+                class="kiri-panel-iframe"
+                src="http://localhost:8080/kiri/"
+                title="Kiri:Moto Laminador Local">
+            </iframe>
+
+        </div>
+    </div>
+
     <!-- Scripts existentes -->
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
@@ -1625,5 +1666,231 @@
     <!-- Script de comunicación con HandHelHearts -->
     <script src="js/bridge-handhelhearts.js"></script>
 
+    <!-- MINI CALCULADORA / CONVERSOR DE TIEMPOS -->
+    <div id="calcFab" class="calc-fab" onclick="MiniCalculadora.toggle()" title="Calculadora y conversor de tiempos">🧮</div>
+
+    <div id="calcPanel" class="calc-panel" style="display:none;">
+        <div class="calc-panel-header">
+            <div class="calc-tabs">
+                <button class="calc-tab active" id="tabCalc" onclick="MiniCalculadora.setTab('calc')">🧮 Calculadora</button>
+                <button class="calc-tab" id="tabTime" onclick="MiniCalculadora.setTab('time')">⏱ Tiempos</button>
+            </div>
+            <button class="calc-close" onclick="MiniCalculadora.toggle()">✕</button>
+        </div>
+
+        <!-- PESTAÑA CALCULADORA -->
+        <div id="calcPanelCalc" class="calc-panel-body">
+            <div class="calc-display-wrap">
+                <div class="calc-display-expr" id="calcExpr"></div>
+                <input type="text" class="calc-display" id="calcDisplay" readonly value="0">
+            </div>
+            <div class="calc-grid">
+                <button class="calc-btn calc-btn-wide calc-btn-clear" onclick="MiniCalculadora.clear()">C</button>
+                <button class="calc-btn calc-btn-op" onclick="MiniCalculadora.backspace()">⌫</button>
+                <button class="calc-btn calc-btn-op" onclick="MiniCalculadora.input('/')">÷</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('7')">7</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('8')">8</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('9')">9</button>
+                <button class="calc-btn calc-btn-op" onclick="MiniCalculadora.input('*')">×</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('4')">4</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('5')">5</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('6')">6</button>
+                <button class="calc-btn calc-btn-op" onclick="MiniCalculadora.input('-')">−</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('1')">1</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('2')">2</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('3')">3</button>
+                <button class="calc-btn calc-btn-op calc-btn-tall" onclick="MiniCalculadora.input('+')">+</button>
+                <button class="calc-btn calc-btn-wide" onclick="MiniCalculadora.input('0')">0</button>
+                <button class="calc-btn" onclick="MiniCalculadora.input('.')">.</button>
+                <button class="calc-btn calc-btn-equals" onclick="MiniCalculadora.equals()">=</button>
+            </div>
+        </div>
+
+        <!-- PESTAÑA TIEMPOS -->
+        <div id="calcPanelTime" class="calc-panel-body" style="display:none;">
+            <div class="time-add-row">
+                <div class="time-input-group">
+                    <input type="number" id="timeHoras" min="0" placeholder="0" class="time-input">
+                    <span class="time-label">h</span>
+                    <input type="number" id="timeMinutos" min="0" max="59" placeholder="0" class="time-input">
+                    <span class="time-label">m</span>
+                </div>
+                <button class="btn-add-block" onclick="MiniCalculadora.agregarBloque()">+ Agregar</button>
+            </div>
+
+            <div id="bloquesTiempoList" class="bloques-list"></div>
+
+            <div class="time-total-box" id="timeTotalBox" style="display:none;">
+                <div class="time-total-label">Total acumulado</div>
+                <div class="time-total-valor" id="timeTotalValor">0h 0m</div>
+                <div class="time-total-decimal" id="timeTotalDecimal">= 0.00 horas</div>
+                <button class="btn-usar-tiempo" onclick="MiniCalculadora.aplicarTiempo()">
+                    &#9654; Usar en cotización
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============================================
+    // MINI CALCULADORA / CONVERSOR DE TIEMPOS
+    // ============================================
+    const MiniCalculadora = {
+        visible: false,
+        tabActiva: 'calc',
+        expresion: '',
+        esperandoOperando: false,
+        bloquesTiempo: [],
+        contadorBloque: 0,
+
+        toggle() {
+            this.visible = !this.visible;
+            document.getElementById('calcPanel').style.display = this.visible ? 'flex' : 'none';
+        },
+
+        setTab(tab) {
+            this.tabActiva = tab;
+            document.getElementById('calcPanelCalc').style.display = tab === 'calc' ? 'block' : 'none';
+            document.getElementById('calcPanelTime').style.display = tab === 'time' ? 'block' : 'none';
+            document.getElementById('tabCalc').classList.toggle('active', tab === 'calc');
+            document.getElementById('tabTime').classList.toggle('active', tab === 'time');
+        },
+
+        input(val) {
+            const display = document.getElementById('calcDisplay');
+            const ops = ['+', '-', '*', '/'];
+            if (ops.includes(val)) {
+                if (this.expresion && ops.includes(this.expresion.slice(-1))) {
+                    this.expresion = this.expresion.slice(0, -1);
+                }
+                this.expresion += display.value + val;
+                document.getElementById('calcExpr').textContent = this.formatExpr(this.expresion);
+                this.esperandoOperando = true;
+                return;
+            }
+            if (this.esperandoOperando) {
+                display.value = val === '.' ? '0.' : val;
+                this.esperandoOperando = false;
+            } else {
+                if (val === '.' && display.value.includes('.')) return;
+                display.value = display.value === '0' && val !== '.' ? val : display.value + val;
+            }
+        },
+
+        equals() {
+            const display = document.getElementById('calcDisplay');
+            try {
+                const expr = this.expresion + display.value;
+                if (!expr) return;
+                const result = this.evalSafe(expr);
+                document.getElementById('calcExpr').textContent = this.formatExpr(expr) + ' =';
+                display.value = parseFloat(result.toFixed(8)).toString();
+                this.expresion = '';
+                this.esperandoOperando = true;
+            } catch (e) {
+                display.value = 'Error';
+                this.expresion = '';
+                this.esperandoOperando = true;
+            }
+        },
+
+        evalSafe(expr) {
+            // Parser seguro sin eval: tokenizar y calcular respetando precedencia
+            const tokens = expr.match(/(\d+\.?\d*|[+\-*/])/g);
+            if (!tokens) throw new Error('Expresión inválida');
+            const nums = [], ops = [];
+            const prec = { '+': 1, '-': 1, '*': 2, '/': 2 };
+            const apply = () => {
+                const b = nums.pop(), a = nums.pop(), op = ops.pop();
+                if (op === '+') nums.push(a + b);
+                else if (op === '-') nums.push(a - b);
+                else if (op === '*') nums.push(a * b);
+                else if (op === '/') {
+                    if (b === 0) throw new Error('División por cero');
+                    nums.push(a / b);
+                }
+            };
+            for (const t of tokens) {
+                if (!isNaN(t)) { nums.push(parseFloat(t)); }
+                else {
+                    while (ops.length && prec[ops[ops.length - 1]] >= prec[t]) apply();
+                    ops.push(t);
+                }
+            }
+            while (ops.length) apply();
+            return nums[0];
+        },
+
+        formatExpr(expr) {
+            return expr.replace(/\*/g, '×').replace(/\//g, '÷');
+        },
+
+        clear() {
+            document.getElementById('calcDisplay').value = '0';
+            document.getElementById('calcExpr').textContent = '';
+            this.expresion = '';
+            this.esperandoOperando = false;
+        },
+
+        backspace() {
+            const display = document.getElementById('calcDisplay');
+            display.value = display.value.length > 1 ? display.value.slice(0, -1) : '0';
+        },
+
+        // --- Módulo de tiempos ---
+        agregarBloque() {
+            const h = parseInt(document.getElementById('timeHoras').value) || 0;
+            const m = parseInt(document.getElementById('timeMinutos').value) || 0;
+            if (h === 0 && m === 0) return;
+            this.contadorBloque++;
+            this.bloquesTiempo.push({ id: this.contadorBloque, h, m });
+            document.getElementById('timeHoras').value = '';
+            document.getElementById('timeMinutos').value = '';
+            this.renderBloques();
+            this.actualizarTotal();
+        },
+
+        eliminarBloque(id) {
+            this.bloquesTiempo = this.bloquesTiempo.filter(b => b.id !== id);
+            this.renderBloques();
+            this.actualizarTotal();
+        },
+
+        renderBloques() {
+            const list = document.getElementById('bloquesTiempoList');
+            if (this.bloquesTiempo.length === 0) { list.innerHTML = ''; return; }
+            list.innerHTML = this.bloquesTiempo.map(b => `
+                <div class="bloque-tiempo-item">
+                    <span class="bloque-tiempo-label">Bandeja ${b.id}</span>
+                    <span class="bloque-tiempo-val">${b.h}h ${b.m}m</span>
+                    <button class="bloque-tiempo-del" onclick="MiniCalculadora.eliminarBloque(${b.id})">✕</button>
+                </div>
+            `).join('');
+        },
+
+        actualizarTotal() {
+            const totalMin = this.bloquesTiempo.reduce((s, b) => s + b.h * 60 + b.m, 0);
+            const totalBox = document.getElementById('timeTotalBox');
+            if (totalMin === 0) { totalBox.style.display = 'none'; return; }
+            const h = Math.floor(totalMin / 60);
+            const m = totalMin % 60;
+            const dec = (totalMin / 60).toFixed(2);
+            document.getElementById('timeTotalValor').textContent = `${h}h ${m}m`;
+            document.getElementById('timeTotalDecimal').textContent = `= ${dec} horas`;
+            totalBox.style.display = 'block';
+        },
+
+        aplicarTiempo() {
+            const totalMin = this.bloquesTiempo.reduce((s, b) => s + b.h * 60 + b.m, 0);
+            const campo = document.getElementById('tiempoImpresion');
+            if (campo) {
+                campo.value = totalMin;
+                campo.dispatchEvent(new Event('input'));
+                campo.dispatchEvent(new Event('change'));
+            }
+            this.toggle();
+        }
+    };
+    </script>
 </body>
 </html>

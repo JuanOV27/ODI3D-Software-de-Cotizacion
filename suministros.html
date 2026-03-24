@@ -95,9 +95,19 @@
 
         <!-- TABLA DE SUMINISTROS -->
         <div class="table-section">
-            <h2 class="section-title">📋 Listado de Suministros</h2>
-            
-            <div class="table-responsive">
+            <div class="section-header-row">
+                <h2 class="section-title">📋 Listado de Suministros</h2>
+                <div class="vista-toggle">
+                    <button class="btn btn-primary" id="btnVistaTabla" onclick="toggleVista('tabla')" title="Vista tabla">
+                        📋 Tabla
+                    </button>
+                    <button class="btn btn-outline" id="btnVistaCards" onclick="toggleVista('cards')" title="Vista tarjetas">
+                        🃏 Tarjetas
+                    </button>
+                </div>
+            </div>
+
+            <div id="tablaWrapper" class="table-responsive">
                 <table id="tablaSuministros">
                     <thead>
                         <tr>
@@ -120,6 +130,9 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- VISTA DE TARJETAS -->
+            <div id="cardsWrapper" class="cards-grid" style="display: none;"></div>
         </div>
 
         <!-- MODAL: AGREGAR/EDITAR SUMINISTRO -->
