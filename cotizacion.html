@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/stylecotizacion.css">
     <!-- NUEVO: Estilos de Kiri:Moto -->
     <link rel="stylesheet" href="css/kirimoto-styles.css">
+    <!-- Estilos del modo Cotización Rápida -->
+    <link rel="stylesheet" href="css/cotizacion-rapida.css">
 </head>
 <body class="kiri-panel-open">
     <div class="container">
@@ -17,11 +19,18 @@
             <button class="calc-toggle-btn" onclick="KiriMotoIntegration.togglePanel()" id="kiriHeaderToggle" title="Mostrar/Ocultar Kiri:Moto">
                 🖨️ Kiri:Moto
             </button>
+            <!-- Switch Manual / Rápida -->
+            <div class="mode-switch-bar">
+                <button class="mode-btn mode-btn--active" id="btnModoManual"
+                        onclick="CotizacionRapida.setMode('manual')">📝 Cotización Manual</button>
+                <button class="mode-btn" id="btnModoRapido"
+                        onclick="CotizacionRapida.setMode('rapida')">⚡ Cotización Rápida</button>
+            </div>
         </div>
 
         <div class="main-content">
-            <!-- COLUMNA DE PASOS -->
-            <div class="steps-column">
+            <!-- COLUMNA DE PASOS — MODO MANUAL -->
+            <div class="steps-column" id="stepsColumnManual">
                 
                 <!-- PASO 1: Información de la Pieza -->
                 <div class="step-container">
@@ -893,6 +902,140 @@
                 </div>
             </div>
 
+            <!-- COLUMNA DE PASOS — MODO RÁPIDO (oculto por defecto) -->
+            <div class="steps-column" id="stepsColumnRapido" style="display:none;">
+
+                <!-- Barra de progreso -->
+                <div class="step-container" id="quickProgressContainer">
+                    <div class="quick-progress-steps">
+                        <div class="quick-step" id="qstep-upload">
+                            <div class="quick-step__dot"></div>
+                            <span>Subir archivo</span>
+                        </div>
+                        <div class="quick-step__line"></div>
+                        <div class="quick-step" id="qstep-slice">
+                            <div class="quick-step__dot"></div>
+                            <span>Analizando</span>
+                        </div>
+                        <div class="quick-step__line"></div>
+                        <div class="quick-step" id="qstep-ready">
+                            <div class="quick-step__dot"></div>
+                            <span>Listo</span>
+                        </div>
+                    </div>
+                    <div id="quickStatusMsg" class="quick-status-msg">
+                        Sube un archivo STL o 3MF para comenzar
+                    </div>
+                </div>
+
+                <!-- Zona de carga del modelo -->
+                <div class="step-container" id="quickUploadCard">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Cargar Modelo 3D</h3>
+                    <div class="quick-dropzone" id="quickDropzone"
+                         onclick="CotizacionRapida.triggerFileSelect()"
+                         ondragover="event.preventDefault(); this.classList.add('dragover')"
+                         ondragleave="this.classList.remove('dragover')"
+                         ondrop="CotizacionRapida.handleDrop(event)">
+                        <div class="quick-dropzone__icon">📦</div>
+                        <div class="quick-dropzone__label">Arrastra tu archivo aquí</div>
+                        <div class="quick-dropzone__sub">o haz clic para seleccionar</div>
+                        <div class="quick-dropzone__types">.STL · .3MF</div>
+                    </div>
+                    <input type="file" id="quickFileInput" accept=".stl,.3mf" style="display:none;"
+                           onchange="CotizacionRapida.handleFileSelect(event)">
+
+                    <!-- Chips de resultado del análisis -->
+                    <div id="quickSliceResults" style="display:none;" class="quick-slice-results">
+                        <div class="quick-result-chip">
+                            <span>Peso estimado</span>
+                            <strong id="quickPesoDisplay">— g</strong>
+                        </div>
+                        <div class="quick-result-chip">
+                            <span>Tiempo estimado</span>
+                            <strong id="quickTiempoDisplay">— min</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario condensado -->
+                <div class="step-container" id="quickFormCard">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Parámetros Esenciales</h3>
+
+                    <div class="form-group">
+                        <label for="quickNombrePieza">Nombre de la Pieza</label>
+                        <input type="text" id="quickNombrePieza" placeholder="Ej: Engranaje v2.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quickFilamento">Filamento</label>
+                        <select id="quickFilamento" onchange="CotizacionRapida._onQuickFilamentoChange()">
+                            <option value="">-- Seleccionar del inventario --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quickMaquina">Máquina</label>
+                        <select id="quickMaquina">
+                            <option value="">-- Seleccionar máquina --</option>
+                        </select>
+                    </div>
+
+                    <div class="quick-grid-2">
+                        <div class="form-group">
+                            <label for="quickCantidad">Cantidad de Piezas</label>
+                            <input type="number" id="quickCantidad" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="quickPiezasLote">Piezas por Lote</label>
+                            <input type="number" id="quickPiezasLote" value="1" min="1">
+                        </div>
+                    </div>
+
+                    <div class="quick-grid-2">
+                        <div class="form-group">
+                            <label for="quickMargenMin">Margen Minorista (%)</label>
+                            <input type="number" id="quickMargenMin" value="30" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="quickMargenMay">Margen Mayorista (%)</label>
+                            <input type="number" id="quickMargenMay" value="20" min="0" max="100">
+                        </div>
+                    </div>
+
+                    <details class="quick-advanced-toggle">
+                        <summary>Ajustes avanzados (opcionales)</summary>
+                        <div class="quick-advanced-inner">
+                            <div class="form-group">
+                                <label for="quickHorasDiseno">Horas de Diseño</label>
+                                <input type="number" id="quickHorasDiseno" value="0" min="0" step="0.5">
+                            </div>
+                            <div class="form-group">
+                                <label for="quickCostoHoraDiseno">Costo Hora Diseño (COP)</label>
+                                <input type="number" id="quickCostoHoraDiseno" value="25000" min="0" step="1000">
+                            </div>
+                        </div>
+                    </details>
+
+                    <button class="quick-calc-btn" id="quickCalcBtn"
+                            onclick="CotizacionRapida.calcular()" disabled>
+                        ⚡ Calcular Precio
+                    </button>
+                    <p class="quick-calc-hint" id="quickCalcHint">
+                        Sube un archivo STL para habilitar el cálculo
+                    </p>
+                </div>
+
+            </div><!-- /#stepsColumnRapido -->
+
+            <!-- Iframe oculto de Kiri:Moto para modo rápido -->
+            <iframe id="quickKiriFrame"
+                    style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px; top:-9999px; border:none;"
+                    aria-hidden="true"
+                    tabindex="-1">
+            </iframe>
+
             <!-- DIVISOR REDIMENSIONABLE -->
             <div class="resizer" id="resizer"></div>
 
@@ -965,13 +1108,15 @@
 </div>
                     
                     <div class="result-item highlight">
-                        <span class="result-label">💵 Precio Minorista:</span>
+                        <span class="result-label">💵 Total Pedido Minorista:</span>
                         <span class="result-value" id="precioMinorista">$0</span>
+                        <span id="subtituloPrecioMinorista" style="font-size:0.75rem;color:#6b7280;grid-column:1/-1;margin-top:-4px;"></span>
                     </div>
-                    
+
                     <div class="result-item highlight">
-                        <span class="result-label">🏪 Precio Mayorista:</span>
+                        <span class="result-label">🏪 Total Pedido Mayorista:</span>
                         <span class="result-value" id="precioMayorista">$0</span>
+                        <span id="subtituloPrecioMayorista" style="font-size:0.75rem;color:#6b7280;grid-column:1/-1;margin-top:-4px;"></span>
                     </div>
                 </div>
 
@@ -1665,6 +1810,8 @@
 
     <!-- Script de comunicación con HandHelHearts -->
     <script src="js/bridge-handhelhearts.js"></script>
+    <!-- Módulo de cotización rápida con auto-slice -->
+    <script src="js/cotizacion-rapida.js"></script>
 
     <!-- MINI CALCULADORA / CONVERSOR DE TIEMPOS -->
     <div id="calcFab" class="calc-fab" onclick="MiniCalculadora.toggle()" title="Calculadora y conversor de tiempos">🧮</div>

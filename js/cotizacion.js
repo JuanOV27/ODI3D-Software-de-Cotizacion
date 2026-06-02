@@ -243,11 +243,18 @@ const datosPostprocesado = obtenerDatosPostprocesado();
         cantidadPiezas: parseInt(document.getElementById('cantidadPiezas').value) || 1,
         piezasPorLote: parseInt(document.getElementById('piezasPorLote').value) || 1,
 
-         // NUEVO: Datos de máquina
-        maquina_id: datosMaquina.modo === 'unica' ? datosMaquina.maquinaId : null,
-        maquinas_multiples: datosMaquina.modo === 'multiple' 
-            ? JSON.stringify(datosMaquina.maquinas) 
+        // Bug 2: incluir perfil y carrete seleccionados para que el backend los registre en BD
+        perfilFilamentoId: (typeof filamentoSeleccionado !== 'undefined' && filamentoSeleccionado?.perfil?.id)
+            ? filamentoSeleccionado.perfil.id
+            : (document.getElementById('perfilFilamentoCotizacion')?.value || null),
+        carreteId: (typeof filamentoSeleccionado !== 'undefined')
+            ? (filamentoSeleccionado?.carrete?.id || filamentoSeleccionado?.carrete?.carrete_id || null)
             : null,
+
+        // Datos de máquina
+        maquina_id: datosMaquina.modo === 'unica' ? datosMaquina.maquinaId : null,
+        // Bug 1: enviar como array (no JSON string) para que el backend lo procese directamente
+        maquinas_multiples: datosMaquina.modo === 'multiple' ? datosMaquina.maquinas : null,
 
         // NUEVO: Datos de paquetería
         depreciacion_por_hora: datosMaquina.depreciacionPorHora,
@@ -309,6 +316,7 @@ const datosPostprocesado = obtenerDatosPostprocesado();
             costoEnergia: cotizacion.costo_energia || 0,
             costoDiseno: cotizacion.costo_diseno || 0,
             depreciacionMaquina: cotizacion.depreciacion_maquina || 0,
+            subtotal: cotizacion.subtotal || 0,
             costoGIF: cotizacion.costo_gif || 0,
             costoAIU: cotizacion.costo_aiu || 0,
             costoMarcaAgua: cotizacion.costo_marca_agua || 0,
@@ -318,10 +326,11 @@ const datosPostprocesado = obtenerDatosPostprocesado();
             numeroLotes: cotizacion.numero_lotes || 1,
             costoTotalPedido: cotizacion.costo_total_pedido || 0,
             tiempoTotalHoras: cotizacion.tiempo_total_horas || 0,
-            filamentoTotalGramos: cotizacion.filamento_total_gramos || 0,      
+            filamentoTotalGramos: cotizacion.filamento_total_gramos || 0,
             costoManoObraPostprocesado: cotizacion.costo_mano_obra_postprocesado || 0,
             costoInsumosPostprocesado: cotizacion.costo_insumos_postprocesado || 0,
-            costoTotalPostprocesado: cotizacion.costo_total_postprocesado || 0
+            costoTotalPostprocesado: cotizacion.costo_total_postprocesado || 0,
+            alcancePostprocesado: cotizacion.alcance_postprocesado || 'por_pieza'
         };
         
         console.log('Calculos realizados:', calculos);
@@ -333,9 +342,21 @@ const datosPostprocesado = obtenerDatosPostprocesado();
         actualizarElemento('depreciacionMaquina', calculos.depreciacionMaquina);
         actualizarElemento('costoGIF', calculos.costoGIF);
         actualizarElemento('costoAIU', calculos.costoAIU);
+        // Precio Base por Pieza — solo fabricación, sin márgenes ni extras
         actualizarElemento('precioFinal', calculos.precioFinal);
-        actualizarElemento('precioMinorista', calculos.precioMinorista);
-        actualizarElemento('precioMayorista', calculos.precioMayorista);
+
+        // Total del pedido = (precio_pieza × cantidad) + delivery + paquetería
+        // Esto es lo que el cliente paga en total, que es lo que se muestra prominentemente.
+        const _extrasOrden = (datosDelivery.costo_delivery_total || 0) + (datosPaqueteria.costo_total_paqueteria || 0);
+        const _qty = datos.cantidadPiezas || 1;
+        actualizarElemento('precioMinorista', (calculos.precioMinorista || 0) * _qty + _extrasOrden);
+        actualizarElemento('precioMayorista', (calculos.precioMayorista || 0) * _qty + _extrasOrden);
+
+        // Actualizar subtítulos de precio por pieza si existen
+        const lblPrecioMin = document.getElementById('subtituloPrecioMinorista');
+        const lblPrecioMay = document.getElementById('subtituloPrecioMayorista');
+        if (lblPrecioMin) lblPrecioMin.textContent = `Por pieza: ${formatearMoneda(calculos.precioMinorista || 0)}`;
+        if (lblPrecioMay) lblPrecioMay.textContent = `Por pieza: ${formatearMoneda(calculos.precioMayorista || 0)}`;
         
         // Actualizar marca de agua si estÃ¡ incluida
         if (datos.incluirMarcaAgua) {
@@ -374,25 +395,36 @@ if (datosDelivery.requiere_delivery && datosDelivery.costo_delivery_total > 0) {
             resumenLotes.textContent = calculos.numeroLotes + (calculos.numeroLotes === 1 ? ' lote' : ' lotes');
         }
         
-        actualizarElemento('resumenCostoTotal', calculos.costoTotalPedido);
+        // Bug 3: resumen también refleja el total real (fabricación + delivery + paquetería)
+        const _extras = (datos.costo_delivery_total || 0) + (datos.costo_total_paqueteria || 0);
+        actualizarElemento('resumenCostoTotal', (calculos.costoTotalPedido || 0) + _extras);
         
         const datosPostprocesado = obtenerDatosPostprocesado();
 
 if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado > 0) {
+    // Bug 4: los valores de mano de obra e insumos ya vienen divididos por pieza desde el backend
+    // cuando el alcance es todo_el_lote, así que el desglose coincide con el precio calculado.
+    const esLote = calculos.alcancePostprocesado === 'todo_el_lote' && (datos.cantidadPiezas || 1) > 1;
+    const sufijo = esLote ? ` <small style="opacity:.7">(÷${datos.cantidadPiezas} piezas)</small>` : '';
+
     // Mostrar mano de obra
     const itemManoObra = document.getElementById('itemManoObraPostprocesado');
     if (itemManoObra) {
         itemManoObra.style.display = 'flex';
         actualizarElemento('costoManoObraPostprocesadoDisplay', calculos.costoManoObraPostprocesado);
+        const labelMO = itemManoObra.querySelector('span:first-child');
+        if (labelMO) labelMO.innerHTML = 'Mano de obra' + sufijo;
     }
-    
+
     // Mostrar insumos
     const itemInsumos = document.getElementById('itemInsumosPostprocesado');
     if (itemInsumos) {
         itemInsumos.style.display = 'flex';
         actualizarElemento('costoInsumosPostprocesadoDisplay', calculos.costoInsumosPostprocesado);
+        const labelIns = itemInsumos.querySelector('span:first-child');
+        if (labelIns) labelIns.innerHTML = 'Insumos' + sufijo;
     }
-    
+
     // Actualizar sección detallada
     actualizarSeccionPostprocesadoDetallado(datosPostprocesado, calculos);
     
@@ -537,14 +569,18 @@ function actualizarCostosAvanzados(datos, calculos) {
         document.getElementById('desgloseNumeroLotes').textContent = calculos.numeroLotes || 1;
         document.getElementById('desgloseTiempoTotal').textContent = ((calculos.tiempoTotalHoras || 0).toFixed(1)) + 'h';
         document.getElementById('desgloseFilamentoTotal').textContent = ((calculos.filamentoTotalGramos || 0).toFixed(1)) + 'g';
-        document.getElementById('desgloseCostoTotalPedido').textContent = formatearMoneda(calculos.costoTotalPedido || 0);
-        
-        // Calcular totales por canal
-        const totalMinorista = (calculos.costoTotalPedido || 0) * (1 + (datos.margenMinorista || 0) / 100);
-        const totalMayorista = (calculos.costoTotalPedido || 0) * (1 + (datos.margenMayorista || 0) / 100);
-        
-        document.getElementById('desgloseTotalMinorista').textContent = formatearMoneda(totalMinorista);
-        document.getElementById('desgloseTotalMayorista').textContent = formatearMoneda(totalMayorista);
+
+        // Bug 3: el costo total real incluye delivery y paquetería
+        const costoDelivery   = datos.costo_delivery_total || 0;
+        const costoPaqueteria = datos.costo_total_paqueteria || 0;
+        const extras          = costoDelivery + costoPaqueteria;
+        const granTotal          = (calculos.costoTotalPedido || 0) + extras;
+        const granTotalMinorista = (calculos.costoTotalPedido || 0) * (1 + (datos.margenMinorista || 0) / 100) + extras;
+        const granTotalMayorista = (calculos.costoTotalPedido || 0) * (1 + (datos.margenMayorista || 0) / 100) + extras;
+
+        document.getElementById('desgloseCostoTotalPedido').textContent = formatearMoneda(granTotal);
+        document.getElementById('desgloseTotalMinorista').textContent = formatearMoneda(granTotalMinorista);
+        document.getElementById('desgloseTotalMayorista').textContent = formatearMoneda(granTotalMayorista);
         
         console.log('✅ Panel de costos avanzados actualizado correctamente');
         

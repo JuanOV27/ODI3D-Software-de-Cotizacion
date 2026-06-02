@@ -1,0 +1,299 @@
+/* ============================================================
+   COTIZACIÓN RÁPIDA — Estilos del modo auto-slice
+   Complementa stylecotizacion.css sin sobreescribirlo
+   ============================================================ */
+
+/* ─── Barra de switch Manual / Rápida ────────────────────────── */
+.mode-switch-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.mode-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.75);
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease-out;
+}
+
+.mode-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.mode-btn--active {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1A2E3C;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.mode-btn--active:hover {
+    background: #fff;
+    color: #1A2E3C;
+}
+
+/* ─── Barra de progreso (3 pasos) ────────────────────────────── */
+.quick-progress-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 12px;
+}
+
+.quick-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.quick-step__dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    border: 2px solid #ccc;
+    transition: all 0.2s ease-out;
+    position: relative;
+}
+
+.quick-step__line {
+    width: 48px;
+    height: 2px;
+    background: #e0e0e0;
+    margin-bottom: 22px;
+    transition: background 0.2s ease-out;
+}
+
+.quick-step span {
+    font-size: 0.72rem;
+    color: #999;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.2s ease-out;
+}
+
+/* Estado activo */
+.quick-step--active .quick-step__dot {
+    background: #2196F3;
+    border-color: #1976D2;
+    box-shadow: 0 0 0 4px rgba(33,150,243,0.2);
+}
+
+.quick-step--active span {
+    color: #1976D2;
+    font-weight: 600;
+}
+
+/* Estado completado */
+.quick-step--done .quick-step__dot {
+    background: #2E7D32;
+    border-color: #1B5E20;
+}
+
+.quick-step--done .quick-step__dot::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.quick-step--done span {
+    color: #2E7D32;
+}
+
+/* Línea activa / completa cuando el paso siguiente está activo o done */
+.quick-step--active + .quick-step__line,
+.quick-step--done + .quick-step__line {
+    background: #2196F3;
+}
+
+/* ─── Mensaje de estado ──────────────────────────────────────── */
+.quick-status-msg {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #666;
+    font-family: 'Inter', sans-serif;
+    padding: 4px 0;
+    min-height: 22px;
+    transition: color 0.2s ease-out;
+}
+
+.quick-status-msg--loading { color: #1976D2; }
+.quick-status-msg--success { color: #2E7D32; font-weight: 600; }
+.quick-status-msg--error   { color: #C62828; font-weight: 600; }
+.quick-status-msg--warning { color: #E65100; }
+
+/* ─── Zona de carga (drag-drop) ──────────────────────────────── */
+.quick-dropzone {
+    border: 2px dashed #C0C9D0;
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #FAFBFC;
+    transition: all 0.2s ease-out;
+    margin-bottom: 12px;
+}
+
+.quick-dropzone:hover,
+.quick-dropzone.dragover {
+    border-color: #1976D2;
+    background: #EBF3FB;
+}
+
+.quick-dropzone__icon {
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.quick-dropzone__label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1A2E3C;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.quick-dropzone__sub {
+    font-size: 0.8rem;
+    color: #78909C;
+    margin-bottom: 6px;
+}
+
+.quick-dropzone__types {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-family: 'Space Mono', monospace;
+    background: #E8EEF2;
+    color: #546E7A;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+/* ─── Chips de resultado (peso / tiempo) ────────────────────── */
+.quick-slice-results {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.quick-result-chip {
+    flex: 1;
+    background: #E8F5E9;
+    border: 1px solid #A5D6A7;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.quick-result-chip span {
+    display: block;
+    font-size: 0.72rem;
+    color: #558B2F;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.quick-result-chip strong {
+    display: block;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #2E7D32;
+}
+
+/* ─── Grid de 2 columnas para campos compactos ──────────────── */
+.quick-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ─── Sección avanzada colapsable ───────────────────────────── */
+.quick-advanced-toggle {
+    margin-top: 8px;
+}
+
+.quick-advanced-toggle summary {
+    font-size: 0.82rem;
+    color: #546E7A;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    padding: 6px 0;
+    user-select: none;
+    transition: color 0.2s ease-out;
+}
+
+.quick-advanced-toggle summary:hover {
+    color: #1A2E3C;
+}
+
+.quick-advanced-inner {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ─── Botón principal Calcular Precio ───────────────────────── */
+.quick-calc-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #1A6A2E, #2E7D32);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    box-shadow: 0 3px 10px rgba(46,125,50,0.35);
+}
+
+.quick-calc-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #155724, #1B5E20);
+    box-shadow: 0 5px 15px rgba(46,125,50,0.45);
+    transform: translateY(-1px);
+}
+
+.quick-calc-btn:disabled {
+    background: #B0BEC5;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* ─── Hint debajo del botón ──────────────────────────────────── */
+.quick-calc-hint {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #90A4AE;
+    font-family: 'Inter', sans-serif;
+    margin-top: 8px;
+}

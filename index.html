@@ -110,6 +110,26 @@
             </a>
         </div>
 
+        <!-- BARRA DE SERVICIOS: Estado de Kiri:Moto -->
+        <div class="services-bar" id="servicesBar">
+            <div class="services-title">⚙️ Servicios del Sistema</div>
+            <div class="service-item" id="kiriServiceItem">
+                <div class="service-dot" id="kiriDot"></div>
+                <div class="service-info">
+                    <strong>🖨️ Kiri:Moto — Laminador Local</strong>
+                    <span class="service-status-text" id="kiriStatusText">Verificando...</span>
+                </div>
+                <div class="service-actions">
+                    <button class="service-btn-start" id="kiriStartBtn" onclick="iniciarKirimoto()" style="display:none">
+                        ▶ Iniciar
+                    </button>
+                    <a class="service-btn-open" id="kiriOpenLink" href="http://localhost:8080/kiri/" target="_blank" style="display:none">
+                        Abrir laminador ↗
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p><strong>Sistema de Gestión 3D</strong> - Versión 6.0</p>
             <p style="margin-top: 10px; font-size: 0.9rem;">
@@ -120,5 +140,253 @@
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/cotizacion.js"></script>
+
+    <script>
+    // ============================================
+    // LANZADOR DE KIRI:MOTO — INDEX
+    // ============================================
+
+    const KIRI_API = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api')
+                     + '/kirimoto_launcher.php';
+    let kiriPolling = null;
+
+    async function verificarKirimoto() {
+        try {
+            const res  = await fetch(KIRI_API + '?action=status');
+            const data = await res.json();
+            actualizarUIKiri(data.running, data.message);
+            return data.running;
+        } catch (e) {
+            actualizarUIKiri(false, '⚠️ No se pudo contactar al lanzador PHP');
+            return false;
+        }
+    }
+
+    async function iniciarKirimoto() {
+        const btn = document.getElementById('kiriStartBtn');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Iniciando...'; }
+
+        try {
+            const res  = await fetch(KIRI_API + '?action=start');
+            const data = await res.json();
+
+            if (!data.success && !data.running) {
+                actualizarUIKiri(false, '❌ ' + (data.message || 'Error al iniciar'));
+                if (btn) { btn.disabled = false; btn.textContent = '▶ Iniciar'; }
+                return;
+            }
+        } catch (e) {
+            actualizarUIKiri(false, '⚠️ Error de comunicación con PHP');
+            if (btn) { btn.disabled = false; btn.textContent = '▶ Iniciar'; }
+            return;
+        }
+
+        // Polling hasta que responda (máx 60 s)
+        actualizarUIKiri(false, '⏳ Esperando que Kiri:Moto levante (~15 s)...', true);
+        let intentos = 0;
+        kiriPolling = setInterval(async () => {
+            intentos++;
+            const corriendo = await verificarKirimoto();
+            if (corriendo || intentos >= 20) {
+                clearInterval(kiriPolling);
+                if (!corriendo) {
+                    actualizarUIKiri(false, '⏱️ Tardó más de lo esperado — revisa la ventana minimizada');
+                    if (btn) { btn.disabled = false; btn.textContent = '▶ Reintentar'; }
+                }
+            }
+        }, 3000);
+    }
+
+    function actualizarUIKiri(running, mensaje, iniciando = false) {
+        const dot    = document.getElementById('kiriDot');
+        const txt    = document.getElementById('kiriStatusText');
+        const btnS   = document.getElementById('kiriStartBtn');
+        const btnO   = document.getElementById('kiriOpenLink');
+        const item   = document.getElementById('kiriServiceItem');
+
+        if (txt) txt.textContent = mensaje || '';
+
+        if (running) {
+            if (dot)  { dot.className  = 'service-dot dot-green'; }
+            if (item) { item.className = 'service-item service-running'; }
+            if (btnS) { btnS.style.display = 'none'; }
+            if (btnO) { btnO.style.display = 'inline-flex'; }
+        } else if (iniciando) {
+            if (dot)  { dot.className  = 'service-dot dot-yellow'; }
+            if (item) { item.className = 'service-item service-starting'; }
+            if (btnS) { btnS.style.display = 'none'; }
+            if (btnO) { btnO.style.display = 'none'; }
+        } else {
+            if (dot)  { dot.className  = 'service-dot dot-red'; }
+            if (item) { item.className = 'service-item service-stopped'; }
+            if (btnS) { btnS.style.display = 'inline-flex'; btnS.disabled = false; btnS.textContent = '▶ Iniciar'; }
+            if (btnO) { btnO.style.display = 'none'; }
+        }
+    }
+
+    // Verificar al cargar y cada 30 segundos
+    document.addEventListener('DOMContentLoaded', () => {
+        verificarKirimoto();
+        setInterval(verificarKirimoto, 30000);
+    });
+    </script>
+
+    <style>
+    /* ============================================
+       BARRA DE SERVICIOS — INDEX
+       ============================================ */
+    .services-bar {
+        background: #1A2E3C;
+        padding: 16px 40px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .services-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: rgba(255,255,255,0.5);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+    }
+
+    .service-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+        padding: 10px 16px;
+        transition: all 0.3s ease;
+        flex: 1;
+        min-width: 280px;
+    }
+
+    .service-item.service-running {
+        border-color: rgba(16,185,129,0.5);
+        background: rgba(16,185,129,0.08);
+    }
+    .service-item.service-stopped {
+        border-color: rgba(239,68,68,0.4);
+        background: rgba(239,68,68,0.06);
+    }
+    .service-item.service-starting {
+        border-color: rgba(251,191,36,0.5);
+        background: rgba(251,191,36,0.07);
+    }
+
+    /* Indicador de estado (bolita) */
+    .service-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: #6B7280;
+        box-shadow: 0 0 0 2px rgba(107,114,128,0.3);
+        transition: all 0.3s ease;
+    }
+    .dot-green  {
+        background: #10B981;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.3);
+        animation: pulse-green 2s ease-in-out infinite;
+    }
+    .dot-red    { background: #EF4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.3); }
+    .dot-yellow {
+        background: #FBBF24;
+        box-shadow: 0 0 0 3px rgba(251,191,36,0.3);
+        animation: pulse-yellow 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-green {
+        0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.3); }
+        50%      { box-shadow: 0 0 0 6px rgba(16,185,129,0.15); }
+    }
+    @keyframes pulse-yellow {
+        0%,100% { opacity: 1; }
+        50%      { opacity: 0.5; }
+    }
+
+    .service-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .service-info strong {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #FFFFFF;
+    }
+    .service-status-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.6);
+    }
+    .service-running  .service-status-text { color: #6EE7B7; }
+    .service-stopped  .service-status-text { color: #FCA5A5; }
+    .service-starting .service-status-text { color: #FDE68A; }
+
+    .service-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .service-btn-start {
+        background: linear-gradient(135deg, #1B5E7B 0%, #27AE60 100%);
+        color: #FFFFFF;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .service-btn-start:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(39,174,96,0.4);
+    }
+    .service-btn-start:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .service-btn-open {
+        background: rgba(255,255,255,0.12);
+        color: #FFFFFF;
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .service-btn-open:hover {
+        background: rgba(255,255,255,0.2);
+    }
+
+    @media (max-width: 600px) {
+        .services-bar { padding: 14px 20px; }
+        .service-item { min-width: 100%; }
+    }
+    </style>
 </body>
 </html>

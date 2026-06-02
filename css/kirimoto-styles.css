@@ -84,88 +84,230 @@
 }
 
 /* ============================================
-   CONTENEDOR IFRAME (MODO ESCRITORIO)
+   PANEL LATERAL KIRI:MOTO (PERSISTENTE)
+   Reemplaza el contenedor fullscreen anterior
    ============================================ */
 
-.kiri-iframe-container {
+/* ---- Panel principal ---- */
+.kiri-side-panel {
     position: fixed;
+    right: 0;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.88);
-    z-index: 9999;
+    height: 100vh;
+    width: 32px;              /* colapsado: solo el tab */
+    z-index: 500;
+    display: flex;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.20);
+}
+
+.kiri-side-panel.kiri-panel-open {
+    width: 50vw;
+    min-width: 400px;
+}
+
+.kiri-side-panel.kiri-panel-expanded {
+    width: 70vw;
+    min-width: 400px;
+}
+
+/* ---- Tab lateral (siempre visible) ---- */
+.kiri-panel-tab {
+    width: 32px;
+    flex-shrink: 0;
+    background: #1A2E3C;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+    gap: 12px;
+    border-left: 2px solid rgba(255, 255, 255, 0.12);
+    transition: background 0.2s ease;
+    user-select: none;
 }
 
-.kiri-iframe-container.active {
-    opacity: 1;
-    visibility: visible;
+.kiri-panel-tab:hover {
+    background: #1B5E7B;
 }
 
-.kiri-header {
+.kiri-tab-icon {
+    font-size: 1rem;
+}
+
+.kiri-tab-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.kiri-tab-arrow {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.55);
+    transition: transform 0.35s ease;
+}
+
+.kiri-panel-open .kiri-tab-arrow,
+.kiri-panel-expanded .kiri-tab-arrow {
+    transform: rotate(180deg);
+}
+
+/* ---- Cuerpo del panel ---- */
+.kiri-panel-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #FFFFFF;
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* Ocultar cuerpo cuando está colapsado */
+.kiri-side-panel:not(.kiri-panel-open):not(.kiri-panel-expanded) .kiri-panel-body {
+    display: none;
+}
+
+/* ---- Header del panel ---- */
+.kiri-panel-header {
     background: #1A2E3C;
     color: #FFFFFF;
-    padding: 18px 28px;
+    padding: 11px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
 }
 
-.kiri-header h3 {
+.kiri-panel-title {
     font-family: 'Montserrat', sans-serif;
-    margin: 0;
-    font-size: 1.3rem;
-    font-weight: 600;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #FFFFFF;
 }
 
-.kiri-close {
-    background: rgba(255, 255, 255, 0.15);
+.kiri-panel-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.kiri-ctrl-btn {
+    background: rgba(255, 255, 255, 0.12);
     border: none;
     color: #FFFFFF;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    font-size: 1.4rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-size: 0.88rem;
+    transition: background 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: inherit;
 }
 
-.kiri-close:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: rotate(90deg);
+.kiri-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
 }
 
-#kiriFrame {
+/* ---- iFrame del laminador ---- */
+.kiri-panel-iframe {
     flex: 1;
     border: none;
     width: 100%;
-    background: #FFFFFF;
+    background: #1A1A2E;
+    display: block;
 }
 
-.kiri-controls {
-    background: #F5F5F5;
-    padding: 18px;
+/* ---- Footer del panel ---- */
+.kiri-panel-footer {
+    background: #F9FAFB;
+    border-top: 2px solid #E5E7EB;
+    padding: 10px 14px;
     display: flex;
-    gap: 14px;
-    justify-content: center;
-    border-top: 1px solid #CCCCCC;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.kiri-controls .btn {
-    min-width: 140px;
-    padding: 11px 22px;
+.kiri-auto-status {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    color: #374151;
+    text-align: center;
+    line-height: 1.45;
+    padding: 7px 10px;
+    background: #EBF4F9;
+    border-radius: 5px;
+    border-left: 3px solid #1B5E7B;
+}
+
+.kiri-auto-status.status-success {
+    background: #D1FAE5;
+    border-left-color: #10B981;
+    color: #065F46;
+}
+
+.kiri-apply-btn {
+    background: linear-gradient(135deg, #1A2E3C 0%, #1B5E7B 100%);
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
     font-family: 'Montserrat', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.kiri-apply-btn:hover {
+    background: linear-gradient(135deg, #1B5E7B 0%, #154360 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 46, 60, 0.32);
+}
+
+/* ============================================
+   AJUSTE DE BODY CUANDO EL PANEL ESTÁ ABIERTO
+   ============================================ */
+
+body {
+    transition: padding-right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.kiri-panel-open {
+    padding-right: calc(50vw + 20px);
+}
+
+body.kiri-panel-expanded {
+    padding-right: calc(70vw + 20px);
+}
+
+/* Adaptar columnas de pasos cuando el panel está abierto */
+body.kiri-panel-open .steps-column,
+body.kiri-panel-expanded .steps-column {
+    flex: 0 0 300px;
+    min-width: 260px;
+    grid-template-columns: 1fr;
+}
+
+body.kiri-panel-expanded .steps-column {
+    flex: 0 0 250px;
+    min-width: 220px;
 }
 
 /* ============================================
@@ -258,8 +400,14 @@
     to   { transform: translateY(0);    opacity: 1; }
 }
 
-.kiri-iframe-container.active {
-    animation: slideInUp 0.4s ease-out;
+.kiri-side-panel.kiri-panel-open,
+.kiri-side-panel.kiri-panel-expanded {
+    animation: slideInRight 0.35s ease-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
 }
 
 /* ============================================
