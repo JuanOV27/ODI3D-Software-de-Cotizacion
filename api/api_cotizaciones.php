@@ -54,6 +54,8 @@ require_once __DIR__ . '/cotizacion_calculos.php';
 
 try {
     require_once 'config.php';
+    require_once __DIR__ . '/auth_middleware.php';
+    $usuario = requireAuth();
 
     $db = Database::getInstance()->getConnection();
     $action = $_GET['action'] ?? $_POST['action'] ?? 'list';

@@ -5,6 +5,8 @@
  */
 
 require_once 'config.php';
+require_once __DIR__ . '/auth_middleware.php';
+$usuario = requireAuth(['admin']);
 
 class InventarioCarretes extends BaseModel {
     

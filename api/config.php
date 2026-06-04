@@ -370,6 +370,32 @@ if (!file_exists(__DIR__ . '/logs')) {
 }
 
 // ============================================
+// FUNCIONES CSRF
+// ============================================
+
+/**
+ * Genera o retorna el token CSRF de la sesión actual.
+ * Requiere que session_start() ya haya sido llamado.
+ */
+function generarCSRF(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Verifica que el token CSRF enviado coincida con el de la sesión.
+ * Usa comparación resistente a timing attacks.
+ */
+function validarCSRF(string $token): bool {
+    if (empty($_SESSION['csrf_token']) || empty($token)) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// ============================================
 // TEST DE CONEXIÓN (solo cuando se llama directamente)
 // ============================================
 

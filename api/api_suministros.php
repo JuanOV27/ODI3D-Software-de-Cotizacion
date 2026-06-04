@@ -17,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Incluir configuración de base de datos
 // Nota: el archivo de configuración se llama `config.php` en este proyecto
 require_once 'config.php';
+require_once __DIR__ . '/auth_middleware.php';
+$usuario = requireAuth(['admin']);
 
 // Obtener la acción solicitada
 $action = isset($_GET['action']) ? $_GET['action'] : '';

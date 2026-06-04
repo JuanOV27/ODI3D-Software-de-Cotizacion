@@ -27,7 +27,9 @@ ob_start();
 try {
     // Incluir configuración
     require_once __DIR__ . '/config.php';
-    
+    require_once __DIR__ . '/auth_middleware.php';
+    $usuario = requireAuth();
+
     // Obtener conexión PDO
     $db = Database::getInstance()->getConnection();
     
