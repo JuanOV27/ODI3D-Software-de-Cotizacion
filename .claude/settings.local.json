@@ -1,8 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git restore *)",
-      "Bash(node -e ' *)"
+      "Bash(gh pr:*)",
+      "Bash(git rm --cached api/logs/php_errors.log)",
+      "Bash(git add .gitignore)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git add api/api_cotizaciones.php cotizacion.html js/cotizacion.js)",
+      "Bash(git add CLAUDE.md js/config.js js/acciones_cotizacion.js js/paqueteria.js js/historial-cotizaciones.js js/cotizacion.js)",
+      "Bash(git push origin claude/peaceful-neumann)"
     ]
   }
 }

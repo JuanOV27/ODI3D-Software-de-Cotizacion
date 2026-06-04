@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catálogo de Productos — ODI3D</title>
+    <link rel="stylesheet" href="css/stylehistorial.css" />
+    <style>
+        /* ── Layout del catálogo ── */
+        .catalogo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.2rem;
+        }
+        .producto-card {
+            background: var(--card-bg, #fff);
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: box-shadow 0.2s ease-out;
+        }
+        .producto-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.10); }
+        .producto-card-img {
+            width: 100%; height: 160px;
+            object-fit: cover;
+            background: #f0f0f0;
+            display: flex; align-items: center; justify-content: center;
+            color: #aaa; font-size: 2rem;
+        }
+        .producto-card-img img { width: 100%; height: 100%; object-fit: cover; }
+        .producto-card-body { padding: 0.9rem 1rem; }
+        .producto-card-nombre { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .producto-card-cat { font-size: 0.75rem; color: #888; margin-bottom: 0.4rem; }
+        .producto-card-precio { font-size: 1.05rem; font-weight: 700; color: #1a2e3c; }
+        .producto-card-actions {
+            display: flex; gap: 0.4rem;
+            padding: 0.6rem 1rem; border-top: 1px solid #f0f0f0;
+        }
+        .badge-visible { display:inline-block; padding:2px 8px; border-radius:4px;
+            font-size:0.7rem; font-weight:700; }
+        .badge-visible.si  { background:#e6f4ea; color:#2e7d32; }
+        .badge-visible.no  { background:#fce8e6; color:#c62828; }
+
+        /* ── Formulario modal ── */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .preview-imgs { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem; }
+        .preview-img-item {
+            position: relative; width: 80px; height: 80px;
+            border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;
+        }
+        .preview-img-item img { width:100%; height:100%; object-fit:cover; }
+        .preview-img-item .btn-del-img {
+            position:absolute; top:2px; right:2px;
+            background:rgba(0,0,0,0.6); color:#fff;
+            border:none; border-radius:50%; width:18px; height:18px;
+            font-size:0.65rem; cursor:pointer; line-height:18px; text-align:center;
+        }
+        .upload-area {
+            border: 2px dashed #ccc; border-radius: 8px;
+            padding: 1.2rem; text-align: center; cursor: pointer;
+            color: #888; font-size: 0.85rem;
+            transition: border-color 0.2s ease-out;
+        }
+        .upload-area:hover { border-color: #1a2e3c; }
+        .upload-area.drag-over { border-color: #F5C518; background: #fffde7; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="index.html" class="nav-back">← Volver al Menú</a>
+        <h1>🏪 Catálogo de Productos</h1>
+        <p>Gestiona los productos visibles en la tienda ODI3D</p>
+    </div>
+
+    <div class="main-content" style="padding:1.5rem">
+
+        <!-- Barra de acciones -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem; margin-bottom:1rem;">
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="buscarProducto" placeholder="Buscar producto..."
+                       style="padding:0.45rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.88rem; min-width:200px;"
+                       oninput="filtrarProductos()" />
+                <select id="filtroCat" onchange="filtrarProductos()"
+                        style="padding:0.45rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.88rem;">
+                    <option value="">Todas las categorías</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">+ Nuevo producto</button>
+        </div>
+
+        <!-- Grid de productos -->
+        <div id="catalogoGrid" class="catalogo-grid">
+            <p style="color:#888; grid-column:1/-1; text-align:center; padding:2rem;">Cargando productos...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ MODAL CREAR / EDITAR ══════════════ -->
+<div id="modalProducto" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:660px;">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Nuevo producto</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="pId" />
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="pNombre" maxlength="200" />
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <input type="text" id="pCategoria" maxlength="100" placeholder="Ej: Miniaturas, Piezas técnicas" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="pDescripcion" rows="3" style="width:100%; resize:vertical; padding:0.5rem; border:1px solid #ddd; border-radius:6px; font-size:0.88rem;"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Precio (COP) *</label>
+                    <input type="number" id="pPrecio" min="0" step="100" />
+                </div>
+                <div class="form-group" style="display:flex; align-items:flex-end; gap:0.5rem; padding-bottom:2px;">
+                    <label style="margin:0; cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
+                        <input type="checkbox" id="pVisible" checked style="width:16px;height:16px;" />
+                        Visible en tienda
+                    </label>
+                </div>
+            </div>
+
+            <!-- Subida de imágenes -->
+            <div class="form-group">
+                <label>Imágenes (JPG, PNG, WebP — máx 5 MB cada una)</label>
+                <div class="upload-area" id="uploadArea"
+                     ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                     ondragleave="this.classList.remove('drag-over')"
+                     ondrop="onDrop(event)"
+                     onclick="document.getElementById('fileInput').click()">
+                    📁 Arrastra imágenes aquí o haz clic para seleccionar
+                </div>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp"
+                       multiple style="display:none" onchange="onFileSelect(event)" />
+                <div class="preview-imgs" id="previewImgs"></div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.6rem;">
+            <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ MODAL CONFIRMAR ELIMINAR ══════════════ -->
+<div id="modalEliminar" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header">
+            <h3>Eliminar producto</h3>
+            <button class="modal-close" onclick="cerrarModalEliminar()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Seguro que quieres eliminar <strong id="nombreEliminar"></strong>? Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.6rem;">
+            <button class="btn btn-secondary" onclick="cerrarModalEliminar()">Cancelar</button>
+            <button class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    const BASE_API = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api')
+                     + '/api_productos.php';
+
+    let productos   = [];
+    let idEliminar  = null;
+    // Imágenes pendientes de subir (modo crear) y las ya guardadas (modo editar)
+    let archivosNuevos = [];
+    let imagenesGuardadas = []; // [{id, ruta}]
+
+    // ── Cargar productos ──────────────────────────────────────
+    async function cargarProductos() {
+        try {
+            const r = await apiClient.get('api_productos.php', { action: 'list' });
+            if (r.success) {
+                productos = r.data || [];
+                poblarFiltroCategoria();
+                renderizarGrid(productos);
+            }
+        } catch (e) {
+            document.getElementById('catalogoGrid').innerHTML =
+                '<p style="color:#c00; grid-column:1/-1; text-align:center;">Error al cargar productos.</p>';
+        }
+    }
+
+    function poblarFiltroCategoria() {
+        const cats = [...new Set(productos.map(p => p.categoria).filter(Boolean))].sort();
+        const sel  = document.getElementById('filtroCat');
+        const actual = sel.value;
+        sel.innerHTML = '<option value="">Todas las categorías</option>';
+        cats.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c; o.textContent = c;
+            if (c === actual) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+
+    window.filtrarProductos = function () {
+        const q   = document.getElementById('buscarProducto').value.toLowerCase();
+        const cat = document.getElementById('filtroCat').value;
+        const fil = productos.filter(p =>
+            (!q   || p.nombre.toLowerCase().includes(q) || (p.descripcion || '').toLowerCase().includes(q)) &&
+            (!cat || p.categoria === cat)
+        );
+        renderizarGrid(fil);
+    };
+
+    function renderizarGrid(lista) {
+        const grid = document.getElementById('catalogoGrid');
+        if (!lista.length) {
+            grid.innerHTML = '<p style="color:#888; grid-column:1/-1; text-align:center; padding:2rem;">Sin productos.</p>';
+            return;
+        }
+        grid.innerHTML = lista.map(p => `
+            <div class="producto-card">
+                <div class="producto-card-img">
+                    ${p.imagen_principal
+                        ? `<img src="/gestion3d/${p.imagen_principal}" alt="${p.nombre}" loading="lazy" />`
+                        : '🖼️'}
+                </div>
+                <div class="producto-card-body">
+                    <div class="producto-card-nombre">${p.nombre}</div>
+                    <div class="producto-card-cat">${p.categoria || '—'}</div>
+                    <div class="producto-card-precio">$${Number(p.precio).toLocaleString('es-CO')} COP</div>
+                    <div style="margin-top:0.4rem;">
+                        <span class="badge-visible ${p.visible ? 'si' : 'no'}">
+                            ${p.visible ? 'Visible' : 'Oculto'}
+                        </span>
+                    </div>
+                </div>
+                <div class="producto-card-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="editarProducto('${p.id}')">✏️ Editar</button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleVisible('${p.id}', ${!p.visible})">
+                        ${p.visible ? '🚫 Ocultar' : '✅ Mostrar'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="solicitarEliminar('${p.id}', '${p.nombre.replace(/'/g,"\\'")}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ── Modal crear / editar ──────────────────────────────────
+    window.abrirModalNuevo = function () {
+        limpiarModal();
+        document.getElementById('modalTitulo').textContent = 'Nuevo producto';
+        document.getElementById('modalProducto').style.display = 'flex';
+    };
+
+    window.editarProducto = async function (id) {
+        limpiarModal();
+        try {
+            const r = await apiClient.get('api_productos.php', { action: 'get', id });
+            if (!r.success) return;
+            const p = r.data;
+            document.getElementById('pId').value          = p.id;
+            document.getElementById('pNombre').value      = p.nombre;
+            document.getElementById('pCategoria').value   = p.categoria || '';
+            document.getElementById('pDescripcion').value = p.descripcion || '';
+            document.getElementById('pPrecio').value      = p.precio;
+            document.getElementById('pVisible').checked   = !!p.visible;
+            imagenesGuardadas = p.imagenes || [];
+            renderizarImagenesGuardadas();
+            document.getElementById('modalTitulo').textContent = 'Editar producto';
+            document.getElementById('modalProducto').style.display = 'flex';
+        } catch (e) { alert('Error al cargar producto'); }
+    };
+
+    function limpiarModal() {
+        ['pId','pNombre','pCategoria','pDescripcion','pPrecio'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('pVisible').checked = true;
+        archivosNuevos = [];
+        imagenesGuardadas = [];
+        document.getElementById('previewImgs').innerHTML = '';
+        document.getElementById('fileInput').value = '';
+    }
+
+    window.cerrarModal = function () {
+        document.getElementById('modalProducto').style.display = 'none';
+    };
+
+    // ── Subida de imágenes ────────────────────────────────────
+    window.onFileSelect = function (e) {
+        agregarArchivos(Array.from(e.target.files));
+    };
+
+    window.onDrop = function (e) {
+        e.preventDefault();
+        document.getElementById('uploadArea').classList.remove('drag-over');
+        agregarArchivos(Array.from(e.dataTransfer.files));
+    };
+
+    function agregarArchivos(files) {
+        const permitidos = ['image/jpeg','image/png','image/webp'];
+        files.forEach(f => {
+            if (!permitidos.includes(f.type)) {
+                alert(`Archivo "${f.name}" no permitido. Solo JPG, PNG, WebP.`);
+                return;
+            }
+            if (f.size > 5 * 1024 * 1024) {
+                alert(`Archivo "${f.name}" supera 5 MB.`);
+                return;
+            }
+            archivosNuevos.push(f);
+        });
+        renderizarPreviewNuevos();
+    }
+
+    function renderizarPreviewNuevos() {
+        const prev = document.getElementById('previewImgs');
+        prev.innerHTML = '';
+        renderizarImagenesGuardadas(prev);
+        archivosNuevos.forEach((f, i) => {
+            const div = document.createElement('div');
+            div.className = 'preview-img-item';
+            const url = URL.createObjectURL(f);
+            div.innerHTML = `<img src="${url}" alt="${f.name}" />
+                <button class="btn-del-img" onclick="quitarArchivoNuevo(${i})">✕</button>`;
+            prev.appendChild(div);
+        });
+    }
+
+    function renderizarImagenesGuardadas(contenedor) {
+        const prev = contenedor || document.getElementById('previewImgs');
+        imagenesGuardadas.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'preview-img-item';
+            div.innerHTML = `<img src="/gestion3d/${img.ruta}" alt="img" />
+                <button class="btn-del-img" onclick="eliminarImagenGuardada('${img.id}')">✕</button>`;
+            prev.appendChild(div);
+        });
+    }
+
+    window.quitarArchivoNuevo = function (i) {
+        archivosNuevos.splice(i, 1);
+        renderizarPreviewNuevos();
+    };
+
+    window.eliminarImagenGuardada = async function (imgId) {
+        if (!confirm('¿Eliminar esta imagen?')) return;
+        try {
+            const r = await apiClient.delete('api_productos.php?action=delete_imagen', { id: imgId });
+            if (r.success) {
+                imagenesGuardadas = imagenesGuardadas.filter(i => i.id !== imgId);
+                document.getElementById('previewImgs').innerHTML = '';
+                renderizarImagenesGuardadas();
+                renderizarPreviewNuevos();
+            }
+        } catch (e) { alert('Error al eliminar imagen'); }
+    };
+
+    // ── Guardar producto ──────────────────────────────────────
+    window.guardarProducto = async function () {
+        const id         = document.getElementById('pId').value;
+        const nombre     = document.getElementById('pNombre').value.trim();
+        const precio     = document.getElementById('pPrecio').value;
+        const descripcion = document.getElementById('pDescripcion').value.trim();
+        const categoria  = document.getElementById('pCategoria').value.trim();
+        const visible    = document.getElementById('pVisible').checked;
+
+        if (!nombre) { alert('El nombre es obligatorio.'); return; }
+        if (!precio || isNaN(precio)) { alert('El precio es obligatorio.'); return; }
+
+        try {
+            let productoId = id;
+            let r;
+
+            if (id) {
+                r = await apiClient.put('api_productos.php', { action: 'update' }, { id, nombre, precio: parseFloat(precio), descripcion, categoria, visible });
+            } else {
+                r = await apiClient.post('api_productos.php', { action: 'create' }, { nombre, precio: parseFloat(precio), descripcion, categoria, visible });
+                if (r.success) productoId = r.data.id;
+            }
+
+            if (!r.success) { alert(r.message || r.error || 'Error al guardar'); return; }
+
+            // Subir imágenes nuevas secuencialmente
+            for (let i = 0; i < archivosNuevos.length; i++) {
+                const fd = new FormData();
+                fd.append('producto_id', productoId);
+                fd.append('imagen', archivosNuevos[i]);
+                fd.append('orden', imagenesGuardadas.length + i);
+                await fetch(`/gestion3d/api/api_productos.php?action=upload_imagen`, {
+                    method: 'POST', body: fd
+                });
+            }
+
+            cerrarModal();
+            cargarProductos();
+        } catch (e) { alert('Error al guardar producto'); }
+    };
+
+    // ── Toggle visible ────────────────────────────────────────
+    window.toggleVisible = async function (id) {
+        try {
+            const r = await apiClient.post('api_productos.php', { action: 'toggle_visible' }, { id });
+            if (r.success) cargarProductos();
+        } catch (e) { alert('Error'); }
+    };
+
+    // ── Eliminar ──────────────────────────────────────────────
+    window.solicitarEliminar = function (id, nombre) {
+        idEliminar = id;
+        document.getElementById('nombreEliminar').textContent = nombre;
+        document.getElementById('modalEliminar').style.display = 'flex';
+    };
+    window.cerrarModalEliminar = function () {
+        document.getElementById('modalEliminar').style.display = 'none';
+        idEliminar = null;
+    };
+    window.confirmarEliminar = async function () {
+        if (!idEliminar) return;
+        try {
+            const r = await apiClient.delete(`api_productos.php?action=delete&id=${idEliminar}`);
+            if (r.success) { cerrarModalEliminar(); cargarProductos(); }
+            else alert(r.message || 'Error al eliminar');
+        } catch (e) { alert('Error'); }
+    };
+
+    // Iniciar
+    document.addEventListener('DOMContentLoaded', cargarProductos);
+})();
+</script>
+</body>
+</html>

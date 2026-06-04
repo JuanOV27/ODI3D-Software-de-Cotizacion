@@ -1,0 +1,84 @@
+/* ============================================
+   ODI3D — SISTEMA DE DISEÑO DE MARCA
+   Manual de Identidad Visual v2
+   Ortiz Diseño e Impresión 3D
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&family=Space+Mono:wght@400&display=swap');
+
+:root {
+    /* ─── PALETA PRINCIPAL ─────────────────── */
+    --color-primary:       #1A2E3C;   /* Azul Marino Profundo — encabezados, botones principales */
+    --color-secondary:     #1B5E7B;   /* Azul Petróleo — acentos, hover, íconos activos */
+    --color-cta:           #F5C518;   /* Amarillo ODI3D — solo para CTAs (texto negro obligatorio) */
+    --color-black:         #000000;   /* Negro absoluto — texto principal, contornos */
+    --color-white:         #FFFFFF;   /* Blanco puro — fondo principal, texto sobre fondos oscuros */
+
+    /* ─── NEUTROS ──────────────────────────── */
+    --color-carbon:        #4A4A4A;   /* Gris Carbón — cuerpo de texto, descripciones */
+    --color-gray-mid:      #AAAAAA;   /* Gris Medio — bordes, separadores, placeholders */
+    --color-gray-border:   #CCCCCC;   /* Gris Borde — inputs, divisores */
+    --color-smoke:         #F5F5F5;   /* Gris Humo — fondo de secciones, tarjetas */
+    --color-hover-row:     #EBF4F9;   /* Hover de filas en tablas */
+
+    /* ─── SEMÁNTICOS ──────────────────────── */
+    --color-success:       #27AE60;   /* Verde — éxito, completado */
+    --color-success-dark:  #1E8449;
+    --color-warning:       #F39C12;   /* Ámbar — advertencia, en proceso */
+    --color-warning-dark:  #D68910;
+    --color-danger:        #C0392B;   /* Rojo — peligro, eliminar */
+    --color-error:         #E74C3C;   /* Rojo error */
+    --color-error-dark:    #C0392B;
+    --color-info:          #2980B9;   /* Azul info — pendiente */
+    --color-neutral:       #7F8C8D;   /* Gris neutral — cancelado */
+
+    /* ─── TIPOGRAFÍA ──────────────────────── */
+    --font-title:          'Montserrat', 'Inter', sans-serif;
+    --font-body:           'Inter', 'Open Sans', sans-serif;
+    --font-mono:           'Space Mono', 'JetBrains Mono', monospace;
+
+    /* Jerarquía tipográfica */
+    --text-h1:             2.5rem;    /* 40px */
+    --text-h2:             2rem;      /* 32px */
+    --text-h3:             1.5rem;    /* 24px */
+    --text-body:           1rem;      /* 16px */
+    --text-caption:        0.875rem;  /* 14px */
+    --text-small:          0.8125rem; /* 13px */
+
+    /* ─── BORDES Y SOMBRAS ────────────────── */
+    --radius-sm:           4px;
+    --radius-md:           6px;
+    --radius-lg:           8px;
+    --radius-xl:           12px;
+    --radius-2xl:          16px;
+    --radius-card:         8px;
+
+    --shadow-sm:           0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-card:         0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md:           0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-lg:           0 10px 25px rgba(0, 0, 0, 0.12);
+    --shadow-xl:           0 20px 40px rgba(0, 0, 0, 0.15);
+
+    /* ─── COMPONENTES ─────────────────────── */
+    /* Botón primario */
+    --btn-primary-bg:      var(--color-primary);
+    --btn-primary-hover:   var(--color-secondary);
+    --btn-primary-text:    var(--color-white);
+
+    /* Botón CTA */
+    --btn-cta-bg:          var(--color-cta);
+    --btn-cta-text:        var(--color-black);
+
+    /* Input */
+    --input-border:        var(--color-gray-border);
+    --input-focus-border:  var(--color-secondary);
+    --input-focus-shadow:  0 0 0 3px rgba(27, 94, 123, 0.15);
+    --input-bg:            var(--color-white);
+    --input-bg-readonly:   var(--color-smoke);
+
+    /* Tabla */
+    --table-header-bg:     var(--color-primary);
+    --table-header-text:   var(--color-white);
+    --table-row-alt:       var(--color-smoke);
+    --table-row-hover:     var(--color-hover-row);
+}

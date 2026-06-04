@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Solicitudes — ODI3D</title>
+    <link rel="stylesheet" href="css/stylehistorial.css" />
+    <style>
+        .solicitudes-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            height: calc(100vh - 140px);
+            overflow: hidden;
+        }
+        @media (max-width: 768px) {
+            .solicitudes-layout { grid-template-columns: 1fr; height: auto; }
+            .detalle-panel { display: none; }
+            .detalle-panel.activo { display: flex; }
+        }
+
+        /* ── Lista izquierda ── */
+        .lista-panel {
+            border-right: 1px solid #e0e0e0;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .lista-panel-header {
+            padding: 0.8rem 1rem; border-bottom: 1px solid #e0e0e0;
+            display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+        }
+        .lista-panel-header select {
+            font-size: 0.82rem; padding: 0.3rem 0.6rem;
+            border: 1px solid #ddd; border-radius: 5px; flex: 1;
+        }
+        .lista-scroll { overflow-y: auto; flex: 1; }
+
+        .solicitud-item {
+            padding: 0.85rem 1rem; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer; transition: background 0.15s ease-out;
+        }
+        .solicitud-item:hover { background: #f7f9fc; }
+        .solicitud-item.activa { background: #e8f0fe; border-left: 3px solid #1a2e3c; }
+        .solicitud-item-header { display:flex; justify-content:space-between; align-items:center; }
+        .solicitud-nombre { font-weight: 700; font-size: 0.88rem; }
+        .solicitud-fecha { font-size: 0.72rem; color: #888; }
+        .solicitud-desc { font-size: 0.8rem; color: #555; margin-top: 0.2rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge-estado {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;
+        }
+        .estado-recibida      { background:#e3f2fd; color:#1565c0; }
+        .estado-en_proceso    { background:#fff3e0; color:#e65100; }
+        .estado-cotizada      { background:#e8f5e9; color:#2e7d32; }
+        .estado-aceptada      { background:#f3e5f5; color:#6a1b9a; }
+        .estado-rechazada     { background:#fce8e6; color:#c62828; }
+        .estado-en_produccion { background:#e0f7fa; color:#006064; }
+        .estado-entregada     { background:#e8eaf6; color:#283593; }
+        .badge-chat {
+            background: #F5C518; color: #000; border-radius: 50%;
+            font-size: 0.65rem; font-weight: 800; width: 18px; height: 18px;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* ── Panel de detalle ── */
+        .detalle-panel {
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .detalle-vacio {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            color: #bbb; font-size: 1rem;
+        }
+        .detalle-header {
+            padding: 0.9rem 1.2rem; border-bottom: 1px solid #e0e0e0;
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+        }
+        .detalle-nombre { font-size: 1rem; font-weight: 700; }
+        .detalle-meta { font-size: 0.8rem; color: #666; margin-top: 0.15rem; }
+        .detalle-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
+        .detalle-desc {
+            background: #f7f9fc; border-radius: 8px; padding: 0.8rem 1rem;
+            font-size: 0.88rem; white-space: pre-wrap; margin-bottom: 1rem;
+        }
+        .archivos-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
+        .archivo-chip {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px;
+            padding: 4px 10px; font-size: 0.8rem; text-decoration: none; color: #333;
+            transition: background 0.15s ease-out;
+        }
+        .archivo-chip:hover { background: #e0e0e0; }
+
+        /* ── Acciones de estado ── */
+        .estado-form {
+            background: #f7f9fc; border-radius: 8px; padding: 0.8rem 1rem;
+            margin-bottom: 1rem; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+        }
+        .estado-form select, .estado-form input {
+            font-size: 0.83rem; padding: 0.35rem 0.6rem;
+            border: 1px solid #ddd; border-radius: 5px;
+        }
+
+        /* ── Chat interno ── */
+        .chat-panel {
+            border-top: 1px solid #e0e0e0;
+            display: flex; flex-direction: column; height: 260px;
+        }
+        .chat-titulo { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700;
+            color: #555; border-bottom: 1px solid #f0f0f0; }
+        .chat-mensajes { flex: 1; overflow-y: auto; padding: 0.6rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .msg-burbuja {
+            max-width: 75%; padding: 0.45rem 0.7rem; border-radius: 8px;
+            font-size: 0.82rem; line-height: 1.4;
+        }
+        .msg-cliente  { background:#e3f2fd; align-self:flex-start; }
+        .msg-empleado { background:#e8f5e9; align-self:flex-end; }
+        .msg-fecha { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
+        .chat-input-row {
+            display: flex; gap: 0.5rem; padding: 0.5rem 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+        .chat-input-row input {
+            flex: 1; padding: 0.4rem 0.7rem;
+            border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="index.html" class="nav-back">← Volver al Menú</a>
+        <h1>📥 Panel de Solicitudes</h1>
+        <p>Gestiona las solicitudes de cotización de los clientes</p>
+    </div>
+
+    <div class="solicitudes-layout">
+
+        <!-- ── Lista de solicitudes ── -->
+        <div class="lista-panel">
+            <div class="lista-panel-header">
+                <span style="font-size:0.8rem;font-weight:700;">Filtrar:</span>
+                <select id="filtroEstado" onchange="cargarSolicitudes()">
+                    <option value="">Todos los estados</option>
+                    <option value="recibida">Recibida</option>
+                    <option value="en_proceso">En proceso</option>
+                    <option value="cotizada">Cotizada</option>
+                    <option value="aceptada">Aceptada</option>
+                    <option value="en_produccion">En producción</option>
+                    <option value="entregada">Entregada</option>
+                    <option value="rechazada">Rechazada</option>
+                </select>
+            </div>
+            <div class="lista-scroll" id="listaSolicitudes">
+                <p style="padding:1rem; color:#888; font-size:0.85rem;">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- ── Detalle + chat ── -->
+        <div class="detalle-panel" id="detallePanel">
+            <div class="detalle-vacio" id="detalleVacio">
+                Selecciona una solicitud para ver el detalle
+            </div>
+            <div id="detalleContenido" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+                <div class="detalle-header">
+                    <div>
+                        <div class="detalle-nombre" id="dNombre">—</div>
+                        <div class="detalle-meta" id="dMeta">—</div>
+                    </div>
+                    <span class="badge-estado" id="dBadgeEstado">—</span>
+                </div>
+
+                <div class="detalle-body">
+                    <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">DESCRIPCIÓN</p>
+                    <div class="detalle-desc" id="dDescripcion">—</div>
+
+                    <div id="dArchivosSection" style="display:none;">
+                        <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">ARCHIVOS ADJUNTOS</p>
+                        <div class="archivos-list" id="dArchivos"></div>
+                    </div>
+
+                    <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">CAMBIAR ESTADO</p>
+                    <div class="estado-form">
+                        <select id="selectEstado">
+                            <option value="recibida">Recibida</option>
+                            <option value="en_proceso">En proceso</option>
+                            <option value="cotizada">Cotizada</option>
+                            <option value="aceptada">Aceptada</option>
+                            <option value="en_produccion">En producción</option>
+                            <option value="entregada">Entregada</option>
+                            <option value="rechazada">Rechazada</option>
+                        </select>
+                        <input type="number" id="inputPrecioFinal" placeholder="Precio final (COP)"
+                               min="0" step="100" style="width:180px;" />
+                        <button class="btn btn-primary btn-sm" onclick="guardarEstado()">Guardar estado</button>
+                    </div>
+
+                    <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">NOTAS INTERNAS</p>
+                    <textarea id="notasInternas" rows="2"
+                        style="width:100%; font-size:0.83rem; padding:0.5rem; border:1px solid #ddd; border-radius:6px; resize:vertical; margin-bottom:1rem;"
+                        placeholder="Notas internas (no visibles para el cliente)..."></textarea>
+                </div>
+
+                <!-- Chat -->
+                <div class="chat-panel">
+                    <div class="chat-titulo">💬 Chat con el cliente</div>
+                    <div class="chat-mensajes" id="chatMensajes"></div>
+                    <div class="chat-input-row">
+                        <input type="text" id="chatInput" placeholder="Escribe un mensaje..."
+                               onkeydown="if(event.key==='Enter') enviarMensaje()" />
+                        <button class="btn btn-primary btn-sm" onclick="enviarMensaje()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    let solicitudActual = null;
+    let pollingInterval = null;
+    const BASE_API = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api');
+
+    // ── Cargar lista ──────────────────────────────────────────
+    window.cargarSolicitudes = async function () {
+        const estado = document.getElementById('filtroEstado').value;
+        try {
+            const params = { action: 'list' };
+            if (estado) params.estado = estado;
+            const r = await apiClient.get('api_solicitudes.php', params);
+            if (r.success) renderizarLista(r.data || []);
+        } catch (e) {
+            document.getElementById('listaSolicitudes').innerHTML =
+                '<p style="padding:1rem;color:#c00;font-size:0.82rem;">Error al cargar solicitudes.</p>';
+        }
+    };
+
+    function renderizarLista(lista) {
+        const cont = document.getElementById('listaSolicitudes');
+        if (!lista.length) {
+            cont.innerHTML = '<p style="padding:1rem;color:#888;font-size:0.82rem;">Sin solicitudes.</p>';
+            return;
+        }
+        cont.innerHTML = lista.map(s => `
+            <div class="solicitud-item ${solicitudActual?.id === s.id ? 'activa' : ''}"
+                 onclick="verDetalle('${s.id}')">
+                <div class="solicitud-item-header">
+                    <span class="solicitud-nombre">${s.cliente_nombre || s.cliente_email || 'Cliente'}</span>
+                    <div style="display:flex;gap:4px;align-items:center;">
+                        ${s.mensajes_no_leidos > 0
+                            ? `<span class="badge-chat">${s.mensajes_no_leidos}</span>`
+                            : ''}
+                        <span class="badge-estado estado-${s.estado}">${formatEstado(s.estado)}</span>
+                    </div>
+                </div>
+                <div class="solicitud-desc">${s.descripcion}</div>
+                <div class="solicitud-fecha">${formatFecha(s.fecha_solicitud)}</div>
+            </div>
+        `).join('');
+    }
+
+    // ── Ver detalle ───────────────────────────────────────────
+    window.verDetalle = async function (id) {
+        clearInterval(pollingInterval);
+        try {
+            const r = await apiClient.get('api_solicitudes.php', { action: 'get', id });
+            if (!r.success) return;
+            const s = r.data;
+            solicitudActual = s;
+
+            document.getElementById('detalleVacio').style.display = 'none';
+            const cont = document.getElementById('detalleContenido');
+            cont.style.display = 'flex';
+
+            document.getElementById('dNombre').textContent =
+                s.cliente_nombre || s.cliente_email || 'Cliente';
+            document.getElementById('dMeta').textContent =
+                `${s.cliente_email || ''}${s.cliente_telefono ? ' · ' + s.cliente_telefono : ''} · ${formatFecha(s.fecha_solicitud)}`;
+            const badge = document.getElementById('dBadgeEstado');
+            badge.textContent = formatEstado(s.estado);
+            badge.className   = `badge-estado estado-${s.estado}`;
+            document.getElementById('dDescripcion').textContent = s.descripcion;
+            document.getElementById('selectEstado').value      = s.estado;
+            document.getElementById('inputPrecioFinal').value  = s.precio_final || '';
+            document.getElementById('notasInternas').value     = s.notas_internas || '';
+
+            // Archivos
+            const secArch = document.getElementById('dArchivosSection');
+            const listArch = document.getElementById('dArchivos');
+            if (s.archivos && s.archivos.length) {
+                secArch.style.display = '';
+                listArch.innerHTML = s.archivos.map(a =>
+                    `<a class="archivo-chip"
+                        href="${BASE_API}/api_solicitudes.php?action=descargar_archivo&archivo_id=${a.id}"
+                        download="${a.nombre_original}" target="_blank">
+                        📎 ${a.nombre_original}
+                    </a>`
+                ).join('');
+            } else {
+                secArch.style.display = 'none';
+            }
+
+            // Resaltar en lista
+            cargarSolicitudes();
+
+            // Cargar mensajes y activar polling
+            await cargarMensajes(id);
+            pollingInterval = setInterval(() => cargarMensajes(id), 5000);
+
+        } catch (e) { console.error(e); }
+    };
+
+    // ── Guardar estado ────────────────────────────────────────
+    window.guardarEstado = async function () {
+        if (!solicitudActual) return;
+        const estado      = document.getElementById('selectEstado').value;
+        const precioFinal = document.getElementById('inputPrecioFinal').value;
+        const notas       = document.getElementById('notasInternas').value;
+
+        try {
+            const body = { id: solicitudActual.id, estado };
+            if (precioFinal) body.precio_final     = parseFloat(precioFinal);
+            if (notas)       body.notas_internas   = notas;
+
+            const r = await apiClient.post('api_solicitudes.php', { action: 'cambiar_estado' }, body);
+            if (r.success) {
+                solicitudActual.estado = estado;
+                const badge = document.getElementById('dBadgeEstado');
+                badge.textContent = formatEstado(estado);
+                badge.className   = `badge-estado estado-${estado}`;
+                cargarSolicitudes();
+            } else {
+                alert(r.message || 'Error al guardar');
+            }
+        } catch (e) { alert('Error'); }
+    };
+
+    // ── Chat ──────────────────────────────────────────────────
+    async function cargarMensajes(solicitudId) {
+        try {
+            const r = await apiClient.get('api_chat.php', { action: 'mensajes', solicitud_id: solicitudId });
+            if (!r.success) return;
+            renderizarMensajes(r.data || []);
+        } catch (e) {}
+    }
+
+    function renderizarMensajes(mensajes) {
+        const cont = document.getElementById('chatMensajes');
+        if (!mensajes.length) {
+            cont.innerHTML = '<p style="color:#bbb;font-size:0.8rem;text-align:center;padding:0.5rem;">Sin mensajes aún.</p>';
+            return;
+        }
+        const html = mensajes.map(m => `
+            <div>
+                <div class="msg-burbuja msg-${m.remitente}">${m.mensaje}</div>
+                <div class="msg-fecha" style="text-align:${m.remitente==='empleado'?'right':'left'}">
+                    ${m.remitente === 'cliente' ? '👤 Cliente' : '🔧 Empleado'} · ${formatFecha(m.fecha)}
+                </div>
+            </div>
+        `).join('');
+        const antes = cont.scrollTop === cont.scrollHeight - cont.clientHeight;
+        cont.innerHTML = html;
+        if (antes || cont.innerHTML.length < 500) cont.scrollTop = cont.scrollHeight;
+    }
+
+    window.enviarMensaje = async function () {
+        const input   = document.getElementById('chatInput');
+        const mensaje = input.value.trim();
+        if (!mensaje || !solicitudActual) return;
+        input.value = '';
+        try {
+            await apiClient.post('api_chat.php', { action: 'enviar' }, {
+                solicitud_id: solicitudActual.id, mensaje
+            });
+            await cargarMensajes(solicitudActual.id);
+        } catch (e) {}
+    };
+
+    // ── Utilidades ────────────────────────────────────────────
+    function formatEstado(e) {
+        const m = { recibida:'Recibida', en_proceso:'En proceso', cotizada:'Cotizada',
+            aceptada:'Aceptada', rechazada:'Rechazada', en_produccion:'En producción', entregada:'Entregada' };
+        return m[e] || e;
+    }
+
+    function formatFecha(f) {
+        if (!f) return '—';
+        return new Date(f).toLocaleString('es-CO', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarSolicitudes);
+})();
+</script>
+</body>
+</html>

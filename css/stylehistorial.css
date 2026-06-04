@@ -1,0 +1,774 @@
+/* ============================================
+   HISTORIAL DE COTIZACIONES - ESTILOS
+   ODI3D — Identidad Visual v2
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Open Sans', sans-serif;
+    background: #F5F5F5;
+    min-height: 100vh;
+    padding: 20px;
+    color: #000000;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+    overflow: hidden;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    padding: 30px 40px;
+    position: relative;
+}
+
+.nav-back {
+    display: inline-block;
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.nav-back:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(-4px);
+}
+
+.header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.header p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    opacity: 0.85;
+}
+
+/* ============================================
+   DASHBOARD DE ESTADÍSTICAS
+   ============================================ */
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 28px 40px;
+    background: #F5F5F5;
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.stat-card {
+    background: #FFFFFF;
+    padding: 22px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    border: 1px solid #CCCCCC;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: #1B5E7B;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #000000;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #4A4A4A;
+    font-weight: 500;
+}
+
+/* ============================================
+   BOTONES DE ACCIÓN
+   ============================================ */
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    padding: 24px 40px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 11px 22px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #1A2E3C;
+    color: #FFFFFF;
+}
+
+.btn-primary:hover {
+    background: #1B5E7B;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26, 46, 60, 0.25);
+}
+
+.btn-secondary {
+    background: #27AE60;
+    color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+    background: #1E8449;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(39, 174, 96, 0.25);
+}
+
+.btn-outline {
+    background: #FFFFFF;
+    color: #1A2E3C;
+    border: 1px solid #1A2E3C;
+}
+
+.btn-outline:hover {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: #E74C3C;
+    color: #FFFFFF;
+}
+
+.btn-danger:hover {
+    background: #C0392B;
+    transform: translateY(-2px);
+}
+
+.btn-info {
+    background: #2980B9;
+    color: #FFFFFF;
+    padding: 7px 14px;
+    font-size: 0.875rem;
+}
+
+.btn-info:hover {
+    background: #1F618D;
+}
+
+.btn-warning {
+    background: #F39C12;
+    color: #FFFFFF;
+    padding: 7px 14px;
+    font-size: 0.875rem;
+}
+
+.btn-warning:hover {
+    background: #D68910;
+}
+
+/* ============================================
+   FILTROS Y BÚSQUEDA
+   ============================================ */
+
+.filters-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 24px 40px;
+    background: #F5F5F5;
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #4A4A4A;
+    font-size: 0.875rem;
+}
+
+.filter-group select,
+.filter-group input[type="text"],
+.filter-group input[type="date"],
+.filter-group input[type="number"] {
+    padding: 10px 14px;
+    border: 1px solid #CCCCCC;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    background: #FFFFFF;
+    color: #000000;
+    transition: all 0.2s ease;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
+}
+
+/* ============================================
+   TABLA DE HISTORIAL
+   ============================================ */
+
+.table-section {
+    padding: 28px 40px;
+}
+
+.section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title .count-badge {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    font-size: 0.85rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+#tablaCotizaciones {
+    width: 100%;
+    border-collapse: collapse;
+    background: #FFFFFF;
+}
+
+#tablaCotizaciones thead {
+    background: #1A2E3C;
+    color: #FFFFFF;
+}
+
+#tablaCotizaciones th {
+    padding: 14px 15px;
+    text-align: left;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+#tablaCotizaciones tbody tr {
+    border-bottom: 1px solid #CCCCCC;
+    transition: all 0.2s ease;
+}
+
+#tablaCotizaciones tbody tr:hover {
+    background: #EBF4F9;
+}
+
+#tablaCotizaciones td {
+    padding: 13px 15px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #4A4A4A;
+    vertical-align: middle;
+}
+
+.precio-final {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: #1A2E3C;
+    font-size: 0.95rem;
+}
+
+.precio-secundario {
+    font-size: 0.82rem;
+    color: #6B7280;
+}
+
+.nombre-pieza {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: #000000;
+}
+
+.fecha-cell {
+    white-space: nowrap;
+    font-size: 0.82rem;
+    color: #6B7280;
+}
+
+.cantidad-badge {
+    display: inline-block;
+    background: #EBF4F9;
+    color: #1B5E7B;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 3px 9px;
+    border-radius: 20px;
+}
+
+.acciones-cell {
+    display: flex;
+    gap: 6px;
+}
+
+/* Estado vacío */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6B7280;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.empty-state h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #4A4A4A;
+    margin-bottom: 8px;
+}
+
+/* ============================================
+   MODAL BASE
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-content {
+    background: #FFFFFF;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-large { max-width: 1000px; }
+.modal-small { max-width: 480px; }
+
+@keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-header {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    padding: 22px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #FFFFFF;
+    font-size: 1.3rem;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: rotate(90deg);
+}
+
+.modal-body { padding: 28px; }
+
+.modal-footer {
+    padding: 18px 28px;
+    background: #F5F5F5;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #CCCCCC;
+}
+
+/* ============================================
+   DETALLE DE COTIZACIÓN (modal)
+   ============================================ */
+
+.detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1A2E3C;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.detalle-titulo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #000000;
+}
+
+.detalle-fecha {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #6B7280;
+    margin-top: 4px;
+}
+
+.detalle-precio-principal {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1B5E7B;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.detalle-precio-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: #6B7280;
+    text-align: right;
+    margin-top: 2px;
+}
+
+.detalle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.detalle-seccion {
+    background: #F5F5F5;
+    border-radius: 8px;
+    padding: 18px;
+    border: 1px solid #CCCCCC;
+}
+
+.detalle-seccion-titulo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1A2E3C;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detalle-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #E5E7EB;
+    gap: 12px;
+}
+
+.detalle-fila:last-child { border-bottom: none; }
+
+.detalle-clave {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #6B7280;
+    flex: 1;
+}
+
+.detalle-valor {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #000000;
+    text-align: right;
+}
+
+.detalle-valor.destacado {
+    color: #1B5E7B;
+    font-size: 1rem;
+}
+
+.precios-resumen {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+}
+
+.precio-item { text-align: center; }
+
+.precio-item-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    opacity: 0.75;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.precio-item-valor {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+/* ============================================
+   MODAL FACTURA
+   ============================================ */
+
+.factura-empresa {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1A2E3C;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.factura-logo-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1A2E3C;
+}
+
+.factura-empresa-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: #6B7280;
+    margin-top: 4px;
+}
+
+.factura-numero { text-align: right; }
+
+.factura-numero-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.factura-numero-valor {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1A2E3C;
+}
+
+.factura-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.factura-tabla th {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+}
+
+.factura-tabla td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #CCCCCC;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #4A4A4A;
+}
+
+.factura-tabla tfoot td {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: #000000;
+    border-top: 2px solid #1A2E3C;
+}
+
+.factura-total-row td {
+    font-size: 1.1rem;
+    color: #1B5E7B;
+}
+
+/* ============================================
+   NOTIFICACIONES
+   ============================================ */
+
+.notificaciones-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notificacion {
+    background: #FFFFFF;
+    padding: 14px 18px;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    animation: slideInRight 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #000000;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(400px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+.notificacion-exito   { border-left: 4px solid #27AE60; }
+.notificacion-error   { border-left: 4px solid #E74C3C; }
+.notificacion-warning { border-left: 4px solid #F39C12; }
+.notificacion-info    { border-left: 4px solid #2980B9; }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .detalle-grid { grid-template-columns: 1fr; }
+    .precios-resumen { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    .header { padding: 20px; }
+    .header h1 { font-size: 1.6rem; }
+    .dashboard { padding: 20px; grid-template-columns: 1fr; }
+    .action-buttons { padding: 16px 20px; flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+    .filters-section { padding: 16px 20px; grid-template-columns: 1fr; }
+    .table-section { padding: 16px 20px; }
+    .modal-content { width: 95%; max-height: 95vh; }
+    .stat-value { font-size: 1.5rem; }
+    .detalle-precio-principal { font-size: 1.5rem; }
+    .precios-resumen { grid-template-columns: 1fr; }
+    .acciones-cell { flex-wrap: wrap; }
+}
+
+@media print {
+    body { background: white; padding: 0; }
+    .container { box-shadow: none; border-radius: 0; }
+    .action-buttons, .filters-section, .btn, .nav-back { display: none; }
+}

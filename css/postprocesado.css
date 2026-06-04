@@ -1,0 +1,406 @@
+/* ============================================
+   ESTILOS PARA MÓDULO DE POSTPROCESADO
+   ODI3D — Identidad Visual v2
+   ============================================ */
+
+/* Contenedor principal del módulo */
+#contenedorPostprocesado {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0);     }
+}
+
+/* Selector de nivel de dificultad */
+#nivelDificultadPostprocesado {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+#nivelDificultadPostprocesado:focus {
+    outline: none;
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
+}
+
+/* Input de costo de mano de obra */
+#costoManoObraPostprocesado {
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    font-weight: 400;
+    transition: border-color 0.2s;
+}
+
+#costoManoObraPostprocesado:focus {
+    outline: none;
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
+}
+
+/* Lista de insumos seleccionados */
+.insumos-seleccionados-lista {
+    min-height: 60px;
+    margin-top: 14px;
+}
+
+.lista-insumos {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.insumo-item {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.insumo-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Botón de eliminar insumo */
+.btn-eliminar-mini {
+    transition: all 0.2s;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.btn-eliminar-mini:hover {
+    background: #C0392B !important;
+    transform: scale(1.1);
+}
+
+/* Alerta de insumos faltantes */
+.alerta-insumos-faltantes {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0);  }
+    25%       { transform: translateX(-5px); }
+    75%       { transform: translateX(5px);  }
+}
+
+.lista-faltantes > div {
+    transition: background-color 0.2s;
+}
+
+.lista-faltantes > div:hover {
+    background-color: #FEF9E7 !important;
+}
+
+/* Modal de selección de insumos */
+.modal-overlay {
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-content {
+    animation: slideUp 0.3s ease-in-out;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0);     }
+}
+
+/* Input de búsqueda en modal */
+#buscarInsumoPostprocesado {
+    transition: all 0.2s;
+}
+
+#buscarInsumoPostprocesado:focus {
+    outline: none;
+    border-color: #1B5E7B;
+    box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
+}
+
+/* Items del modal */
+.insumo-modal-item {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.insumo-modal-item:hover {
+    background-color: #EBF4F9 !important;
+    transform: translateX(4px);
+}
+
+.insumo-modal-item button {
+    transition: all 0.2s;
+}
+
+.insumo-modal-item button:not(:disabled):hover {
+    background-color: #1B5E7B !important;
+    transform: scale(1.05);
+}
+
+/* Botones generales */
+.btn-small {
+    background: #1A2E3C;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+
+.btn-small:hover {
+    background: #1B5E7B;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(26, 46, 60, 0.2);
+}
+
+.btn-secondary {
+    background: #4A4A4A;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: #2C2C2C;
+}
+
+/* Resumen de costos */
+.resultado-seccion {
+    transition: all 0.3s;
+}
+
+.resultado-seccion:hover {
+    background-color: #F5F5F5;
+    padding: 14px;
+    border-radius: 6px;
+    margin: -14px;
+    margin-top: 14px;
+}
+
+/* Iconos y badges */
+.badge-nivel {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-facil {
+    background: #D5F5E3;
+    color: #1D6A3D;
+}
+
+.badge-intermedio {
+    background: #FEF9E7;
+    color: #7D6608;
+}
+
+.badge-dificil {
+    background: #FADBD8;
+    color: #922B21;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #CCCCCC;
+    border-top-color: #1A2E3C;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Inputs numéricos — ocultar spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+input[type="number"]:hover::-webkit-inner-spin-button,
+input[type="number"]:hover::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* Checkbox personalizado */
+#incluirPostprocesado {
+    accent-color: #1A2E3C;
+    cursor: pointer;
+}
+
+/* Tooltip style */
+.tooltip-postprocesado {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-postprocesado .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #1A2E3C;
+    color: #FFFFFF;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+}
+
+.tooltip-postprocesado:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Responsive — Móvil */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95%;
+        max-height: 90vh;
+        padding: 16px;
+    }
+
+    .insumo-item {
+        padding: 10px !important;
+    }
+
+    .insumo-item > div:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .btn-eliminar-mini {
+        margin-top: 8px;
+        align-self: flex-end;
+    }
+
+    .insumo-item > div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Transiciones suaves para todos los elementos interactivos */
+* {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+}
+
+button, input, select {
+    transition-duration: 0.2s;
+    transition-timing-function: ease-in-out;
+}
+
+/* Estados de error */
+.input-error {
+    border-color: #E74C3C !important;
+    background-color: #FDF2F0 !important;
+}
+
+.input-error:focus {
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.12) !important;
+}
+
+/* Estados de éxito */
+.input-success {
+    border-color: #27AE60 !important;
+    background-color: #F0FDF4 !important;
+}
+
+/* Scrollbar personalizado para el modal */
+#listaInsumosModal::-webkit-scrollbar { width: 6px; }
+#listaInsumosModal::-webkit-scrollbar-track { background: #F5F5F5; border-radius: 4px; }
+#listaInsumosModal::-webkit-scrollbar-thumb { background: #AAAAAA; border-radius: 4px; }
+#listaInsumosModal::-webkit-scrollbar-thumb:hover { background: #1B5E7B; }
+
+/* Animación de carga skeleton */
+.skeleton-loading {
+    background: linear-gradient(90deg, #F5F5F5 25%, #EEEEEE 50%, #F5F5F5 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0%   { background-position: 200% 0;  }
+    100% { background-position: -200% 0; }
+}
+
+/* Estado disabled */
+.disabled-overlay {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.disabled-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+}
+
+/* Print styles */
+@media print {
+    .modal-overlay,
+    .btn-small,
+    .btn-secondary,
+    .btn-eliminar-mini {
+        display: none !important;
+    }
+
+    .insumo-item {
+        page-break-inside: avoid;
+    }
+}
+
+/* Accesibilidad — focus visible */
+*:focus-visible {
+    outline: 2px solid #1B5E7B;
+    outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    #contenedorPostprocesado {
+        background: #1A2E3C !important;
+        color: #F5F5F5;
+    }
+
+    .insumo-item {
+        background: #1B5E7B !important;
+        border-color: #2980B9 !important;
+    }
+
+    .modal-content {
+        background: #1A2E3C !important;
+        color: #F5F5F5;
+    }
+}
