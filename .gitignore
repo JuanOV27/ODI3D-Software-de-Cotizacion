@@ -18,3 +18,7 @@ desktop.ini
 
 # XAMPP / PHP
 *.bak
+
+# Worktrees comprimidos (archivos grandes, no subir a GitHub)
+.claude/worktrees/*.rar
+.claude/worktrees/*.zip
