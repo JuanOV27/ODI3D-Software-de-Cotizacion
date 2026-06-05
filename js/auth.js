@@ -46,21 +46,26 @@
     async function verificarSesion() {
         try {
             const resp = await fetch(`${BASE}/api/api_auth.php?action=check_session`, {
-                cache: 'no-store'
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin'
             });
 
             // Si el servidor no responde correctamente redirigir a login
             if (!resp.ok && resp.status !== 401) {
-                window.location.href = `${BASE}/login.html`;
+                redirigirLogin();
                 return;
             }
 
             const json = await resp.json();
 
             if (!json.success || !json.data?.autenticado) {
-                window.location.href = `${BASE}/login.html`;
+                redirigirLogin();
                 return;
             }
+
+            // Sesión válida — mostrar contenido
+            mostrarContenido();
 
             // Guardar datos del usuario en window para uso en otras páginas
             window.sessionUsuario = json.data;
@@ -73,8 +78,28 @@
 
         } catch (err) {
             // Error de red — redirigir a login
-            window.location.href = `${BASE}/login.html`;
+            redirigirLogin();
         }
+    }
+
+    // --------------------------------------------------------
+    // Redirigir a login reemplazando el historial para que el
+    // botón "atrás" no pueda volver a la página protegida
+    // --------------------------------------------------------
+    function redirigirLogin() {
+        window.location.replace(`${BASE}/login.html`);
+    }
+
+    // --------------------------------------------------------
+    // Ocultar/mostrar el contenido de la página mientras se
+    // verifica la sesión (evita el flash de contenido protegido)
+    // --------------------------------------------------------
+    function ocultarContenido() {
+        document.documentElement.style.visibility = 'hidden';
+    }
+
+    function mostrarContenido() {
+        document.documentElement.style.visibility = '';
     }
 
     // --------------------------------------------------------
@@ -116,17 +141,37 @@
     // --------------------------------------------------------
     window.cerrarSesion = async function () {
         try {
-            await fetch(`${BASE}/api/api_auth.php?action=logout`, { method: 'GET' });
+            await fetch(`${BASE}/api/api_auth.php?action=logout`, {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin'
+            });
         } catch (_) {}
-        window.location.href = `${BASE}/login.html`;
+        // replace() borra esta página del historial: el botón "atrás"
+        // no podrá volver a ella después de cerrar sesión
+        window.location.replace(`${BASE}/login.html`);
     };
 
     // --------------------------------------------------------
-    // Arrancar al cargar el DOM
+    // Arrancar: ocultar contenido de inmediato para evitar
+    // que se vea brevemente antes de verificar la sesión
     // --------------------------------------------------------
+    ocultarContenido();
+
+    // Verificar sesión en carga normal del DOM
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', verificarSesion);
     } else {
         verificarSesion();
     }
+
+    // Verificar sesión cuando el navegador restaura la página desde
+    // el bfcache (botón "atrás"/"adelante" del navegador)
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            // La página viene del bfcache — re-verificar sesión
+            ocultarContenido();
+            verificarSesion();
+        }
+    });
 })();

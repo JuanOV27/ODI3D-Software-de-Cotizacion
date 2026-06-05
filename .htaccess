@@ -9,6 +9,14 @@
     Header set X-Frame-Options "DENY"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Evitar que el navegador cachee páginas autenticadas.
+    # Esto previene que el botón "atrás" muestre páginas protegidas
+    # luego de cerrar sesión (ataque bfcache / historial del navegador).
+    <FilesMatch "\.html$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
 </IfModule>
 
 # Bloquear acceso directo a archivos sensibles del servidor
