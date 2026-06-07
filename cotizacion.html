@@ -9,8 +9,19 @@
     <link rel="stylesheet" href="css/kirimoto-styles.css">
     <!-- Estilos del modo Cotización Rápida -->
     <link rel="stylesheet" href="css/cotizacion-rapida.css">
+    <style>
+        /* Modo incrustado: usado dentro de un <iframe> (ej. panel-empleado.html
+           vía ?embed=1) para integrarse visualmente sin encabezado propio */
+        body.embebido .header { display: none; }
+        body.embebido .container { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+    </style>
 </head>
 <body class="kiri-panel-open">
+    <script>
+        if (new URLSearchParams(location.search).get('embed') === '1') {
+            document.body.classList.add('embebido');
+        }
+    </script>
     <div class="container">
         <div class="header">
             <a href="index.html" class="nav-back">← Volver al Menú</a>

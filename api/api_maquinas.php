@@ -6,12 +6,18 @@
 
 require_once 'config.php';
 require_once __DIR__ . '/auth_middleware.php';
-$usuario = requireAuth(['admin']);
-
-header('Content-Type: application/json; charset=utf-8');
 
 // Obtener acción
 $action = $_GET['action'] ?? '';
+
+// Las acciones de solo lectura también las puede usar el rol "empleado"
+// (necesario para el cotizador y el centro de fabricación). Crear, editar
+// y eliminar máquinas sigue siendo exclusivo del administrador.
+$accionesLectura = ['list', 'estadisticas'];
+$rolesPermitidos = in_array($action, $accionesLectura, true) ? ['admin', 'empleado'] : ['admin'];
+$usuario = requireAuth($rolesPermitidos);
+
+header('Content-Type: application/json; charset=utf-8');
 
 // Obtener método HTTP
 $method = $_SERVER['REQUEST_METHOD'];

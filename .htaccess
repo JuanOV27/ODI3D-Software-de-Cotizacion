@@ -6,7 +6,10 @@
 # Activar mod_headers si está disponible
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "DENY"
+    # SAMEORIGIN: permite que las páginas del sistema se incrusten en
+    # iframes del MISMO sitio (ej. los módulos dentro de panel-empleado.html),
+    # pero sigue bloqueando que cualquier sitio externo las incruste (clickjacking).
+    Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
 

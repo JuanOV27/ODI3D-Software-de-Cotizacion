@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel del Empleado — ODI3D</title>
+    <script>
+        // ── Anti-anidamiento ──────────────────────────────────────
+        // panel-empleado.html JAMÁS debe renderizarse dentro de un <iframe>.
+        // Esto puede ocurrir si, dentro de un módulo incrustado (ej. al ver/
+        // duplicar una cotización desde el Historial), la navegación interna
+        // termina en index.html → (redirección de empleado) → panel-empleado.html,
+        // todo dentro del mismo iframe — generando un panel duplicado/anidado.
+        // Si detectamos que estamos dentro de un iframe, "rompemos" hacia la
+        // ventana superior para cargar un único panel limpio de nivel superior.
+        if (window.self !== window.top) {
+            window.top.location.replace(window.location.href);
+        }
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --negro:    #000000;
+            --blanco:   #FFFFFF;
+            --amarillo: #F5C518;
+            --gris-1:   #111111;
+            --gris-2:   #1A1A1A;
+            --gris-3:   #2A2A2A;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #eef1f5;
+        }
+
+        .empleado-layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Barra lateral ── */
+        .empleado-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            background: var(--negro);
+            color: var(--blanco);
+            display: flex;
+            flex-direction: column;
+            padding: 1.4rem 1.1rem;
+        }
+
+        .sidebar-brand {
+            font-size: 1.35rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.2rem;
+        }
+        .sidebar-brand span { color: var(--amarillo); }
+        .sidebar-sub {
+            font-size: 0.7rem;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 1.6rem;
+        }
+
+        .sidebar-usuario {
+            background: var(--gris-2);
+            border: 1px solid var(--gris-3);
+            border-radius: 10px;
+            padding: 0.8rem 0.9rem;
+            margin-bottom: 1.6rem;
+        }
+        .sidebar-usuario .rol-badge {
+            display: inline-block;
+            background: var(--amarillo);
+            color: var(--negro);
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 0.4rem;
+        }
+        .sidebar-usuario .nombre {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--blanco);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1;
+        }
+        .sidebar-nav-titulo {
+            font-size: 0.68rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin: 0.4rem 0 0.5rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.65rem 0.8rem;
+            border-radius: 8px;
+            color: #ccc;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.2s ease-out, color 0.2s ease-out, transform 0.15s ease-out;
+        }
+        .sidebar-link:hover {
+            background: var(--gris-2);
+            color: var(--blanco);
+            transform: translateX(2px);
+        }
+        .sidebar-link .icono { font-size: 1.05rem; }
+
+        .sidebar-link-activo {
+            background: rgba(245, 197, 24, 0.12);
+            color: var(--amarillo);
+            border: 1px solid rgba(245, 197, 24, 0.35);
+        }
+        .sidebar-link-activo:hover { color: var(--amarillo); transform: none; }
+
+        .btn-logout-sidebar {
+            margin-top: 1.2rem;
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--gris-3);
+            color: #aaa;
+            border-radius: 8px;
+            padding: 0.6rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: border-color 0.2s ease-out, color 0.2s ease-out;
+        }
+        .btn-logout-sidebar:hover {
+            border-color: #c0392b;
+            color: #ff6b5b;
+        }
+
+        /* ── Contenido principal ── */
+        .empleado-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .empleado-main-header {
+            background: var(--blanco);
+            border-bottom: 1px solid #dde2e8;
+            padding: 1.1rem 1.6rem;
+        }
+        .empleado-main-header h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--negro);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .empleado-main-header p {
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: 0.2rem;
+        }
+
+        /* ── Módulos incrustados (cada uno vive en su propio iframe,
+               para conservar su estado al cambiar entre pestañas) ── */
+        .modulo-frame-wrap {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .modulo-frame {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+            background: var(--blanco);
+        }
+        .modulo-frame.activo { display: block; }
+
+        @media (max-width: 860px) {
+            .empleado-layout { flex-direction: column; height: auto; }
+            .empleado-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+            .sidebar-brand, .sidebar-sub, .sidebar-usuario { display: none; }
+            .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+            .sidebar-link { width: auto; }
+            .btn-logout-sidebar { width: auto; margin-top: 0; }
+            .modulo-frame-wrap { height: 80vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="empleado-layout">
+
+        <!-- ── Barra lateral ── -->
+        <aside class="empleado-sidebar">
+            <div class="sidebar-brand">ODI<span>3D</span></div>
+            <div class="sidebar-sub">Panel del empleado</div>
+
+            <div class="sidebar-usuario" id="headerUsuario" style="display:none">
+                <span class="rol-badge" id="rolBadge">Empleado</span>
+                <div class="nombre" id="usuarioNombre">...</div>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebarNav">
+                <div class="sidebar-nav-titulo">Accesos</div>
+
+                <button type="button" class="sidebar-link sidebar-link-activo"
+                        data-modulo="solicitudes"
+                        data-titulo="📥 Panel de Solicitudes de Cotización"
+                        data-desc="Atiende y da seguimiento a las solicitudes de los clientes directamente desde aquí">
+                    <span class="icono">📥</span> Panel de solicitudes
+                </button>
+
+                <button type="button" class="sidebar-link"
+                        data-modulo="cotizador"
+                        data-titulo="💰 Cotizador"
+                        data-desc="Genera cotizaciones de proyectos de impresión 3D">
+                    <span class="icono">💰</span> Cotizador
+                </button>
+
+                <button type="button" class="sidebar-link"
+                        data-modulo="historial"
+                        data-titulo="📋 Historial de cotizaciones"
+                        data-desc="Consulta y gestiona las cotizaciones realizadas">
+                    <span class="icono">📋</span> Historial de cotizaciones
+                </button>
+
+                <button type="button" class="sidebar-link"
+                        data-modulo="fabricacion"
+                        data-titulo="🏭 Centro de fabricación"
+                        data-desc="Consulta el parque de máquinas y su disponibilidad">
+                    <span class="icono">🏭</span> Centro de fabricación
+                </button>
+            </nav>
+
+            <button class="btn-logout-sidebar" onclick="cerrarSesion()">Cerrar sesión</button>
+        </aside>
+
+        <!-- ── Contenido principal: módulos incrustados ── -->
+        <main class="empleado-main">
+            <div class="empleado-main-header">
+                <h1 id="moduloTitulo">📥 Panel de Solicitudes de Cotización</h1>
+                <p id="moduloDesc">Atiende y da seguimiento a las solicitudes de los clientes directamente desde aquí</p>
+            </div>
+            <div class="modulo-frame-wrap">
+                <iframe class="modulo-frame activo" data-modulo="solicitudes"
+                        data-src="panel-solicitudes.html?embed=1"
+                        src="panel-solicitudes.html?embed=1"
+                        title="Panel de solicitudes de cotización"></iframe>
+
+                <iframe class="modulo-frame" data-modulo="cotizador"
+                        data-src="cotizacion.html?embed=1"
+                        title="Cotizador"></iframe>
+
+                <iframe class="modulo-frame" data-modulo="historial"
+                        data-src="historial-cotizaciones.html?embed=1"
+                        title="Historial de cotizaciones"></iframe>
+
+                <iframe class="modulo-frame" data-modulo="fabricacion"
+                        data-src="centro-fabricacion.html?embed=1"
+                        title="Centro de fabricación"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+    // ============================================
+    // Conmutador de módulos incrustados
+    // Cada módulo vive en su propio <iframe> (carga perezosa la
+    // primera vez que se selecciona) y se muestra/oculta sin perder
+    // su estado al cambiar de pestaña.
+    // ============================================
+    (function () {
+        'use strict';
+
+        const titulo = document.getElementById('moduloTitulo');
+        const desc   = document.getElementById('moduloDesc');
+
+        function activarModulo(boton) {
+            const moduloId = boton.dataset.modulo;
+
+            // Resaltar botón activo en la barra lateral
+            document.querySelectorAll('#sidebarNav .sidebar-link').forEach(b => {
+                b.classList.toggle('sidebar-link-activo', b === boton);
+            });
+
+            // Actualizar encabezado del panel
+            titulo.textContent = boton.dataset.titulo;
+            desc.textContent   = boton.dataset.desc;
+
+            // Mostrar el iframe correspondiente (cargándolo si es la primera vez)
+            document.querySelectorAll('.modulo-frame').forEach(frame => {
+                const esEsteModulo = frame.dataset.modulo === moduloId;
+                frame.classList.toggle('activo', esEsteModulo);
+                if (esEsteModulo && !frame.getAttribute('src')) {
+                    frame.setAttribute('src', frame.dataset.src);
+                }
+            });
+        }
+
+        document.querySelectorAll('#sidebarNav .sidebar-link').forEach(boton => {
+            boton.addEventListener('click', () => activarModulo(boton));
+        });
+    })();
+    </script>
+</body>
+</html>

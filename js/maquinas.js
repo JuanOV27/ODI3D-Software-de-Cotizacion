@@ -142,11 +142,11 @@ function renderizarTablaMaquinas() {
                                 title="Ver detalles">
                             👁️
                         </button>
-                        <button class="btn-icon btn-edit" onclick="editarMaquina('${m.id}')" 
+                        <button class="btn-icon btn-edit solo-admin" onclick="editarMaquina('${m.id}')"
                                 title="Editar">
                             ✏️
                         </button>
-                        <button class="btn-icon btn-delete" onclick="confirmarEliminarMaquina('${m.id}')" 
+                        <button class="btn-icon btn-delete solo-admin" onclick="confirmarEliminarMaquina('${m.id}')"
                                 title="Eliminar">
                             🗑️
                         </button>

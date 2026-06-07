@@ -6,7 +6,14 @@
 
 require_once 'config.php';
 require_once __DIR__ . '/auth_middleware.php';
-$usuario = requireAuth(['admin']);
+
+// Las acciones de solo lectura también las puede usar el rol "empleado"
+// (necesario para el cotizador). Crear, editar y eliminar perfiles de
+// filamento sigue siendo exclusivo del administrador.
+$accionSolicitada = $_GET['action'] ?? '';
+$accionesLectura = ['list', 'get', 'byTipo', 'byMarca'];
+$rolesPermitidos = in_array($accionSolicitada, $accionesLectura, true) ? ['admin', 'empleado'] : ['admin'];
+$usuario = requireAuth($rolesPermitidos);
 
 class PerfilesFilamento extends BaseModel {
     

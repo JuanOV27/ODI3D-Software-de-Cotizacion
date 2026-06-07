@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Usuarios — ODI3D</title>
+    <link rel="stylesheet" href="css/stylehistorial.css" />
+    <style>
+        .usuarios-table-wrap {
+            overflow-x: auto;
+            margin-top: 1.2rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+        }
+        table.usuarios-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        table.usuarios-table th {
+            text-align: left;
+            background: #f7f9fc;
+            color: #555;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #e0e0e0;
+            white-space: nowrap;
+        }
+        table.usuarios-table td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        table.usuarios-table tr:last-child td { border-bottom: none; }
+        table.usuarios-table tr:hover td { background: #fafbfd; }
+
+        .badge-rol {
+            display: inline-block; padding: 3px 10px; border-radius: 4px;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .badge-rol.admin    { background: #fdecea; color: #c0392b; }
+        .badge-rol.empleado { background: #e8f0fe; color: #1a2e3c; }
+
+        .badge-activo {
+            display: inline-block; padding: 3px 10px; border-radius: 4px;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .badge-activo.si { background: #e6f4ea; color: #2e7d32; }
+        .badge-activo.no { background: #f0f0f0; color: #888; }
+
+        .usuario-tu-mismo {
+            font-size: 0.7rem; color: #aaa; font-style: italic;
+        }
+
+        .acciones-usuario { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+        /* ── Modal: campo condicional de confirmación de contraseña ── */
+        .alerta-admin {
+            background: #fff8e1; border: 1px solid #f5c518; border-radius: 8px;
+            padding: 0.7rem 0.9rem; margin-top: 0.6rem; font-size: 0.82rem; color: #6b5400;
+            display: none;
+        }
+        .alerta-admin.visible { display: block; }
+        .ayuda-campo { font-size: 0.75rem; color: #888; margin-top: 0.25rem; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block; font-weight: 600; color: #4A4A4A;
+            margin-bottom: 6px; font-size: 0.85rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 0.55rem 0.75rem; border: 1px solid #ccc;
+            border-radius: 6px; font-size: 0.92rem; transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: #1B5E7B; box-shadow: 0 0 0 3px rgba(27, 94, 123, 0.15);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="index.html" class="nav-back">← Volver al Menú</a>
+        <h1>👥 Gestión de Usuarios</h1>
+        <p>Crea, edita y administra los perfiles de administradores y empleados del sistema</p>
+    </div>
+
+    <div class="main-content" style="padding:1.5rem">
+
+        <!-- Barra de acciones -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="buscarUsuario" placeholder="Buscar por nombre o correo..."
+                       style="padding:0.45rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.88rem; min-width:240px;"
+                       oninput="filtrarUsuarios()" />
+                <select id="filtroRol" onchange="filtrarUsuarios()"
+                        style="padding:0.45rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.88rem;">
+                    <option value="">Todos los roles</option>
+                    <option value="admin">Administradores</option>
+                    <option value="empleado">Empleados</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="abrirModalNuevo()">+ Nuevo usuario</button>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="usuarios-table-wrap">
+            <table class="usuarios-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Correo electrónico</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Último acceso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="usuariosBody">
+                    <tr><td colspan="6" style="text-align:center; color:#888; padding:2rem;">Cargando usuarios...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ MODAL CREAR / EDITAR ══════════════ -->
+<div id="modalUsuario" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:520px;">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Nuevo usuario</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="uId" />
+
+            <div class="form-group">
+                <label>Nombre completo *</label>
+                <input type="text" id="uNombre" maxlength="100" placeholder="Ej: Juan Ortiz" />
+            </div>
+
+            <div class="form-group">
+                <label>Correo electrónico *</label>
+                <input type="email" id="uEmail" maxlength="150" placeholder="correo@odi3d.com" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+                <label id="lblPassword">Contraseña *</label>
+                <input type="password" id="uPassword" autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
+                <p class="ayuda-campo" id="ayudaPassword" style="display:none;">Deja este campo en blanco para mantener la contraseña actual.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Rol *</label>
+                <select id="uRol" onchange="onCambioRol()">
+                    <option value="empleado">Empleado</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
+
+            <!-- Confirmación de contraseña del admin actual: solo visible al crear/promover un administrador -->
+            <div class="form-group" id="grupoPasswordActual" style="display:none;">
+                <label>Tu contraseña actual (confirmación de administrador) *</label>
+                <input type="password" id="uPasswordActual" autocomplete="current-password" placeholder="••••••••" />
+                <div class="alerta-admin visible">
+                    🔒 Por seguridad, para crear o promover un perfil de <strong>administrador</strong> debes
+                    confirmar tu propia contraseña. Esto evita que cualquiera otorgue privilegios totales sin autorización.
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.6rem;">
+            <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarUsuario" onclick="guardarUsuario()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ MODAL CONFIRMAR ELIMINAR ══════════════ -->
+<div id="modalEliminar" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:420px;">
+        <div class="modal-header">
+            <h3>Eliminar usuario</h3>
+            <button class="modal-close" onclick="cerrarModalEliminar()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Seguro que quieres eliminar a <strong id="nombreEliminar"></strong>? Esta acción no se puede deshacer.</p>
+            <p class="ayuda-campo">Si el usuario tiene registros asociados (solicitudes, proyectos, etc.), no podrá eliminarse — en ese caso, desactívalo en su lugar.</p>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.6rem;">
+            <button class="btn btn-secondary" onclick="cerrarModalEliminar()">Cancelar</button>
+            <button class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    let usuarios = [];
+    let idEliminar = null;
+    let rolOriginalEdicion = null; // null = creando un usuario nuevo
+
+    // ── Cargar usuarios ───────────────────────────────────────
+    async function cargarUsuarios() {
+        try {
+            const lista = await apiClient.get('api_usuarios.php', { action: 'list' });
+            usuarios = lista || [];
+            renderizarTabla(usuarios);
+        } catch (e) {
+            document.getElementById('usuariosBody').innerHTML =
+                '<tr><td colspan="6" style="text-align:center; color:#c00; padding:2rem;">Error al cargar usuarios.</td></tr>';
+        }
+    }
+
+    window.filtrarUsuarios = function () {
+        const q   = document.getElementById('buscarUsuario').value.toLowerCase();
+        const rol = document.getElementById('filtroRol').value;
+        const fil = usuarios.filter(u =>
+            (!q   || u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) &&
+            (!rol || u.rol === rol)
+        );
+        renderizarTabla(fil);
+    };
+
+    function renderizarTabla(lista) {
+        const tbody = document.getElementById('usuariosBody');
+        if (!lista.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888; padding:2rem;">Sin usuarios registrados.</td></tr>';
+            return;
+        }
+        const miId = window.sessionUsuario?.usuario_id;
+        tbody.innerHTML = lista.map(u => {
+            const esYo = u.id === miId;
+            return `
+            <tr>
+                <td>${u.nombre} ${esYo ? '<span class="usuario-tu-mismo">(tú)</span>' : ''}</td>
+                <td>${u.email}</td>
+                <td><span class="badge-rol ${u.rol}">${u.rol === 'admin' ? 'Administrador' : 'Empleado'}</span></td>
+                <td><span class="badge-activo ${u.activo ? 'si' : 'no'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
+                <td>${formatFecha(u.ultimo_acceso)}</td>
+                <td>
+                    <div class="acciones-usuario">
+                        <button class="btn btn-sm btn-secondary" onclick="editarUsuario('${u.id}')">✏️ Editar</button>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleActivo('${u.id}')" ${esYo ? 'disabled title="No puedes cambiar tu propio estado"' : ''}>
+                            ${u.activo ? '🚫 Desactivar' : '✅ Activar'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="solicitarEliminar('${u.id}', '${u.nombre.replace(/'/g, "\\'")}')" ${esYo ? 'disabled title="No puedes eliminar tu propia cuenta"' : ''}>🗑️</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Modal crear / editar ──────────────────────────────────
+    window.abrirModalNuevo = function () {
+        limpiarModal();
+        rolOriginalEdicion = null;
+        document.getElementById('modalTitulo').textContent = 'Nuevo usuario';
+        document.getElementById('lblPassword').textContent = 'Contraseña *';
+        document.getElementById('ayudaPassword').style.display = 'none';
+        document.getElementById('uPassword').placeholder = 'Mínimo 8 caracteres';
+        onCambioRol();
+        document.getElementById('modalUsuario').style.display = 'flex';
+    };
+
+    window.editarUsuario = async function (id) {
+        limpiarModal();
+        try {
+            const u = await apiClient.get('api_usuarios.php', { action: 'get', id });
+            if (!u) return;
+            document.getElementById('uId').value     = u.id;
+            document.getElementById('uNombre').value = u.nombre;
+            document.getElementById('uEmail').value  = u.email;
+            document.getElementById('uRol').value    = u.rol;
+            rolOriginalEdicion = u.rol;
+
+            document.getElementById('modalTitulo').textContent = 'Editar usuario';
+            document.getElementById('lblPassword').textContent = 'Nueva contraseña';
+            document.getElementById('ayudaPassword').style.display = 'block';
+            document.getElementById('uPassword').placeholder = 'Dejar en blanco para no cambiarla';
+
+            onCambioRol();
+            document.getElementById('modalUsuario').style.display = 'flex';
+        } catch (e) { alert('Error al cargar el usuario'); }
+    };
+
+    function limpiarModal() {
+        ['uId', 'uNombre', 'uEmail', 'uPassword', 'uPasswordActual'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('uRol').value = 'empleado';
+    }
+
+    window.cerrarModal = function () {
+        document.getElementById('modalUsuario').style.display = 'none';
+    };
+
+    // Mostrar/ocultar el campo de confirmación de contraseña del admin actual.
+    // Solo se exige cuando el resultado final del formulario implica
+    // CREAR un admin nuevo o PROMOVER a alguien que no era admin.
+    window.onCambioRol = function () {
+        const rolSeleccionado = document.getElementById('uRol').value;
+        const promoviendoOcreandoAdmin =
+            rolSeleccionado === 'admin' && rolOriginalEdicion !== 'admin';
+
+        document.getElementById('grupoPasswordActual').style.display =
+            promoviendoOcreandoAdmin ? 'block' : 'none';
+
+        if (!promoviendoOcreandoAdmin) {
+            document.getElementById('uPasswordActual').value = '';
+        }
+    };
+
+    // ── Guardar (crear/editar) ────────────────────────────────
+    window.guardarUsuario = async function () {
+        const id     = document.getElementById('uId').value.trim();
+        const nombre = document.getElementById('uNombre').value.trim();
+        const email  = document.getElementById('uEmail').value.trim();
+        const rol    = document.getElementById('uRol').value;
+        const password       = document.getElementById('uPassword').value;
+        const passwordActual = document.getElementById('uPasswordActual').value;
+
+        if (!nombre || !email) {
+            alert('Nombre y correo electrónico son obligatorios.');
+            return;
+        }
+        if (!id && !password) {
+            alert('La contraseña es obligatoria al crear un usuario.');
+            return;
+        }
+        if (password && password.length < 8) {
+            alert('La contraseña debe tener al menos 8 caracteres.');
+            return;
+        }
+
+        const promoviendoOcreandoAdmin = rol === 'admin' && rolOriginalEdicion !== 'admin';
+        if (promoviendoOcreandoAdmin && !passwordActual) {
+            alert('Debes confirmar tu contraseña de administrador para crear o promover un perfil de administrador.');
+            return;
+        }
+
+        const btn = document.getElementById('btnGuardarUsuario');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        try {
+            if (!id) {
+                const body = { nombre, email, password, rol };
+                if (promoviendoOcreandoAdmin) body.password_actual = passwordActual;
+                await apiClient.post('api_usuarios.php', { action: 'create' }, body);
+            } else {
+                const body = { id, nombre, email, rol };
+                if (password) body.password = password;
+                if (promoviendoOcreandoAdmin) body.password_actual = passwordActual;
+                await apiClient.put('api_usuarios.php', { action: 'update' }, body);
+            }
+            cerrarModal();
+            cargarUsuarios();
+        } catch (e) {
+            alert(e.message || 'Ocurrió un error al guardar el usuario.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+        }
+    };
+
+    // ── Activar / desactivar ──────────────────────────────────
+    window.toggleActivo = async function (id) {
+        try {
+            await apiClient.post('api_usuarios.php', { action: 'toggle_activo' }, { id });
+            cargarUsuarios();
+        } catch (e) {
+            alert(e.message || 'No se pudo cambiar el estado del usuario.');
+        }
+    };
+
+    // ── Eliminar ──────────────────────────────────────────────
+    window.solicitarEliminar = function (id, nombre) {
+        idEliminar = id;
+        document.getElementById('nombreEliminar').textContent = nombre;
+        document.getElementById('modalEliminar').style.display = 'flex';
+    };
+
+    window.cerrarModalEliminar = function () {
+        document.getElementById('modalEliminar').style.display = 'none';
+        idEliminar = null;
+    };
+
+    window.confirmarEliminar = async function () {
+        if (!idEliminar) return;
+        try {
+            await apiClient.delete('api_usuarios.php', { action: 'delete', id: idEliminar });
+            cerrarModalEliminar();
+            cargarUsuarios();
+        } catch (e) {
+            alert(e.message || 'No se pudo eliminar el usuario.');
+        }
+    };
+
+    // ── Utilidades ────────────────────────────────────────────
+    function formatFecha(f) {
+        if (!f) return '— Sin accesos —';
+        return new Date(f).toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarUsuarios);
+})();
+</script>
+</body>
+</html>

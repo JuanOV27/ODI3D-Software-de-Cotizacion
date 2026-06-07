@@ -34,9 +34,11 @@
             'nav-solicitudes', 'nav-chat', 'nav-usuarios',
             'nav-modulos', 'nav-metricas'
         ],
+        // Según la matriz de permisos: el empleado NO ve métricas financieras
+        // (nav-dashboard) ni la gestión del catálogo de productos (nav-catalogo)
         empleado: [
-            'nav-dashboard', 'nav-cotizacion', 'nav-historial',
-            'nav-fabricacion', 'nav-catalogo', 'nav-solicitudes', 'nav-chat'
+            'nav-cotizacion', 'nav-historial',
+            'nav-fabricacion', 'nav-solicitudes', 'nav-chat'
         ]
     };
 

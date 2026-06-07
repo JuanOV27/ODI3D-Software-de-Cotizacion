@@ -299,7 +299,8 @@
             const json = await resp.json();
 
             if (json.success) {
-                window.location.href = `${BASE}/index.html`;
+                const rol = json.data?.rol;
+                window.location.href = `${BASE}/${rol === 'empleado' ? 'panel-empleado.html' : 'index.html'}`;
             } else {
                 mostrarError(json.message || json.error || 'Credenciales incorrectas');
                 setBloqueado(false);
@@ -315,7 +316,8 @@
         .then(r => r.json())
         .then(json => {
             if (json.success && json.data?.autenticado) {
-                window.location.href = `${BASE}/index.html`;
+                const rol = json.data?.rol;
+                window.location.href = `${BASE}/${rol === 'empleado' ? 'panel-empleado.html' : 'index.html'}`;
             }
         })
         .catch(() => {});

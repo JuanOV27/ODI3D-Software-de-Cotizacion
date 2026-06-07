@@ -86,7 +86,7 @@
                 <button class="module-button">Ir a Perfiles →</button>
             </a> -->
 
-            <a href="centro-fabricacion.html" class="module-card" data-nav-id="nav-maquinas">
+            <a href="centro-fabricacion.html" class="module-card" data-nav-id="nav-fabricacion">
     <div class="module-icon">🏭</div>
     <h2 class="module-title">Centro de Fabricación</h2>
     <p class="module-description">
@@ -148,6 +148,22 @@
                 </ul>
                 <button class="module-button">Ver Solicitudes →</button>
             </a>
+
+            <!-- MÓDULO: GESTIÓN DE USUARIOS (solo administradores) -->
+            <a href="admin-usuarios.html" class="module-card" data-nav-id="nav-usuarios">
+                <div class="module-icon">👥</div>
+                <h2 class="module-title">Gestión de Usuarios</h2>
+                <p class="module-description">
+                    Administra los perfiles de administradores y empleados con acceso al sistema
+                </p>
+                <ul class="module-features">
+                    <li>Listar, crear, editar y eliminar usuarios</li>
+                    <li>Asignación de roles (admin / empleado)</li>
+                    <li>Confirmación de contraseña al crear administradores</li>
+                    <li>Activar / desactivar cuentas</li>
+                </ul>
+                <button class="module-button">Gestionar Usuarios →</button>
+            </a>
         </div>
 
         <!-- BARRA DE SERVICIOS: Estado de Kiri:Moto -->
@@ -179,6 +195,27 @@
     </div>
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
+    <script>
+        // El panel principal (index.html) es exclusivo del administrador.
+        // Si un empleado llega aquí (enlace directo, marcador, "Volver al Menú"
+        // de un módulo abierto fuera del panel del empleado, etc.) se le
+        // redirige a su panel correspondiente: panel-empleado.html
+        (function () {
+            function redirigirSiEsEmpleado() {
+                const usuario = window.sessionUsuario;
+                if (!usuario) return false;
+                if (usuario.rol === 'empleado') {
+                    window.location.replace('panel-empleado.html');
+                }
+                return true;
+            }
+            if (!redirigirSiEsEmpleado()) {
+                const intervalo = setInterval(() => {
+                    if (redirigirSiEsEmpleado()) clearInterval(intervalo);
+                }, 100);
+            }
+        })();
+    </script>
     <script src="js/main.js"></script>
     <script src="js/cotizacion.js"></script>
 

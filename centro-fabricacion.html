@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Fabricación - Gestión de Máquinas</title>
     <link rel="stylesheet" href="css/stylemaquinas.css">
+    <style>
+        /* Modo incrustado: usado dentro de un <iframe> (ej. panel-empleado.html
+           vía ?embed=1) para integrarse visualmente sin encabezado propio */
+        body.embebido .header { display: none; }
+        body.embebido .container { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+    </style>
 </head>
 <body>
+    <script>
+        if (new URLSearchParams(location.search).get('embed') === '1') {
+            document.body.classList.add('embebido');
+        }
+    </script>
     <div class="container">
         <div class="header">
             <a href="index.html" class="nav-back">← Volver al Menú</a>
@@ -51,7 +62,7 @@
 
         <!-- BOTONES DE ACCIÓN -->
         <div class="action-buttons">
-            <button class="btn btn-primary" onclick="mostrarModalMaquina()">
+            <button class="btn btn-primary solo-admin" id="btnAgregarMaquina" onclick="mostrarModalMaquina()">
                 ➕ Agregar Nueva Máquina
             </button>
             <button class="btn btn-secondary" onclick="actualizarListaMaquinas()">
@@ -278,5 +289,32 @@
     <script src="js/auth.js"></script>
     <script src="js/main.js"></script>
     <script src="js/maquinas.js"></script>
+    <script>
+        // ============================================
+        // Restringir acciones de edición a solo administradores
+        // (el empleado puede VER el centro de fabricación, pero
+        // crear/editar/eliminar máquinas sigue siendo exclusivo del admin)
+        // ============================================
+        (function () {
+            function aplicarPermisosRol() {
+                const usuario = window.sessionUsuario;
+                if (!usuario) return false;
+
+                if (usuario.rol === 'empleado') {
+                    document.body.classList.add('rol-empleado');
+                    const estilo = document.createElement('style');
+                    estilo.textContent = '.solo-admin { display: none !important; }';
+                    document.head.appendChild(estilo);
+                }
+                return true;
+            }
+
+            if (!aplicarPermisosRol()) {
+                const intervalo = setInterval(() => {
+                    if (aplicarPermisosRol()) clearInterval(intervalo);
+                }, 100);
+            }
+        })();
+    </script>
 </body>
 </html>

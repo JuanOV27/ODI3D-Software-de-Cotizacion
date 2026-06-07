@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial de Cotizaciones - Sistema de Gestión 3D</title>
     <link rel="stylesheet" href="css/stylehistorial.css">
+    <style>
+        /* Modo incrustado: usado dentro de un <iframe> (ej. panel-empleado.html
+           vía ?embed=1) para integrarse visualmente sin encabezado propio */
+        body.embebido .header { display: none; }
+        body.embebido .container { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+    </style>
 </head>
 <body>
+    <script>
+        if (new URLSearchParams(location.search).get('embed') === '1') {
+            document.body.classList.add('embebido');
+        }
+    </script>
     <div class="container">
 
         <!-- ============================================
