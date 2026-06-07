@@ -233,8 +233,8 @@
         try {
             const params = { action: 'list' };
             if (estado) params.estado = estado;
-            const r = await apiClient.get('api_solicitudes.php', params);
-            if (r.success) renderizarLista(r.data || []);
+            const lista = await apiClient.get('api_solicitudes.php', params);
+            renderizarLista(lista || []);
         } catch (e) {
             document.getElementById('listaSolicitudes').innerHTML =
                 '<p style="padding:1rem;color:#c00;font-size:0.82rem;">Error al cargar solicitudes.</p>';
@@ -269,9 +269,8 @@
     window.verDetalle = async function (id) {
         clearInterval(pollingInterval);
         try {
-            const r = await apiClient.get('api_solicitudes.php', { action: 'get', id });
-            if (!r.success) return;
-            const s = r.data;
+            const s = await apiClient.get('api_solicitudes.php', { action: 'get', id });
+            if (!s) return;
             solicitudActual = s;
 
             document.getElementById('detalleVacio').style.display = 'none';
@@ -328,25 +327,20 @@
             if (precioFinal) body.precio_final     = parseFloat(precioFinal);
             if (notas)       body.notas_internas   = notas;
 
-            const r = await apiClient.post('api_solicitudes.php', { action: 'cambiar_estado' }, body);
-            if (r.success) {
-                solicitudActual.estado = estado;
-                const badge = document.getElementById('dBadgeEstado');
-                badge.textContent = formatEstado(estado);
-                badge.className   = `badge-estado estado-${estado}`;
-                cargarSolicitudes();
-            } else {
-                alert(r.message || 'Error al guardar');
-            }
+            await apiClient.post('api_solicitudes.php', { action: 'cambiar_estado' }, body);
+            solicitudActual.estado = estado;
+            const badge = document.getElementById('dBadgeEstado');
+            badge.textContent = formatEstado(estado);
+            badge.className   = `badge-estado estado-${estado}`;
+            cargarSolicitudes();
         } catch (e) { alert('Error'); }
     };
 
     // ── Chat ──────────────────────────────────────────────────
     async function cargarMensajes(solicitudId) {
         try {
-            const r = await apiClient.get('api_chat.php', { action: 'mensajes', solicitud_id: solicitudId });
-            if (!r.success) return;
-            renderizarMensajes(r.data || []);
+            const mensajes = await apiClient.get('api_chat.php', { action: 'mensajes', solicitud_id: solicitudId });
+            renderizarMensajes(mensajes || []);
         } catch (e) {}
     }
 

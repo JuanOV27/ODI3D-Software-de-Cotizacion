@@ -217,9 +217,9 @@
 (function () {
     'use strict';
 
-    // Detectar base URL del sistema
+    // Detectar base URL del sistema (funciona aunque esté en una subcarpeta, ej: /ODI3D/gestion3d/)
     const BASE = (() => {
-        const m = location.pathname.match(/^(\/gestion3d)\//);
+        const m = location.pathname.match(/(.*\/gestion3d)\//);
         return m ? m[1] : '/gestion3d';
     })();
 

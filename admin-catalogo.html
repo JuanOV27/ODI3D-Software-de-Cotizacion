@@ -184,6 +184,9 @@
 
     const BASE_API = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/gestion3d/api')
                      + '/api_productos.php';
+    const BASE = typeof API_CONFIG !== 'undefined'
+        ? API_CONFIG.baseURL.replace(/\/api$/, '')
+        : '/gestion3d';
 
     let productos   = [];
     let idEliminar  = null;
@@ -194,12 +197,10 @@
     // ── Cargar productos ──────────────────────────────────────
     async function cargarProductos() {
         try {
-            const r = await apiClient.get('api_productos.php', { action: 'list' });
-            if (r.success) {
-                productos = r.data || [];
-                poblarFiltroCategoria();
-                renderizarGrid(productos);
-            }
+            const lista = await apiClient.get('api_productos.php', { action: 'list' });
+            productos = lista || [];
+            poblarFiltroCategoria();
+            renderizarGrid(productos);
         } catch (e) {
             document.getElementById('catalogoGrid').innerHTML =
                 '<p style="color:#c00; grid-column:1/-1; text-align:center;">Error al cargar productos.</p>';
@@ -239,7 +240,7 @@
             <div class="producto-card">
                 <div class="producto-card-img">
                     ${p.imagen_principal
-                        ? `<img src="/gestion3d/${p.imagen_principal}" alt="${p.nombre}" loading="lazy" />`
+                        ? `<img src="${BASE}/${p.imagen_principal}" alt="${p.nombre}" loading="lazy" />`
                         : '🖼️'}
                 </div>
                 <div class="producto-card-body">
@@ -273,9 +274,8 @@
     window.editarProducto = async function (id) {
         limpiarModal();
         try {
-            const r = await apiClient.get('api_productos.php', { action: 'get', id });
-            if (!r.success) return;
-            const p = r.data;
+            const p = await apiClient.get('api_productos.php', { action: 'get', id });
+            if (!p) return;
             document.getElementById('pId').value          = p.id;
             document.getElementById('pNombre').value      = p.nombre;
             document.getElementById('pCategoria').value   = p.categoria || '';
@@ -350,7 +350,7 @@
         imagenesGuardadas.forEach(img => {
             const div = document.createElement('div');
             div.className = 'preview-img-item';
-            div.innerHTML = `<img src="/gestion3d/${img.ruta}" alt="img" />
+            div.innerHTML = `<img src="${BASE}/${img.ruta}" alt="img" />
                 <button class="btn-del-img" onclick="eliminarImagenGuardada('${img.id}')">✕</button>`;
             prev.appendChild(div);
         });
@@ -394,10 +394,8 @@
                 r = await apiClient.put('api_productos.php', { action: 'update' }, { id, nombre, precio: parseFloat(precio), descripcion, categoria, visible });
             } else {
                 r = await apiClient.post('api_productos.php', { action: 'create' }, { nombre, precio: parseFloat(precio), descripcion, categoria, visible });
-                if (r.success) productoId = r.data.id;
+                if (r) productoId = r.id;
             }
-
-            if (!r.success) { alert(r.message || r.error || 'Error al guardar'); return; }
 
             // Subir imágenes nuevas secuencialmente
             for (let i = 0; i < archivosNuevos.length; i++) {
@@ -405,7 +403,7 @@
                 fd.append('producto_id', productoId);
                 fd.append('imagen', archivosNuevos[i]);
                 fd.append('orden', imagenesGuardadas.length + i);
-                await fetch(`/gestion3d/api/api_productos.php?action=upload_imagen`, {
+                await fetch(`${API_CONFIG.baseURL}/api_productos.php?action=upload_imagen`, {
                     method: 'POST', body: fd
                 });
             }
@@ -418,8 +416,8 @@
     // ── Toggle visible ────────────────────────────────────────
     window.toggleVisible = async function (id) {
         try {
-            const r = await apiClient.post('api_productos.php', { action: 'toggle_visible' }, { id });
-            if (r.success) cargarProductos();
+            await apiClient.post('api_productos.php', { action: 'toggle_visible' }, { id });
+            cargarProductos();
         } catch (e) { alert('Error'); }
     };
 
@@ -436,9 +434,9 @@
     window.confirmarEliminar = async function () {
         if (!idEliminar) return;
         try {
-            const r = await apiClient.delete(`api_productos.php?action=delete&id=${idEliminar}`);
-            if (r.success) { cerrarModalEliminar(); cargarProductos(); }
-            else alert(r.message || 'Error al eliminar');
+            await apiClient.delete(`api_productos.php?action=delete&id=${idEliminar}`);
+            cerrarModalEliminar();
+            cargarProductos();
         } catch (e) { alert('Error'); }
     };
 
