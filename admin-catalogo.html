@@ -124,6 +124,15 @@
                 <textarea id="pDescripcion" rows="3" style="width:100%; resize:vertical; padding:0.5rem; border:1px solid #ddd; border-radius:6px; font-size:0.88rem;"></textarea>
             </div>
 
+            <div class="form-group">
+                <label>Enlace al producto en el catálogo de WhatsApp</label>
+                <input type="url" id="pEnlaceWhatsapp" maxlength="255"
+                       placeholder="Ej: https://wa.me/p/26414236364846202/573147889080" />
+                <small style="color:#888; font-size:0.8rem;">
+                    Si se completa, el botón de WhatsApp del producto llevará directamente a esta ficha del catálogo en lugar de enviar un mensaje genérico.
+                </small>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label>Precio (COP) *</label>
@@ -279,6 +288,7 @@
             document.getElementById('pId').value          = p.id;
             document.getElementById('pNombre').value      = p.nombre;
             document.getElementById('pCategoria').value   = p.categoria || '';
+            document.getElementById('pEnlaceWhatsapp').value = p.enlace_whatsapp || '';
             document.getElementById('pDescripcion').value = p.descripcion || '';
             document.getElementById('pPrecio').value      = p.precio;
             document.getElementById('pVisible').checked   = !!p.visible;
@@ -290,7 +300,7 @@
     };
 
     function limpiarModal() {
-        ['pId','pNombre','pCategoria','pDescripcion','pPrecio'].forEach(id => {
+        ['pId','pNombre','pCategoria','pEnlaceWhatsapp','pDescripcion','pPrecio'].forEach(id => {
             document.getElementById(id).value = '';
         });
         document.getElementById('pVisible').checked = true;
@@ -381,6 +391,7 @@
         const precio     = document.getElementById('pPrecio').value;
         const descripcion = document.getElementById('pDescripcion').value.trim();
         const categoria  = document.getElementById('pCategoria').value.trim();
+        const enlace_whatsapp = document.getElementById('pEnlaceWhatsapp').value.trim();
         const visible    = document.getElementById('pVisible').checked;
 
         if (!nombre) { alert('El nombre es obligatorio.'); return; }
@@ -391,9 +402,9 @@
             let r;
 
             if (id) {
-                r = await apiClient.put('api_productos.php', { action: 'update' }, { id, nombre, precio: parseFloat(precio), descripcion, categoria, visible });
+                r = await apiClient.put('api_productos.php', { action: 'update' }, { id, nombre, precio: parseFloat(precio), descripcion, categoria, enlace_whatsapp, visible });
             } else {
-                r = await apiClient.post('api_productos.php', { action: 'create' }, { nombre, precio: parseFloat(precio), descripcion, categoria, visible });
+                r = await apiClient.post('api_productos.php', { action: 'create' }, { nombre, precio: parseFloat(precio), descripcion, categoria, enlace_whatsapp, visible });
                 if (r) productoId = r.id;
             }
 

@@ -109,8 +109,8 @@ function crearProducto(array $usuario): void {
     $id = time() . '_' . substr(md5(uniqid(rand(), true)), 0, 9);
 
     $stmt = $db->prepare(
-        "INSERT INTO productos (id, nombre, descripcion, precio, categoria, visible, creado_por)
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO productos (id, nombre, descripcion, precio, categoria, enlace_whatsapp, visible, creado_por)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     );
     $ok = $stmt->execute([
         $id,
@@ -118,6 +118,7 @@ function crearProducto(array $usuario): void {
         Utils::sanitizeInput($input['descripcion'] ?? ''),
         (float) $input['precio'],
         Utils::sanitizeInput($input['categoria'] ?? ''),
+        Utils::sanitizeInput($input['enlace_whatsapp'] ?? '') ?: null,
         isset($input['visible']) ? (int)(bool)$input['visible'] : 1,
         $usuario['usuario_id']
     ]);
@@ -161,6 +162,10 @@ function actualizarProducto(array $usuario): void {
     if (isset($input['categoria'])) {
         $campos[] = 'categoria = ?';
         $params[] = Utils::sanitizeInput($input['categoria']);
+    }
+    if (isset($input['enlace_whatsapp'])) {
+        $campos[] = 'enlace_whatsapp = ?';
+        $params[] = Utils::sanitizeInput($input['enlace_whatsapp']) ?: null;
     }
     if (isset($input['visible'])) {
         $campos[] = 'visible = ?';
