@@ -625,47 +625,123 @@ body {
    MODAL FACTURA
    ============================================ */
 
-.factura-empresa {
+.factura-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     padding-bottom: 20px;
     border-bottom: 2px solid #1A2E3C;
     gap: 20px;
     flex-wrap: wrap;
 }
 
-.factura-logo-text {
+.empresa-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-width: 280px;
+}
+
+.empresa-logo {
+    height: 54px;
+    width: auto;
+    object-fit: contain;
+    margin-bottom: 6px;
+}
+
+.empresa-nombre-input {
     font-family: 'Montserrat', sans-serif;
-    font-size: 1.8rem;
+    font-size: 1.15rem;
     font-weight: 800;
     color: #1A2E3C;
+    border: none;
+    border-bottom: 1px solid transparent;
+    padding: 2px 0;
+    background: transparent;
 }
 
-.factura-empresa-sub {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: #6B7280;
-    margin-top: 4px;
-}
-
-.factura-numero { text-align: right; }
-
-.factura-numero-label {
+.empresa-dato-input {
     font-family: 'Inter', sans-serif;
     font-size: 0.82rem;
     color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border: none;
+    border-bottom: 1px solid transparent;
+    padding: 1px 0;
+    background: transparent;
 }
 
-.factura-numero-valor {
+.empresa-nombre-input:focus,
+.empresa-dato-input:focus {
+    border-bottom-color: #CCCCCC;
+    outline: none;
+}
+
+.factura-meta { text-align: right; }
+
+.factura-numero {
     font-family: 'Montserrat', sans-serif;
     font-size: 1.2rem;
     font-weight: 700;
     color: #1A2E3C;
 }
+
+.factura-meta-dato {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: #6B7280;
+    margin-top: 2px;
+}
+
+.factura-estado-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 12px;
+    border-radius: 20px;
+    background: #E8F4F8;
+    color: #1B5E7B;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cliente-section { margin-bottom: 24px; }
+
+.cliente-section h4 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    color: #1A2E3C;
+    margin-bottom: 10px;
+}
+
+.cliente-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.cliente-fila label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: #6B7280;
+    min-width: 70px;
+}
+
+.cliente-input {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #4A4A4A;
+    border: none;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 3px 0;
+    background: transparent;
+}
+
+.cliente-input:focus { border-bottom-color: #1B5E7B; outline: none; }
 
 .factura-tabla {
     width: 100%;
@@ -691,16 +767,106 @@ body {
     color: #4A4A4A;
 }
 
-.factura-tabla tfoot td {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    color: #000000;
-    border-top: 2px solid #1A2E3C;
+.factura-totales {
+    display: flex;
+    justify-content: flex-end;
+    margin: 6px 0 24px;
 }
 
-.factura-total-row td {
-    font-size: 1.1rem;
+.totales-box { min-width: 260px; }
+
+.total-fila {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 6px 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #4A4A4A;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.total-fila:last-child {
+    border-bottom: none;
+    border-top: 2px solid #1A2E3C;
+    margin-top: 4px;
+    padding-top: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
     color: #1B5E7B;
+}
+
+/* --- Bloque de pago: QR Bre-B / Nequi --- */
+.factura-pago {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 0 0 24px;
+    padding: 16px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    background: #F9FAFB;
+}
+
+.pago-qr img {
+    display: block;
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+}
+
+.pago-info h4 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    color: #1A2E3C;
+    margin-bottom: 4px;
+}
+
+.pago-info p {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: #6B7280;
+    margin: 2px 0;
+}
+
+.pago-titular {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: #1B5E7B;
+}
+
+.factura-notas { margin-bottom: 16px; }
+
+.factura-notas h4 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    color: #1A2E3C;
+    margin-bottom: 8px;
+}
+
+.factura-notas textarea {
+    width: 100%;
+    min-height: 60px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: #6B7280;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 10px;
+    resize: vertical;
+}
+
+.factura-footer-text {
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: #6B7280;
+    padding-top: 16px;
+    border-top: 1px solid #E5E7EB;
 }
 
 /* ============================================
@@ -771,4 +937,5 @@ body {
     body { background: white; padding: 0; }
     .container { box-shadow: none; border-radius: 0; }
     .action-buttons, .filters-section, .btn, .nav-back { display: none; }
+    .factura-pago, .cliente-fila, .total-fila { break-inside: avoid; }
 }

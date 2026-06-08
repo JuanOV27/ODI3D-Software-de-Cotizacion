@@ -14,9 +14,75 @@
            vía ?embed=1) para integrarse visualmente sin encabezado propio */
         body.embebido .header { display: none; }
         body.embebido .container { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+
+        /* ---- Panel informativo de solicitud ---- */
+        #solicitudInfoPanel {
+            margin: 0 0 18px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #1B5E7B;
+            box-shadow: 0 2px 8px rgba(27,94,123,.15);
+        }
+        #sipToggleBtn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 16px;
+            background: linear-gradient(135deg,#1A2E3C 0%,#1B5E7B 100%);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-align: left;
+            letter-spacing: 0.01em;
+            transition: opacity 0.2s;
+        }
+        #sipToggleBtn:hover { opacity: 0.92; }
+        #sipArrow { font-size: 0.7rem; transition: transform 0.25s ease; }
+        #sipBody {
+            background: #f0f8fb;
+            padding: 16px 18px;
+        }
+        .sip-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 640px) {
+            .sip-grid { grid-template-columns: 1fr auto; }
+        }
+        .sip-table { width: 100%; font-size: 0.86rem; border-collapse: collapse; }
+        .sip-table td { padding: 3px 0; vertical-align: top; }
+        .sip-table td:first-child { color: #4B6272; font-weight: 700; padding-right: 12px; white-space: nowrap; width: 1%; }
+        .sip-table td:last-child { color: #111827; }
+        .sip-adjuntos-titulo { font-size: 0.82rem; font-weight: 700; color: #1B5E7B; margin-bottom: 8px; }
+        .sip-adj-item {
+            background: #fff;
+            border: 1px solid #d1e7f0;
+            border-radius: 7px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            min-width: 120px;
+            max-width: 160px;
+        }
+        .sip-adj-item:hover { box-shadow: 0 2px 8px rgba(27,94,123,.2); border-color: #1B5E7B; }
+        .sip-adj-img { width: 100%; height: 80px; object-fit: cover; display: block; }
+        .sip-adj-placeholder { width: 100%; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 2rem; background: #e9f3f8; }
+        .sip-adj-label { padding: 4px 8px; font-size: 0.75rem; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+        .sip-adj-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .sip-estado-badge {
+            display: inline-block;
+            padding: 1px 9px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
     </style>
 </head>
-<body class="kiri-panel-open">
+<body>
     <script>
         if (new URLSearchParams(location.search).get('embed') === '1') {
             document.body.classList.add('embebido');
@@ -36,6 +102,23 @@
                         onclick="CotizacionRapida.setMode('manual')">📝 Cotización Manual</button>
                 <button class="mode-btn" id="btnModoRapido"
                         onclick="CotizacionRapida.setMode('rapida')">⚡ Cotización Rápida</button>
+            </div>
+        </div>
+
+        <!-- ====================================================
+             PANEL INFORMATIVO DE SOLICITUD
+             Visible solo cuando la página carga con ?solicitud=ID
+             Muestra un resumen plegable con datos del cliente,
+             descripción, cantidad, estado y archivos adjuntos.
+             El JS en cotizacion.js lo popula y lo muestra.
+        ===================================================== -->
+        <div id="solicitudInfoPanel" style="display:none;">
+            <button type="button" id="sipToggleBtn" onclick="toggleSolicitudInfoPanel()">
+                <span>📋 Solicitud: <span id="sipTitulo">—</span></span>
+                <span id="sipArrow">▲</span>
+            </button>
+            <div id="sipBody">
+                <!-- Contenido generado dinámicamente por renderSolicitudInfoPanel() en cotizacion.js -->
             </div>
         </div>
 
@@ -1433,10 +1516,38 @@
     </h3>
     
     <div style="display: flex; flex-direction: column; gap: 12px;">
-        
+
+        <!-- Botón Cotización Formal -->
+        <button
+            type="button"
+            id="btnCotizacionFormal"
+            onclick="abrirCotizacionFormalDesdeCotizador()"
+            class="btn-accion"
+            disabled
+            style="
+                background: linear-gradient(135deg, #1A2E3C 0%, #1B5E7B 100%);
+                color: white;
+                border: none;
+                padding: 14px 20px;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: not-allowed;
+                opacity: 0.55;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                box-shadow: 0 4px 6px rgba(26, 46, 60, 0.3);
+                transition: all 0.2s ease-out;
+            ">
+            <span style="font-size: 1.3rem;">📄</span>
+            <span>Generar Cotización Formal</span>
+        </button>
+
         <!-- Botón WhatsApp -->
-        <button 
-            type="button" 
+        <button
+            type="button"
             onclick="abrirModalWhatsApp()"
             class="btn-accion"
             style="
@@ -1763,7 +1874,7 @@
          PANEL LATERAL KIRI:MOTO LOCAL
          Requiere: cd grid-apps && npm run dev  (puerto 8080)
          ========================================== -->
-    <div id="kiriSidePanel" class="kiri-side-panel kiri-panel-open">
+    <div id="kiriSidePanel" class="kiri-side-panel">
 
         <!-- Tab de toggle (siempre visible en el borde izquierdo del panel) -->
         <div class="kiri-panel-tab" onclick="KiriMotoIntegration.togglePanel()" title="Mostrar/Ocultar Kiri:Moto">
@@ -1804,8 +1915,9 @@
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/cotizacion.js"></script>
-    
+    <script src="js/cotizacion-formal.js"></script>
+    <script src="js/cotizacion.js?v=3"></script>
+
     <!-- NUEVO: Script de integración Kiri:Moto -->
     <script src="js/kirimoto-integration.js"></script>
     

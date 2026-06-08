@@ -47,6 +47,15 @@ switch ($action) {
         break;
 
     // ----------------------------------------------------------
+    // Verificación cruzada: comprueba si unas credenciales pertenecen
+    // a un usuario interno SIN crear sesión (usado por tienda3d cuando
+    // el login de cliente falla, para redirigir al empleado al sistema correcto).
+    case 'cross_check':
+        Utils::validateMethod('POST');
+        crossCheckCredenciales();
+        break;
+
+    // ----------------------------------------------------------
     default:
         Utils::sendJsonResponse(false, null, 'Acción no válida');
 }
@@ -131,6 +140,40 @@ function manejarLogin(): void {
         'rol'        => $usuario['rol'],
         'email'      => $usuario['email']
     ], 'Sesión iniciada');
+}
+
+/**
+ * Comprueba si email+password pertenecen a un usuario interno.
+ * No crea sesión ni requiere CSRF — solo verifica y responde.
+ * Usado por tienda3d-frontend para redirigir empleados que
+ * intentaron iniciar sesión en la tienda por equivocación.
+ */
+function crossCheckCredenciales(): void {
+    $input    = Utils::getRequestBody();
+    $email    = trim($input['email']    ?? '');
+    $password = trim($input['password'] ?? '');
+
+    if (empty($email) || empty($password)) {
+        http_response_code(400);
+        Utils::sendJsonResponse(false, null, 'Parámetros requeridos');
+    }
+
+    $db   = Database::getInstance()->getConnection();
+    $stmt = $db->prepare(
+        "SELECT nombre, rol, password_hash, activo FROM usuarios_internos WHERE email = ? LIMIT 1"
+    );
+    $stmt->execute([$email]);
+    $usuario = $stmt->fetch();
+
+    if (!$usuario || !password_verify($password, $usuario['password_hash']) || !$usuario['activo']) {
+        // Respuesta neutra — no revelar si el email existe o no
+        Utils::sendJsonResponse(false, null, 'No pertenece al sistema interno');
+    }
+
+    Utils::sendJsonResponse(true, [
+        'nombre' => $usuario['nombre'],
+        'rol'    => $usuario['rol']
+    ]);
 }
 
 function manejarLogout(): void {

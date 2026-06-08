@@ -120,6 +120,20 @@
             elBadge.className = `rol-badge rol-${usuario.rol}`;
         }
 
+        // Actualizar el link "Ver tienda" para que lleve al empleado/admin
+        // identificado en tienda3d — activa el banner "Vista interna" con su nombre y rol.
+        // El parámetro `back` apunta a la página actual de gestion3d para poder volver.
+        const elVerTienda = document.querySelector('.btn-ver-tienda');
+        if (elVerTienda) {
+            const params = new URLSearchParams({
+                empleado: '1',
+                nombre:   usuario.nombre,
+                rol:      usuario.rol,
+                back:     location.href
+            });
+            elVerTienda.href = `http://localhost:5173/?${params.toString()}`;
+        }
+
         // Mostrar la barra de usuario
         const elHeader = document.getElementById('headerUsuario');
         if (elHeader) elHeader.style.display = '';

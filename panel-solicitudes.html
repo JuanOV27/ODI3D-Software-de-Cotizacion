@@ -82,6 +82,7 @@
             padding: 0.9rem 1.2rem; border-bottom: 1px solid #e0e0e0;
             display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
         }
+        #btnAbrirCotizador:hover { background: #14222d !important; }
         .detalle-nombre { font-size: 1rem; font-weight: 700; }
         .detalle-meta { font-size: 0.8rem; color: #666; margin-top: 0.15rem; }
         .detalle-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
@@ -97,6 +98,42 @@
             transition: background 0.15s ease-out;
         }
         .archivo-chip:hover { background: #e0e0e0; }
+        .archivo-chip-visor { cursor: pointer; font: inherit; }
+        .archivo-chip-icono { font-size: 0.95rem; line-height: 1; }
+        .archivo-chip-img {
+            width: 20px; height: 20px; object-fit: cover; border-radius: 3px;
+        }
+
+        /* ── Visor de archivos (modal previsualización) ── */
+        .visor-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 2000;
+            background: rgba(15, 23, 32, 0.72);
+            align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .visor-modal-overlay.activo { display: flex; }
+        .visor-modal {
+            background: #fff; border-radius: 10px; width: 100%; max-width: 760px;
+            max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+        }
+        .visor-modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.7rem 1rem; background: #1A2E3C; color: #fff;
+        }
+        .visor-modal-titulo { font-size: 0.88rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .visor-modal-cerrar {
+            background: none; border: none; color: #fff; font-size: 1rem; cursor: pointer;
+            padding: 0.2rem 0.5rem; transition: opacity 0.15s ease-out; opacity: 0.75;
+        }
+        .visor-modal-cerrar:hover { opacity: 1; }
+        .visor-modal-body {
+            flex: 1; min-height: 320px; display: flex; align-items: center; justify-content: center;
+            overflow: auto; padding: 1rem;
+        }
+        .visor-modal-imagen { max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 6px; }
+        .visor-modal-3d { width: 100%; height: 60vh; min-height: 320px; }
+        .visor-modal-msg { color: #888; font-size: 0.85rem; text-align: center; }
+        .visor-modal-msg a { color: #1565c0; }
 
         /* ── Acciones de estado ── */
         .estado-form {
@@ -179,7 +216,21 @@
                         <div class="detalle-nombre" id="dNombre">—</div>
                         <div class="detalle-meta" id="dMeta">—</div>
                     </div>
-                    <span class="badge-estado" id="dBadgeEstado">—</span>
+                    <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                        <button type="button" class="btn btn-sm" id="btnAbrirCotizador"
+                            onclick="toggleCotizadorEmbebido()"
+                            style="background:#1A2E3C; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-size:0.78rem; cursor:pointer; transition:background 0.15s ease-out; white-space:nowrap;">
+                            🧮 Cotizar aquí
+                        </button>
+                        <span class="badge-estado" id="dBadgeEstado">—</span>
+                    </div>
+                </div>
+
+                <!-- COTIZADOR EMBEBIDO — visible solo cuando el toggle está activo -->
+                <div id="cotizadorEmbedContainer"
+                     style="display:none; flex:1; min-height:0; overflow:hidden; flex-direction:column;">
+                    <iframe id="cotizadorIframe" src="" title="Cotizador ODI3D"
+                            style="width:100%; height:100%; border:none; flex:1;"></iframe>
                 </div>
 
                 <div class="detalle-body">
@@ -191,7 +242,14 @@
                         <div class="archivos-list" id="dArchivos"></div>
                     </div>
 
-                    <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">CAMBIAR ESTADO</p>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.4rem;">
+                        <p style="font-size:0.78rem;font-weight:700;margin:0;color:#555;">CAMBIAR ESTADO</p>
+                        <button type="button" class="btn btn-sm" id="btnCotizacionFormalPanel"
+                            onclick="abrirCotizacionFormalDesdePanel()"
+                            style="background:#1B5E7B; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-size:0.78rem; cursor:pointer; transition:background 0.15s ease-out; white-space:nowrap;">
+                            📄 Cotización formal
+                        </button>
+                    </div>
                     <div class="estado-form">
                         <select id="selectEstado">
                             <option value="recibida">Recibida</option>
@@ -204,6 +262,10 @@
                         </select>
                         <input type="number" id="inputPrecioFinal" placeholder="Precio final (COP)"
                                min="0" step="100" style="width:180px;" />
+                        <label style="font-size:0.78rem;color:#555;display:flex;align-items:center;gap:0.35rem;">
+                            📅 Entrega estimada:
+                            <input type="date" id="inputFechaEstimada" />
+                        </label>
                         <button class="btn btn-primary btn-sm" onclick="guardarEstado()">Guardar estado</button>
                     </div>
 
@@ -211,6 +273,121 @@
                     <textarea id="notasInternas" rows="2"
                         style="width:100%; font-size:0.83rem; padding:0.5rem; border:1px solid #ddd; border-radius:6px; resize:vertical; margin-bottom:1rem;"
                         placeholder="Notas internas (no visibles para el cliente)..."></textarea>
+
+                    <!-- ══════════════════════════════════════════════════
+                         SECCIÓN: REGISTRO DE PAGOS
+                         Permite registrar abonos y pagos de entrega.
+                         Bloquea transición a 'aceptada' sin abono y
+                         a 'entregada' sin pago de entrega + suma total.
+                    ══════════════════════════════════════════════════ -->
+                    <div id="seccionPagos" style="margin-bottom:1rem; border:1.5px solid #1B5E7B; border-radius:8px; overflow:hidden;">
+
+                        <!-- Header plegable -->
+                        <button type="button" onclick="toggleSeccionPagos()"
+                                id="seccionPagosToggleBtn"
+                                style="width:100%; display:flex; align-items:center; justify-content:space-between;
+                                       padding:9px 12px; background:linear-gradient(135deg,#1A2E3C,#1B5E7B);
+                                       color:#fff; border:none; cursor:pointer; font-weight:700;
+                                       font-size:0.82rem; text-align:left; transition:opacity 0.2s;">
+                            <span>💰 Registro de pagos</span>
+                            <span id="seccionPagosArrow" style="font-size:0.7rem; transition:transform 0.25s;">▼</span>
+                        </button>
+
+                        <!-- Cuerpo (colapsado por defecto) -->
+                        <div id="seccionPagosCuerpo" style="display:none; background:#f8fbfc; padding:12px;">
+
+                            <!-- Resumen acumulado -->
+                            <div id="pagosResumen" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                                <span style="font-size:0.8rem; color:#555;">Cargando...</span>
+                            </div>
+
+                            <!-- Lista de pagos -->
+                            <div id="pagosLista" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
+
+                            <!-- Botones de acción -->
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <button type="button" onclick="mostrarFormPago('abono')"
+                                        style="background:#059669; color:#fff; border:none; border-radius:6px;
+                                               padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer;
+                                               transition:opacity 0.2s;">
+                                    + Registrar abono
+                                </button>
+                                <button type="button" onclick="mostrarFormPago('entrega')"
+                                        style="background:#1B5E7B; color:#fff; border:none; border-radius:6px;
+                                               padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer;
+                                               transition:opacity 0.2s;">
+                                    + Registrar pago de entrega
+                                </button>
+                            </div>
+
+                            <!-- Formulario inline de registro (oculto por defecto) -->
+                            <div id="formPagoContainer" style="display:none; margin-top:12px; background:#fff;
+                                 border:1px solid #c7dfe8; border-radius:8px; padding:12px;">
+                                <p style="font-size:0.82rem; font-weight:700; color:#1A2E3C; margin:0 0 10px 0;"
+                                   id="formPagoTitulo">Registrar abono</p>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                                    <div>
+                                        <label style="font-size:0.78rem; color:#555; display:block; margin-bottom:4px;">
+                                            Monto (COP) *
+                                        </label>
+                                        <input type="number" id="formPagoMonto" min="1" step="100"
+                                               placeholder="Ej: 50000"
+                                               style="width:100%; padding:7px; border:1px solid #d1d5db;
+                                                      border-radius:6px; font-size:0.85rem;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.78rem; color:#555; display:block; margin-bottom:4px;">
+                                            Fecha del pago *
+                                        </label>
+                                        <input type="date" id="formPagoFecha"
+                                               style="width:100%; padding:7px; border:1px solid #d1d5db;
+                                                      border-radius:6px; font-size:0.85rem;">
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom:10px;">
+                                    <label style="font-size:0.78rem; color:#555; display:block; margin-bottom:4px;">
+                                        Comprobante de pago (imagen, opcional)
+                                    </label>
+                                    <input type="file" id="formPagoComprobante" accept="image/*"
+                                           onchange="previsualizarComprobante()"
+                                           style="font-size:0.82rem; width:100%;">
+                                    <img id="formPagoComprobantePreview" src="" alt="Vista previa"
+                                         style="display:none; max-width:100%; max-height:120px;
+                                                object-fit:cover; border-radius:6px; margin-top:6px;
+                                                border:1px solid #e5e7eb;">
+                                </div>
+
+                                <div style="margin-bottom:10px;">
+                                    <label style="font-size:0.78rem; color:#555; display:block; margin-bottom:4px;">
+                                        Nota (opcional)
+                                    </label>
+                                    <input type="text" id="formPagoNota" maxlength="500"
+                                           placeholder="Ej: Transferencia Bancolombia"
+                                           style="width:100%; padding:7px; border:1px solid #d1d5db;
+                                                  border-radius:6px; font-size:0.85rem;">
+                                </div>
+
+                                <div style="display:flex; gap:8px;">
+                                    <button type="button" onclick="submitRegistrarPago()"
+                                            style="background:#1A2E3C; color:#fff; border:none;
+                                                   border-radius:6px; padding:8px 16px; font-size:0.82rem;
+                                                   font-weight:700; cursor:pointer;">
+                                        💾 Guardar pago
+                                    </button>
+                                    <button type="button" onclick="cerrarFormPago()"
+                                            style="background:#f3f4f6; color:#555; border:1px solid #d1d5db;
+                                                   border-radius:6px; padding:8px 12px; font-size:0.82rem;
+                                                   cursor:pointer;">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div><!-- /cuerpo -->
+                    </div><!-- /seccionPagos -->
+
                 </div>
 
                 <!-- Chat -->
@@ -228,8 +405,66 @@
     </div>
 </div>
 
+<!-- ──────────────────────────────────────────────────────────────
+     TARJETA FLOTANTE DE SOLICITUD
+     Visible solo cuando el Cotizador embebido está activo.
+     Permite mantener a la vista los datos de la solicitud
+     sin abandonar el iframe del cotizador.
+     Sigue el patrón visual de .calc-fab / .calc-panel.
+────────────────────────────────────────────────────────────── -->
+<div id="solicitudFloatCard" style="display:none; position:fixed; right:18px; bottom:18px;
+     z-index:2000; font-family:inherit;">
+    <!-- Chip colapsado -->
+    <button id="sfcChip" onclick="toggleSolicitudFloatCard()"
+            style="background:linear-gradient(135deg,#1A2E3C,#1B5E7B); color:#fff;
+                   border:none; border-radius:999px; padding:8px 16px; cursor:pointer;
+                   font-size:0.82rem; font-weight:700; box-shadow:0 4px 12px rgba(0,0,0,.3);
+                   display:flex; align-items:center; gap:8px; transition:transform 0.2s ease-out;">
+        <span>📋</span>
+        <span id="sfcChipNombre" style="max-width:150px; overflow:hidden; text-overflow:ellipsis;
+              white-space:nowrap;">Solicitud</span>
+        <span id="sfcChipArrow" style="font-size:0.6rem; transition:transform 0.2s;">▲</span>
+    </button>
+    <!-- Panel expandido -->
+    <div id="sfcPanel"
+         style="display:none; background:#fff; border-radius:12px; padding:14px 16px;
+                margin-bottom:8px; box-shadow:0 6px 24px rgba(0,0,0,.18);
+                min-width:240px; max-width:300px; border:1.5px solid #1B5E7B;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:0.78rem; font-weight:800; color:#1A2E3C; text-transform:uppercase;
+                         letter-spacing:0.05em;">Solicitud activa</span>
+            <span id="sfcBadge" style="font-size:0.7rem; font-weight:700; padding:2px 8px;
+                  border-radius:999px; background:#e0f2fe; color:#1B5E7B;">—</span>
+        </div>
+        <div style="font-size:0.88rem; font-weight:700; color:#111827; margin-bottom:4px;"
+             id="sfcNombre">—</div>
+        <div style="font-size:0.78rem; color:#6B7280; margin-bottom:8px; max-height:48px;
+             overflow:hidden; line-height:1.4;" id="sfcDesc">—</div>
+        <div style="display:flex; gap:8px; font-size:0.76rem; color:#374151; flex-wrap:wrap;"
+             id="sfcMeta">—</div>
+        <div style="margin-top:10px; padding-top:8px; border-top:1px solid #e5e7eb; display:flex; gap:6px;">
+            <button onclick="toggleCotizadorEmbebido()"
+                    style="flex:1; background:#f3f4f6; color:#1A2E3C; border:1px solid #d1d5db;
+                           border-radius:6px; padding:5px 10px; font-size:0.76rem; cursor:pointer;
+                           font-weight:700; transition:background 0.15s;">
+                ← Volver al detalle
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/cotizacion-formal.js"></script>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module" src="js/visor-archivos.js"></script>
 <script>
 (function () {
     'use strict';
@@ -276,6 +511,142 @@
         `).join('');
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // COTIZADOR EMBEBIDO — toggle entre vista normal e iframe
+    // ══════════════════════════════════════════════════════════════
+
+    let _cotizadorActivo = false;
+
+    window.toggleCotizadorEmbebido = function () {
+        if (!solicitudActual) return;
+        _cotizadorActivo = !_cotizadorActivo;
+
+        const embed     = document.getElementById('cotizadorEmbedContainer');
+        const body      = document.querySelector('#detalleContenido .detalle-body');
+        const chat      = document.querySelector('#detalleContenido .chat-panel');
+        const btn       = document.getElementById('btnAbrirCotizador');
+        const floatCard = document.getElementById('solicitudFloatCard');
+        const iframe    = document.getElementById('cotizadorIframe');
+
+        if (_cotizadorActivo) {
+            // Cargar iframe (solo si no está cargado aún o cambió la solicitud)
+            const iframeSrc = 'cotizacion.html?solicitud=' + encodeURIComponent(solicitudActual.id) + '&embed=1';
+            if (iframe.src !== window.location.origin + '/ODI3D/gestion3d/' + iframeSrc &&
+                !iframe.src.includes(solicitudActual.id)) {
+                iframe.src = iframeSrc;
+            }
+
+            // Ocultar vista normal, mostrar iframe
+            if (body) body.style.display = 'none';
+            if (chat) chat.style.display = 'none';
+            embed.style.display = 'flex';
+
+            // Actualizar botón
+            btn.textContent = '← Volver al detalle';
+            btn.style.background = '#374151';
+
+            // Mostrar tarjeta flotante
+            _actualizarSolicitudFloatCard();
+            floatCard.style.display = 'block';
+
+        } else {
+            // Restaurar vista normal
+            if (body) body.style.display = '';
+            if (chat) chat.style.display = '';
+            embed.style.display = 'none';
+
+            // Restaurar botón
+            btn.textContent = '🧮 Cotizar aquí';
+            btn.style.background = '#1A2E3C';
+
+            // Ocultar tarjeta flotante
+            floatCard.style.display = 'none';
+            document.getElementById('sfcPanel').style.display = 'none';
+        }
+    };
+
+    // Mantener compatibilidad con código que llame a abrirEnCotizador
+    window.abrirEnCotizador = window.toggleCotizadorEmbebido;
+
+    function _actualizarSolicitudFloatCard() {
+        if (!solicitudActual) return;
+        const nombre  = solicitudActual.cliente_nombre || solicitudActual.cliente_email || 'Cliente';
+        const desc    = solicitudActual.descripcion || '—';
+        const estado  = solicitudActual.estado || '—';
+        const precio  = solicitudActual.precio_final;
+
+        document.getElementById('sfcChipNombre').textContent = nombre;
+        document.getElementById('sfcNombre').textContent     = nombre;
+        document.getElementById('sfcDesc').textContent       = desc.length > 100 ? desc.slice(0, 97) + '…' : desc;
+        document.getElementById('sfcBadge').textContent      = formatEstado(estado);
+
+        const meta = [];
+        if (solicitudActual.cantidad) meta.push('📦 ' + solicitudActual.cantidad + ' uds.');
+        if (precio) meta.push('💰 $' + Number(precio).toLocaleString('es-CO'));
+        if (solicitudActual.fecha_estimada_entrega) {
+            const fe = new Date(solicitudActual.fecha_estimada_entrega + 'T12:00:00')
+                .toLocaleDateString('es-CO', {day:'2-digit',month:'short'});
+            meta.push('🗓️ ' + fe);
+        }
+        document.getElementById('sfcMeta').textContent = meta.join(' · ') || '—';
+    }
+
+    window.toggleSolicitudFloatCard = function () {
+        const panel = document.getElementById('sfcPanel');
+        const arrow = document.getElementById('sfcChipArrow');
+        if (!panel) return;
+        const open = panel.style.display !== 'none';
+        panel.style.display = open ? 'none' : 'block';
+        arrow.style.transform = open ? '' : 'rotate(180deg)';
+    };
+
+    // ── Cotización formal desde el Panel de Solicitudes ──────────
+    // Si la solicitud tiene una cotización vinculada, se traen sus precios
+    // (base/minorista/mayorista) para ofrecerlos como opción; si no, solo
+    // queda disponible el precio "Manual".
+    window.abrirCotizacionFormalDesdePanel = async function () {
+        if (!solicitudActual) return;
+        if (typeof abrirCotizacionFormal !== 'function') {
+            console.error('El módulo cotizacion-formal.js no está cargado.');
+            return;
+        }
+
+        let precios = {};
+        if (solicitudActual.cotizacion_id) {
+            try {
+                const cot = await apiClient.get('api_cotizaciones.php', { action: 'get', id: solicitudActual.cotizacion_id });
+                if (cot) {
+                    precios = {
+                        base:      cot.precio_final,
+                        minorista: cot.precio_minorista,
+                        mayorista: cot.precio_mayorista
+                    };
+                }
+            } catch (e) { console.warn('No se pudo cargar la cotización vinculada:', e); }
+        }
+
+        abrirCotizacionFormal({
+            solicitudId:  solicitudActual.id,
+            estadoActual: solicitudActual.estado,
+            cliente:      solicitudActual.cliente_nombre || solicitudActual.cliente_email || 'Cliente',
+            descripcion:  solicitudActual.descripcion || '',
+            cantidad:     solicitudActual.cantidad || 1,
+            precios:      precios,
+            permiteEnvio: true,
+            alEnviar: function (info) {
+                // Reflejar el nuevo precio/estado sin recargar todo el detalle
+                solicitudActual.estado = info.estado;
+                solicitudActual.precio_final = info.precio;
+                document.getElementById('inputPrecioFinal').value = info.precio;
+                const badge = document.getElementById('dBadgeEstado');
+                badge.textContent = formatEstado(info.estado);
+                badge.className   = `badge-estado estado-${info.estado}`;
+                document.getElementById('selectEstado').value = info.estado;
+                cargarSolicitudes();
+            }
+        });
+    };
+
     // ── Ver detalle ───────────────────────────────────────────
     window.verDetalle = async function (id) {
         clearInterval(pollingInterval);
@@ -299,19 +670,29 @@
             document.getElementById('selectEstado').value      = s.estado;
             document.getElementById('inputPrecioFinal').value  = s.precio_final || '';
             document.getElementById('notasInternas').value     = s.notas_internas || '';
+            document.getElementById('inputFechaEstimada').value =
+                s.fecha_estimada_entrega ? String(s.fecha_estimada_entrega).slice(0, 10) : '';
 
             // Archivos
             const secArch = document.getElementById('dArchivosSection');
             const listArch = document.getElementById('dArchivos');
             if (s.archivos && s.archivos.length) {
                 secArch.style.display = '';
-                listArch.innerHTML = s.archivos.map(a =>
-                    `<a class="archivo-chip"
-                        href="${BASE_API}/api_solicitudes.php?action=descargar_archivo&archivo_id=${a.id}"
-                        download="${a.nombre_original}" target="_blank">
-                        📎 ${a.nombre_original}
-                    </a>`
-                ).join('');
+                listArch.innerHTML = '';
+                s.archivos.forEach(a => {
+                    const url = `${BASE_API}/api_solicitudes.php?action=descargar_archivo&archivo_id=${a.id}`;
+                    if (window.VisorArchivos) {
+                        listArch.appendChild(window.VisorArchivos.crearMiniatura(a, url));
+                    } else {
+                        const link = document.createElement('a');
+                        link.className = 'archivo-chip';
+                        link.href = url;
+                        link.download = a.nombre_original;
+                        link.target = '_blank';
+                        link.textContent = `📎 ${a.nombre_original}`;
+                        listArch.appendChild(link);
+                    }
+                });
             } else {
                 secArch.style.display = 'none';
             }
@@ -323,28 +704,59 @@
             await cargarMensajes(id);
             pollingInterval = setInterval(() => cargarMensajes(id), 5000);
 
+            // Cargar historial de pagos
+            cargarPagos(id);
+
         } catch (e) { console.error(e); }
     };
+
+    // ── Intercepción de verDetalle en modo cotizador embebido ──
+    // Al cambiar de solicitud con el cotizador activo, se actualiza el iframe
+    // con la nueva solicitud en lugar de cerrar el embed.
+    // Este bloque DEBE ir después de la definición de window.verDetalle.
+    {
+        const _orig = window.verDetalle;
+        window.verDetalle = async function (id) {
+            if (_cotizadorActivo) {
+                // Cambiar iframe a la nueva solicitud (el borrador de la anterior
+                // queda guardado en localStorage por cotizacion.js)
+                document.getElementById('cotizadorIframe').src =
+                    'cotizacion.html?solicitud=' + encodeURIComponent(id) + '&embed=1';
+                await _orig(id);
+                _actualizarSolicitudFloatCard();
+                return;
+            }
+            return _orig(id);
+        };
+    }
 
     // ── Guardar estado ────────────────────────────────────────
     window.guardarEstado = async function () {
         if (!solicitudActual) return;
-        const estado      = document.getElementById('selectEstado').value;
-        const precioFinal = document.getElementById('inputPrecioFinal').value;
-        const notas       = document.getElementById('notasInternas').value;
+        const estado       = document.getElementById('selectEstado').value;
+        const precioFinal  = document.getElementById('inputPrecioFinal').value;
+        const notas        = document.getElementById('notasInternas').value;
+        const fechaEstimada = document.getElementById('inputFechaEstimada').value;
 
         try {
             const body = { id: solicitudActual.id, estado };
             if (precioFinal) body.precio_final     = parseFloat(precioFinal);
             if (notas)       body.notas_internas   = notas;
+            body.fecha_estimada_entrega = fechaEstimada || null;
 
             await apiClient.post('api_solicitudes.php', { action: 'cambiar_estado' }, body);
             solicitudActual.estado = estado;
+            if (precioFinal) solicitudActual.precio_final = parseFloat(precioFinal);
             const badge = document.getElementById('dBadgeEstado');
             badge.textContent = formatEstado(estado);
             badge.className   = `badge-estado estado-${estado}`;
             cargarSolicitudes();
-        } catch (e) { alert('Error'); }
+        } catch (e) {
+            // Mostrar el mensaje del backend (incluye errores de validación de pagos)
+            const msg = e?.message || (typeof e === 'string' ? e : null)
+                     || 'Error al guardar el estado.';
+            alert('⚠️ ' + msg);
+        }
     };
 
     // ── Chat ──────────────────────────────────────────────────
@@ -357,6 +769,7 @@
 
     function renderizarMensajes(mensajes) {
         const cont = document.getElementById('chatMensajes');
+        mensajes = [...mensajes].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
         if (!mensajes.length) {
             cont.innerHTML = '<p style="color:#bbb;font-size:0.8rem;text-align:center;padding:0.5rem;">Sin mensajes aún.</p>';
             return;
@@ -398,6 +811,199 @@
         if (!f) return '—';
         return new Date(f).toLocaleString('es-CO', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
     }
+
+    function formatMonedaPanel(v) {
+        return '$' + Number(v || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // REGISTRO DE PAGOS
+    // ══════════════════════════════════════════════════════════════
+
+    let _tipoPagoActivo = 'abono'; // estado local del form de pago
+
+    window.toggleSeccionPagos = function () {
+        const cuerpo = document.getElementById('seccionPagosCuerpo');
+        const arrow  = document.getElementById('seccionPagosArrow');
+        if (!cuerpo) return;
+        const visible = cuerpo.style.display !== 'none';
+        cuerpo.style.display  = visible ? 'none' : 'block';
+        arrow.style.transform = visible ? '' : 'rotate(180deg)';
+    };
+
+    async function cargarPagos(solicitudId) {
+        try {
+            const resp = await apiClient.get('api_solicitudes.php', {
+                action: 'listar_pagos', id: solicitudId
+            });
+            renderizarPagos(resp?.pagos || [], resp || {});
+        } catch (e) {
+            console.warn('Error cargando pagos:', e);
+        }
+    }
+
+    function renderizarPagos(pagos, resumen) {
+        const resumenEl = document.getElementById('pagosResumen');
+        const listaEl   = document.getElementById('pagosLista');
+        if (!resumenEl || !listaEl) return;
+
+        const precioFinal = parseFloat(solicitudActual?.precio_final || 0);
+        const granTotal   = parseFloat(resumen.gran_total || 0);
+        const abono       = parseFloat(resumen.total_abono   || 0);
+        const entrega     = parseFloat(resumen.total_entrega || 0);
+
+        // Resumen chips
+        const chips = [
+            { label: 'Abono', val: abono,   color: '#059669' },
+            { label: 'Entrega', val: entrega, color: '#1B5E7B' },
+            { label: 'Total pagado', val: granTotal, color: '#1A2E3C' },
+        ];
+        if (precioFinal > 0) {
+            const pendiente = precioFinal - granTotal;
+            chips.push({ label: 'Pendiente', val: pendiente, color: pendiente > 0 ? '#DC2626' : '#059669' });
+        }
+
+        resumenEl.innerHTML = chips.map(c => `
+            <span style="background:#fff; border:1px solid ${c.color}33; border-radius:999px;
+                         padding:3px 10px; font-size:0.78rem; color:${c.color}; font-weight:700;">
+                ${c.label}: ${formatMonedaPanel(c.val)}
+            </span>
+        `).join('');
+
+        // Lista de pagos
+        if (!pagos.length) {
+            listaEl.innerHTML = '<p style="font-size:0.8rem;color:#888;margin:0;">Sin pagos registrados.</p>';
+            return;
+        }
+
+        listaEl.innerHTML = pagos.map(p => {
+            const tipoColor = p.tipo === 'abono' ? '#059669' : '#1B5E7B';
+            const fechaStr  = p.fecha_pago ? new Date(p.fecha_pago + 'T12:00:00').toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+            const comprobanteBtn = p.comprobante_path
+                ? `<a href="${BASE_API}/api_solicitudes.php?action=comprobante_pago&pago_id=${p.id}&solicitud_id=${p.solicitud_id}"
+                      target="_blank"
+                      style="font-size:0.75rem; color:#1B5E7B; text-decoration:none;">🖼️ Ver comprobante</a>`
+                : '';
+            const registradoPor = p.registrado_por_nombre
+                ? `<span style="font-size:0.72rem; color:#9CA3AF;">👤 ${p.registrado_por_nombre}</span>`
+                : '';
+            return `
+                <div style="background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:8px 10px;
+                            display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span style="background:${tipoColor}22; color:${tipoColor}; border:1px solid ${tipoColor}55;
+                                 border-radius:999px; padding:2px 9px; font-size:0.76rem; font-weight:700;
+                                 white-space:nowrap; text-transform:capitalize;">${p.tipo}</span>
+                    <span style="font-weight:700; color:#111827; font-size:0.88rem;">${formatMonedaPanel(p.monto)}</span>
+                    <span style="font-size:0.78rem; color:#6B7280;">📅 ${fechaStr}</span>
+                    ${p.nota ? `<span style="font-size:0.78rem; color:#374151; font-style:italic;">"${p.nota}"</span>` : ''}
+                    ${comprobanteBtn}
+                    ${registradoPor}
+                </div>`;
+        }).join('');
+    }
+
+    window.mostrarFormPago = function (tipo) {
+        _tipoPagoActivo = tipo;
+        const titulo = tipo === 'abono' ? '💚 Registrar abono' : '🔵 Registrar pago de entrega';
+        document.getElementById('formPagoTitulo').textContent = titulo;
+        // Fecha por defecto: hoy
+        const hoy = new Date().toISOString().slice(0, 10);
+        document.getElementById('formPagoFecha').value = hoy;
+        document.getElementById('formPagoMonto').value = '';
+        document.getElementById('formPagoNota').value  = '';
+        document.getElementById('formPagoComprobante').value = '';
+        document.getElementById('formPagoComprobantePreview').style.display = 'none';
+        document.getElementById('formPagoContainer').style.display = 'block';
+        // Sugerir monto si hay precio_final y modal_pago = 'partes'
+        if (tipo === 'abono' && solicitudActual?.precio_final && solicitudActual?.porcentaje_abono) {
+            const sugerido = (parseFloat(solicitudActual.precio_final) * parseFloat(solicitudActual.porcentaje_abono) / 100);
+            document.getElementById('formPagoMonto').value = Math.round(sugerido);
+        } else if (tipo === 'entrega' && solicitudActual?.precio_final) {
+            // Saldo pendiente
+            apiClient.get('api_solicitudes.php', { action: 'listar_pagos', id: solicitudActual.id })
+                .then(r => {
+                    const pagado  = parseFloat(r?.gran_total || 0);
+                    const saldo   = parseFloat(solicitudActual.precio_final) - pagado;
+                    if (saldo > 0) document.getElementById('formPagoMonto').value = Math.round(saldo);
+                }).catch(() => {});
+        }
+        document.getElementById('formPagoMonto').focus();
+    };
+
+    window.cerrarFormPago = function () {
+        document.getElementById('formPagoContainer').style.display = 'none';
+    };
+
+    window.previsualizarComprobante = function () {
+        const input = document.getElementById('formPagoComprobante');
+        const preview = document.getElementById('formPagoComprobantePreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    };
+
+    window.submitRegistrarPago = async function () {
+        if (!solicitudActual) return;
+
+        const monto    = document.getElementById('formPagoMonto').value.trim();
+        const fecha    = document.getElementById('formPagoFecha').value.trim();
+        const nota     = document.getElementById('formPagoNota').value.trim();
+        const fileInput = document.getElementById('formPagoComprobante');
+
+        if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+            alert('Ingresa un monto válido mayor a 0.');
+            return;
+        }
+        if (!fecha) {
+            alert('Selecciona la fecha del pago.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('solicitud_id', solicitudActual.id);
+        formData.append('tipo',         _tipoPagoActivo);
+        formData.append('monto',        monto);
+        formData.append('fecha_pago',   fecha);
+        if (nota) formData.append('nota', nota);
+        if (fileInput.files && fileInput.files[0]) {
+            formData.append('comprobante', fileInput.files[0]);
+        }
+
+        // Enviar como multipart (fetch directo — apiClient usa JSON, necesitamos FormData)
+        const url = `${BASE_API}/api_solicitudes.php?action=registrar_pago`;
+        try {
+            const btn = document.querySelector('#formPagoContainer button[onclick="submitRegistrarPago()"]');
+            if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+            const resp = await fetch(url, { method: 'POST', body: formData, credentials: 'include' });
+            const data = await resp.json();
+
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar pago'; }
+
+            if (!data.success) {
+                alert('⚠️ ' + (data.error || 'Error al registrar el pago'));
+                return;
+            }
+
+            // Éxito: cerrar form y recargar pagos
+            cerrarFormPago();
+            await cargarPagos(solicitudActual.id);
+            // Abrir sección si estaba cerrada
+            const cuerpo = document.getElementById('seccionPagosCuerpo');
+            if (cuerpo && cuerpo.style.display === 'none') toggleSeccionPagos();
+
+        } catch (e) {
+            console.error('Error registrando pago:', e);
+            alert('Error de conexión al registrar el pago.');
+        }
+    };
 
     document.addEventListener('DOMContentLoaded', cargarSolicitudes);
 })();

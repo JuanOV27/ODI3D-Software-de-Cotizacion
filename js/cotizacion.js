@@ -5,6 +5,7 @@
 // Variables locales
 let ultimoCalculo = null;
 let pendingFormData = null; // datos del último cálculo, listos para guardar cuando el usuario quiera
+let solicitudVinculada = null; // { id, cliente, descripcion, cantidad, estado } — cuando se cotiza desde el Panel de Solicitudes (?solicitud=ID)
 
 // ============================================
 // FUNCIÃ“N PRINCIPAL - DISPONIBLE GLOBALMENTE
@@ -156,6 +157,310 @@ async function cargarCotizacionParaDuplicar(id) {
     }
 }
 
+// ============================================
+// PRECARGAR DATOS DESDE UNA SOLICITUD (desde URL ?solicitud=ID)
+// Permite cotizar "en tiempo real" sin perder el contexto del Panel
+// de Solicitudes (botón "🧮 Abrir en Cotizador").
+// ============================================
+async function cargarCotizacionDesdeSolicitud(id) {
+    try {
+        mostrarNotificacionSimple('Cargando datos de la solicitud...', 'info');
+
+        const baseURL = typeof API_CONFIG !== 'undefined'
+            ? API_CONFIG.baseURL
+            : window.location.pathname.replace(/\/[^\/]+$/, '') + '/api';
+        const resp = await fetch(baseURL + '/api_solicitudes.php?action=get&id=' + encodeURIComponent(id));
+        const texto = await resp.text();
+
+        let datos;
+        try {
+            datos = JSON.parse(texto);
+        } catch (e) {
+            throw new Error('Respuesta inválida del servidor');
+        }
+
+        if (!datos.success || !datos.data) {
+            throw new Error(datos.message || 'Solicitud no encontrada');
+        }
+
+        const s = datos.data;
+        const cliente = s.cliente_nombre || s.cliente_email || 'Cliente';
+
+        setVal('nombrePieza',   s.descripcion ? s.descripcion.slice(0, 120) : '');
+        setVal('cantidadPiezas', s.cantidad || 1);
+
+        // Guardar referencia para "Cotización formal" → enviar precio a la solicitud
+        solicitudVinculada = {
+            id: s.id,
+            cliente: cliente,
+            descripcion: s.descripcion || '',
+            cantidad: s.cantidad || 1,
+            estado: s.estado || 'recibida'
+        };
+        actualizarBotonCotizacionFormal();
+        renderSolicitudInfoPanel(s);
+
+        const headerH1 = document.querySelector('.header h1');
+        if (headerH1) {
+            headerH1.textContent = '🧮 Cotizando para ' + cliente + ' — Solicitud #' + String(id).slice(-8);
+        }
+
+        // Limpiar URL para evitar re-carga al refrescar
+        window.history.replaceState({}, '', 'cotizacion.html');
+
+        // Restaurar borrador si existe (debe ir después de setVal para sobreescribir los defaults)
+        restaurarBorradorCotizacion(id);
+
+        mostrarNotificacionSimple('Datos de la solicitud cargados. Completa la cotización.', 'success');
+
+    } catch (error) {
+        console.error('Error al cargar la solicitud:', error);
+        mostrarNotificacionSimple('Error al cargar la solicitud: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// CACHÉ DE BORRADOR POR SOLICITUD (localStorage)
+// Preserva el estado del formulario por hasta 24h para que
+// al cambiar rápidamente de solicitud no se pierdan los datos.
+// ============================================
+const _DRAFT_FIELDS = [
+    'nombrePieza', 'pesoPieza', 'tiempoImpresion', 'cantidadPiezas', 'piezasPorLote',
+    'maquinaSeleccionada', 'perfilFilamentoCotizacion',
+    'costoCarrete', 'pesoCarrete',
+    'horasDiseno', 'costoHoraDiseno',
+    'factorSeguridad', 'usoElectricidad', 'gif', 'aiu',
+    'margenMinorista', 'margenMayorista', 'porcentajeMarcaAgua'
+];
+const _DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
+
+function _draftKey(id) { return 'cotizador_borrador_' + id; }
+
+function guardarBorradorCotizacion() {
+    if (!solicitudVinculada || !solicitudVinculada.id) return;
+    const data = { _ts: Date.now() };
+    _DRAFT_FIELDS.forEach(function (fieldId) {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        data[fieldId] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    try { localStorage.setItem(_draftKey(solicitudVinculada.id), JSON.stringify(data)); } catch (e) {}
+}
+
+function restaurarBorradorCotizacion(solicitudId) {
+    try {
+        const raw = localStorage.getItem(_draftKey(solicitudId));
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data._ts || (Date.now() - data._ts) > _DRAFT_TTL_MS) {
+            localStorage.removeItem(_draftKey(solicitudId));
+            return;
+        }
+        let restaurado = false;
+        _DRAFT_FIELDS.forEach(function (fieldId) {
+            if (!(fieldId in data)) return;
+            const el = document.getElementById(fieldId);
+            if (!el) return;
+            if (el.type === 'checkbox') { el.checked = data[fieldId]; }
+            else { el.value = data[fieldId]; }
+            restaurado = true;
+        });
+        if (restaurado) {
+            // Toast pequeño, no intrusivo, con ligero delay para que no tape la notif de "cargado"
+            setTimeout(function () {
+                mostrarNotificacionSimple('📋 Borrador restaurado — retomaste desde donde lo dejaste.', 'info');
+            }, 1200);
+        }
+    } catch (e) {}
+}
+
+// Permite limpiar el borrador desde cotizacion-formal.js al enviar el precio a la solicitud
+window.limpiarBorradorCotizacion = function (solicitudId) {
+    const id = solicitudId || (solicitudVinculada && solicitudVinculada.id);
+    if (id) try { localStorage.removeItem(_draftKey(id)); } catch (e) {}
+};
+
+// ============================================
+// PANEL INFORMATIVO DE SOLICITUD
+// Se muestra al cargar desde ?solicitud=ID.
+// Permite ver datos del cliente, descripción, cantidad y adjuntos
+// sin salir del cotizador. Es plegable.
+// ============================================
+
+function _sipEscapar(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _sipFormatEstado(estado) {
+    const mapa = {
+        recibida: 'Recibida', en_proceso: 'En proceso', cotizada: 'Cotizada',
+        aceptada: 'Aceptada', rechazada: 'Rechazada',
+        en_produccion: 'En producción', entregada: 'Entregada'
+    };
+    return mapa[estado] || estado || '—';
+}
+
+function _sipColorEstado(estado) {
+    const colores = {
+        recibida:      '#2563EB',
+        en_proceso:    '#D97706',
+        cotizada:      '#7C3AED',
+        aceptada:      '#059669',
+        rechazada:     '#DC2626',
+        en_produccion: '#EA580C',
+        entregada:     '#0F766E'
+    };
+    return colores[estado] || '#6B7280';
+}
+
+function renderSolicitudInfoPanel(s) {
+    const panel = document.getElementById('solicitudInfoPanel');
+    const titulo = document.getElementById('sipTitulo');
+    const body   = document.getElementById('sipBody');
+    if (!panel || !titulo || !body) return;
+
+    const cliente = s.cliente_nombre || s.cliente_email || 'Cliente';
+    const estado  = _sipFormatEstado(s.estado);
+    const color   = _sipColorEstado(s.estado);
+
+    // Título del header
+    titulo.innerHTML = _sipEscapar(cliente) +
+        ' <span class="sip-estado-badge" style="background:' + color + '22; color:' + color + '; border:1px solid ' + color + '66;">' +
+        _sipEscapar(estado) + '</span>';
+
+    // Filas de detalle
+    const filas = [
+        ['👤 Cliente',    cliente],
+        s.cliente_telefono ? ['📱 Teléfono', s.cliente_telefono] : null,
+        ['📄 Descripción', s.descripcion || '—'],
+        ['📦 Cantidad',    s.cantidad || 1],
+    ].filter(Boolean);
+
+    if (s.fecha_solicitud) {
+        const f = new Date(s.fecha_solicitud).toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'});
+        filas.push(['📅 Fecha', f]);
+    }
+    if (s.fecha_estimada_entrega) {
+        const fe = new Date(s.fecha_estimada_entrega + 'T00:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'});
+        filas.push(['🗓️ Entrega est.', fe]);
+    }
+    if (s.notas_cliente) {
+        filas.push(['💬 Notas cliente', s.notas_cliente]);
+    }
+
+    const tablaHTML = '<table class="sip-table">' +
+        filas.map(([k,v]) => '<tr><td>' + _sipEscapar(k) + '</td><td>' + _sipEscapar(String(v)) + '</td></tr>').join('') +
+        '</table>';
+
+    const archivos = Array.isArray(s.archivos) ? s.archivos : [];
+    const adjuntosHTML = archivos.length
+        ? '<div><div class="sip-adjuntos-titulo">📎 Adjuntos (' + archivos.length + ')</div><div class="sip-adj-grid" id="sipAdjuntosGrid"></div></div>'
+        : '';
+
+    body.innerHTML = '<div class="sip-grid">' + tablaHTML + adjuntosHTML + '</div>';
+
+    // Cargar thumbs de adjuntos
+    if (archivos.length) {
+        const grid = document.getElementById('sipAdjuntosGrid');
+        const apiBase = (typeof API_CONFIG !== 'undefined' ? API_CONFIG.baseURL : '/api');
+
+        archivos.forEach(function(archivo) {
+            const esImagen = archivo.tipo_mime && archivo.tipo_mime.startsWith('image/');
+            const url = apiBase + '/api_solicitudes.php?action=descargar_archivo&archivo_id=' + encodeURIComponent(archivo.id);
+
+            const item = document.createElement('div');
+            item.className = 'sip-adj-item';
+            item.title = archivo.nombre_original;
+
+            if (esImagen) {
+                const img = document.createElement('img');
+                img.className = 'sip-adj-img';
+                img.alt = archivo.nombre_original;
+                fetch(url, {credentials: 'include'})
+                    .then(function(r) { return r.blob(); })
+                    .then(function(blob) { img.src = URL.createObjectURL(blob); })
+                    .catch(function() { img.style.display = 'none'; });
+                item.appendChild(img);
+            } else {
+                const icon = document.createElement('div');
+                icon.className = 'sip-adj-placeholder';
+                icon.textContent = archivo.tipo_mime && archivo.tipo_mime.includes('pdf') ? '📑' : '📄';
+                item.appendChild(icon);
+            }
+
+            const label = document.createElement('div');
+            label.className = 'sip-adj-label';
+            label.textContent = archivo.nombre_original;
+            item.appendChild(label);
+
+            item.addEventListener('click', function() { window.open(url, '_blank'); });
+            grid.appendChild(item);
+        });
+    }
+
+    // Mostrar panel
+    panel.style.display = 'block';
+}
+
+function toggleSolicitudInfoPanel() {
+    const body  = document.getElementById('sipBody');
+    const arrow = document.getElementById('sipArrow');
+    if (!body) return;
+    const visible = body.style.display !== 'none';
+    body.style.display  = visible ? 'none' : 'block';
+    arrow.style.transform = visible ? 'rotate(180deg)' : '';
+}
+
+// ============================================
+// COTIZACIÓN FORMAL — botón "📄 Cotización formal"
+// Habilitado cuando hay un cálculo realizado (ultimoCalculo). Si la
+// cotización viene de una solicitud (?solicitud=ID), se ofrece además
+// "Enviar a la solicitud" (precio_final + condiciones de pago).
+// ============================================
+function actualizarBotonCotizacionFormal() {
+    const btn = document.getElementById('btnCotizacionFormal');
+    if (!btn) return;
+    btn.disabled = !ultimoCalculo;
+    btn.style.opacity = ultimoCalculo ? '1' : '0.55';
+    btn.style.cursor  = ultimoCalculo ? 'pointer' : 'not-allowed';
+}
+
+window.abrirCotizacionFormalDesdeCotizador = function () {
+    if (!ultimoCalculo) {
+        mostrarNotificacionSimple('Primero calcula una cotización para generar el documento.', 'info');
+        return;
+    }
+    if (typeof abrirCotizacionFormal !== 'function') {
+        console.error('El módulo cotizacion-formal.js no está cargado.');
+        return;
+    }
+
+    const cantidad = ultimoCalculo.cantidad_piezas
+        || parseInt(document.getElementById('cantidadPiezas')?.value || 1, 10);
+    const descripcion = ultimoCalculo.nombre_pieza
+        || document.getElementById('nombrePieza')?.value
+        || 'Pieza sin nombre';
+
+    abrirCotizacionFormal({
+        solicitudId:  solicitudVinculada ? solicitudVinculada.id : null,
+        estadoActual: solicitudVinculada ? solicitudVinculada.estado : null,
+        cliente:      solicitudVinculada ? solicitudVinculada.cliente : 'Cliente',
+        descripcion:  descripcion,
+        cantidad:     cantidad,
+        precios: {
+            base:      ultimoCalculo.precio_final,
+            minorista: ultimoCalculo.precio_minorista,
+            mayorista: ultimoCalculo.precio_mayorista
+        },
+        permiteEnvio: !!solicitudVinculada,
+        alEnviar: function (info) {
+            if (solicitudVinculada) solicitudVinculada.estado = info.estado;
+        }
+    });
+};
+
 // Inicializar el módulo cuando se cargue la página
     document.addEventListener('DOMContentLoaded', function() {
         // Detectar modo duplicar desde URL
@@ -163,6 +468,22 @@ async function cargarCotizacionParaDuplicar(id) {
         const duplicarId = urlParams.get('duplicar');
         if (duplicarId) {
             cargarCotizacionParaDuplicar(duplicarId);
+        }
+
+        // Detectar modo "cotizar desde solicitud" desde URL
+        const solicitudId = urlParams.get('solicitud');
+        if (solicitudId) {
+            cargarCotizacionDesdeSolicitud(solicitudId);
+
+            // Auto-guardar borrador en cada cambio mientras se trabaja la cotización
+            let _draftTimer = null;
+            document.addEventListener('input', function () {
+                clearTimeout(_draftTimer);
+                _draftTimer = setTimeout(guardarBorradorCotizacion, 600);
+            });
+            document.addEventListener('change', guardarBorradorCotizacion);
+            // Guardar también justo antes de que se descargue la página
+            window.addEventListener('beforeunload', guardarBorradorCotizacion);
         }
 
         inicializarModuloPostprocesado();
@@ -452,6 +773,7 @@ if (datosPostprocesado.incluir_postprocesado && calculos.costoTotalPostprocesado
         
         // Guardar Ãºltimo cÃ¡lculo
         ultimoCalculo = cotizacion;
+        actualizarBotonCotizacionFormal();
 
         actualizarCostosAvanzados(datos, calculos);
 

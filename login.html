@@ -172,6 +172,38 @@
             font-size: 0.75rem;
             color: #444;
         }
+
+        /* Banner de redirección al sistema correcto */
+        .redirect-banner {
+            display: none;
+            background: rgba(245,197,24,0.12);
+            border: 1px solid rgba(245,197,24,0.4);
+            border-radius: 7px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+        .redirect-banner.visible { display: block; }
+        .redirect-banner .rb-titulo {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--amarillo);
+            margin-bottom: 0.25rem;
+        }
+        .redirect-banner .rb-desc {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        .redirect-banner .rb-spinner {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border: 2px solid rgba(245,197,24,0.3);
+            border-top-color: var(--amarillo);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -184,6 +216,11 @@
 
     <div class="login-card">
         <h2>Iniciar sesión</h2>
+
+        <div class="redirect-banner" id="redirectBanner">
+            <div class="rb-titulo" id="redirectTitulo"></div>
+            <div class="rb-desc"><span class="rb-spinner"></span> <span id="redirectDesc"></span></div>
+        </div>
 
         <div class="error-msg" id="errorMsg"></div>
 
@@ -223,10 +260,15 @@
         return m ? m[1] : '/gestion3d';
     })();
 
-    const form    = document.getElementById('loginForm');
-    const btnLogin = document.getElementById('btnLogin');
-    const errorMsg = document.getElementById('errorMsg');
-    const csrfInput = document.getElementById('csrfToken');
+    // URL del backend y frontend de la tienda (ajustar en producción)
+    const TIENDA_API_URL      = '/ODI3D/tienda3d/public/api';
+    const TIENDA_FRONTEND_URL = 'http://localhost:5173';
+
+    const form         = document.getElementById('loginForm');
+    const btnLogin     = document.getElementById('btnLogin');
+    const errorMsg     = document.getElementById('errorMsg');
+    const csrfInput    = document.getElementById('csrfToken');
+    const redirectBanner = document.getElementById('redirectBanner');
 
     // Obtener token CSRF del servidor al cargar
     async function cargarCSRF() {
@@ -260,6 +302,47 @@
 
     function ocultarError() {
         errorMsg.classList.remove('visible');
+    }
+
+    function mostrarRedirect(titulo, desc) {
+        document.getElementById('redirectTitulo').textContent = titulo;
+        document.getElementById('redirectDesc').textContent   = desc;
+        redirectBanner.classList.add('visible');
+        errorMsg.classList.remove('visible');
+    }
+
+    // Verificar si las credenciales pertenecen a un cliente de tienda3d.
+    // Si sí, lo autentica allá y lo redirige con auto-login via URL params.
+    async function verificarEnTienda(email, password) {
+        try {
+            const resp = await fetch(`${TIENDA_API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            if (!resp.ok) return false;
+            const json = await resp.json();
+            if (!json.success || !json.token) return false;
+
+            // Es un cliente de la tienda — redirigir con auto-login
+            const cliente  = json.cliente || {};
+            const nombre   = cliente.nombre || email;
+            const params   = new URLSearchParams({
+                __odi_token:   json.token,
+                __odi_cliente: JSON.stringify(cliente)
+            });
+            mostrarRedirect(
+                `👋 ¡Hola, ${nombre}!`,
+                'Tus credenciales son de la tienda ODI3D. Redirigiendo al portal de clientes...'
+            );
+            setBloqueado(true);
+            setTimeout(() => {
+                window.location.href = `${TIENDA_FRONTEND_URL}/?${params.toString()}`;
+            }, 2200);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     function setBloqueado(bloqueado) {
@@ -302,8 +385,13 @@
                 const rol = json.data?.rol;
                 window.location.href = `${BASE}/${rol === 'empleado' ? 'panel-empleado.html' : 'index.html'}`;
             } else {
-                mostrarError(json.message || json.error || 'Credenciales incorrectas');
-                setBloqueado(false);
+                // Login en gestion3d falló — verificar si son credenciales de tienda3d
+                const esCliente = await verificarEnTienda(email, password);
+                if (!esCliente) {
+                    mostrarError(json.message || json.error || 'Credenciales incorrectas');
+                    setBloqueado(false);
+                }
+                // Si esCliente=true, la redirección ya fue iniciada por verificarEnTienda()
             }
         } catch (err) {
             mostrarError('Error de conexión. Verifica que el servidor esté activo.');
@@ -324,6 +412,16 @@
 
     // Obtener token CSRF para el formulario
     obtenerCSRF();
+
+    // Pre-llenar email si viene como parámetro en la URL (?email=...) —
+    // usado cuando gestion3d redirige aquí a un empleado que intentó entrar por tienda3d
+    const urlEmail = new URLSearchParams(location.search).get('email');
+    if (urlEmail) {
+        const emailInput = document.getElementById('email');
+        emailInput.value = decodeURIComponent(urlEmail);
+        // Mover foco a la contraseña para agilizar el login
+        document.getElementById('password').focus();
+    }
 })();
 </script>
 </body>

@@ -515,8 +515,8 @@ function renderizarFactura(c) {
         // --- Encabezado empresa ---
         '<div class="factura-header">' +
             '<div class="empresa-info">' +
-                '<span class="empresa-logo">🖨️</span>' +
-                '<input class="empresa-nombre-input" type="text" placeholder="Nombre de tu empresa" value="">' +
+                '<img class="empresa-logo" src="img/logo-odi3d.svg" alt="ODI3D">' +
+                '<input class="empresa-nombre-input" type="text" placeholder="Nombre de tu empresa" value="ODI3D">' +
                 '<input class="empresa-dato-input" type="text" placeholder="NIT: 000.000.000-0">' +
                 '<input class="empresa-dato-input" type="text" placeholder="Tel: +57 300 000 0000">' +
                 '<input class="empresa-dato-input" type="text" placeholder="Dirección o ciudad">' +
@@ -562,6 +562,16 @@ function renderizarFactura(c) {
         // --- Totales ---
         '<div class="factura-totales">' +
             '<div class="totales-box">' + filasTotal + '</div>' +
+        '</div>' +
+
+        // --- Pago: QR Bre-B / Nequi ---
+        '<div class="factura-pago">' +
+            '<div class="pago-qr"><img src="img/qr-pagos-brebe.png" alt="QR de pago Bre-B / Nequi Negocios"></div>' +
+            '<div class="pago-info">' +
+                '<h4>💳 Pagos</h4>' +
+                '<p>Escanea el código QR desde tu app Nequi para pagar con <strong>Bre-B</strong>.</p>' +
+                '<p class="pago-titular">ODI3D — Juan Ortiz</p>' +
+            '</div>' +
         '</div>' +
 
         // --- Notas ---

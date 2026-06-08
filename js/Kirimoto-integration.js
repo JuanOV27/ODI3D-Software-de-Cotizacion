@@ -14,7 +14,7 @@ const KiriMotoIntegration = {
     },
 
     state: {
-        panelOpen: true,
+        panelOpen: false,
         panelExpanded: false,
         modelData: null,
     },
