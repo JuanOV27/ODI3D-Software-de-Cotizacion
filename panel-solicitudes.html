@@ -1727,26 +1727,37 @@
             return;
         }
 
+        // Base URL de tienda3d para servir las imágenes de productos
+        const _tiendaBaseURL = 'http://localhost/ODI3D/tienda3d/public/storage/';
+
         cont.innerHTML = _catalogoResultados.map((p, idx) => {
             const yaSeleccionado = _itemsCompra.some(it => it.catalogoId === p.id);
             const precio = p.precio_base
                 ? '$' + parseFloat(p.precio_base).toLocaleString('es-CO', {minimumFractionDigits: 0})
                 : 'Sin precio';
+            const thumbHTML = p.imagen_principal
+                ? `<img src="${_tiendaBaseURL}${p.imagen_principal}" alt=""
+                        style="width:38px;height:38px;object-fit:cover;border-radius:5px;flex-shrink:0;
+                               border:1px solid #e5e7eb;" onerror="this.style.display='none'" />`
+                : `<div style="width:38px;height:38px;background:#f3f4f6;border-radius:5px;
+                               flex-shrink:0;display:flex;align-items:center;justify-content:center;
+                               font-size:1.1rem;border:1px solid #e5e7eb;">📦</div>`;
             return `
                 <div onclick="${yaSeleccionado ? '' : 'nsSeleccionarProductoCatalogo(' + idx + ')'}"
-                     style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.75rem;
+                     style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.65rem;
                             cursor:${yaSeleccionado ? 'default' : 'pointer'};
                             background:${yaSeleccionado ? '#f0fdf4' : 'white'};
                             border-bottom:1px solid #f3f4f6;
                             transition:background 0.15s ease-out;"
-                     ${!yaSeleccionado ? 'onmouseover="this.style.background=\'#eff6ff\'"  onmouseout="this.style.background=\'white\'"' : ''}>
+                     ${!yaSeleccionado ? 'onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'white\'"' : ''}>
+                    ${thumbHTML}
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:0.81rem;font-weight:600;color:#1A2E3C;
                                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nombre}</div>
                         ${p.categoria ? `<div style="font-size:0.7rem;color:#6b7280;">${p.categoria}</div>` : ''}
                     </div>
                     <div style="font-size:0.79rem;color:#374151;white-space:nowrap;">${precio}</div>
-                    <div style="font-size:0.85rem;${yaSeleccionado ? 'color:#16a34a;' : 'color:#3b82f6;'}">
+                    <div style="font-size:0.9rem;font-weight:700;${yaSeleccionado ? 'color:#16a34a;' : 'color:#3b82f6;'}">
                         ${yaSeleccionado ? '✓' : '+'}
                     </div>
                 </div>`;

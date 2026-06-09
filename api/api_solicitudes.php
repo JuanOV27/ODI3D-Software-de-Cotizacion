@@ -868,9 +868,11 @@ function productosCatalogo(): void {
 
     // La tabla productos pertenece a tienda3d pero está en la misma BD.
     // 'visible' = columna de visibilidad, 'precio' = precio real (alias precio_base al frontend).
-    // Nota: producto_imagenes puede no existir aún; omitir para evitar error.
     $sql    = "SELECT p.id, p.nombre, p.descripcion, p.precio AS precio_base,
-                      p.categoria
+                      p.categoria,
+                      (SELECT pi.ruta FROM producto_imagenes pi
+                       WHERE pi.producto_id = p.id
+                       ORDER BY pi.orden ASC LIMIT 1) AS imagen_principal
                FROM productos p
                WHERE p.visible = 1";
     $params = [];
