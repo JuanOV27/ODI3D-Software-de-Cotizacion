@@ -168,6 +168,71 @@
             flex: 1; padding: 0.4rem 0.7rem;
             border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem;
         }
+
+        /* ── Modales generales ─────────────────────────────── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 3000;
+            background: rgba(15, 23, 32, 0.72);
+            align-items: flex-start; justify-content: center;
+            padding: 2rem 1rem; overflow-y: auto;
+        }
+        .modal-overlay.activo { display: flex; }
+        .modal-box {
+            background: #fff; border-radius: 12px; width: 100%; max-width: 540px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.3); margin: auto;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-box-lg { max-width: 700px; }
+        .modal-header {
+            padding: 0.9rem 1.2rem; background: #1A2E3C; color: #fff;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .modal-header h3 { margin: 0; font-size: 0.95rem; font-weight: 700; }
+        .modal-close {
+            background: none; border: none; color: #fff; font-size: 1.1rem;
+            cursor: pointer; opacity: 0.75; padding: 0.2rem 0.5rem; transition: opacity 0.15s;
+        }
+        .modal-close:hover { opacity: 1; }
+        .modal-body { padding: 1.2rem; overflow-y: auto; max-height: 68vh; }
+        .modal-footer {
+            padding: 0.8rem 1.2rem; border-top: 1px solid #e5e7eb;
+            display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .field-group { margin-bottom: 0.85rem; }
+        .field-group label { font-size: 0.78rem; color: #555; font-weight: 700;
+            display: block; margin-bottom: 0.25rem; }
+        .field-group input, .field-group select, .field-group textarea {
+            width: 100%; padding: 0.45rem 0.7rem; font-size: 0.85rem;
+            border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;
+            transition: border-color 0.15s;
+        }
+        .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+            border-color: #1B5E7B; outline: none;
+        }
+        .tipo-radio-group { display: flex; gap: 0.5rem; }
+        .tipo-radio-btn {
+            flex: 1; padding: 0.55rem 0.5rem; border: 2px solid #e5e7eb; border-radius: 8px;
+            cursor: pointer; text-align: center; font-size: 0.82rem; font-weight: 700;
+            color: #374151; transition: all 0.15s ease-out; background: #f9fafb; user-select: none;
+        }
+        .tipo-radio-btn.activo { border-color: #1B5E7B; background: #e0f2fe; color: #1A2E3C; }
+        .tipo-radio-btn:hover:not(.activo) { border-color: #9ca3af; background: #f3f4f6; }
+        /* Items table */
+        .items-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .items-table th { background: #f3f4f6; padding: 6px 8px; text-align: left; font-weight: 700; color: #374151; border-bottom: 1px solid #e5e7eb; }
+        .items-table td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .items-table tr:last-child td { border-bottom: none; }
+        .items-table tfoot td { background: #f7f9fc; font-weight: 700; font-size: 0.83rem; }
+        /* Carpeta cliente list */
+        .carpeta-item {
+            padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px;
+            margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s ease-out;
+            display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+        }
+        .carpeta-item:hover { background: #f7f9fc; border-color: #1B5E7B; }
+        .carpeta-item-activa { background: #e0f2fe; border-color: #1B5E7B; }
     </style>
 </head>
 <body>
@@ -199,6 +264,13 @@
                     <option value="entregada">Entregada</option>
                     <option value="rechazada">Rechazada</option>
                 </select>
+                <button onclick="abrirModalNuevaSolicitud()"
+                    style="margin-left:auto; background:#1A2E3C; color:#fff; border:none; border-radius:6px;
+                           padding:0.3rem 0.7rem; font-size:0.78rem; font-weight:700; cursor:pointer;
+                           white-space:nowrap; transition:background 0.15s ease-out;"
+                    title="Crear solicitud manual (cliente de WhatsApp)">
+                    + Nueva
+                </button>
             </div>
             <div class="lista-scroll" id="listaSolicitudes">
                 <p style="padding:1rem; color:#888; font-size:0.85rem;">Cargando...</p>
@@ -216,7 +288,12 @@
                         <div class="detalle-nombre" id="dNombre">—</div>
                         <div class="detalle-meta" id="dMeta">—</div>
                     </div>
-                    <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                    <div style="display:flex; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="button" id="btnHistorialCliente" onclick="abrirCarpetaCliente()"
+                            style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:6px; padding:0.35rem 0.7rem; font-size:0.78rem; cursor:pointer; transition:background 0.15s ease-out; white-space:nowrap; display:none;"
+                            title="Ver todas las solicitudes de este cliente">
+                            🗂 Historial
+                        </button>
                         <button type="button" class="btn btn-sm" id="btnAbrirCotizador"
                             onclick="toggleCotizadorEmbebido()"
                             style="background:#1A2E3C; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-size:0.78rem; cursor:pointer; transition:background 0.15s ease-out; white-space:nowrap;">
@@ -234,6 +311,35 @@
                 </div>
 
                 <div class="detalle-body">
+
+                    <!-- ── Alerta de vinculación de cliente ──────────────── -->
+                    <div id="seccionVinculacion" style="display:none;
+                         background:#fef3c7; border:1px solid #f59e0b; border-radius:8px;
+                         padding:0.75rem 1rem; margin-bottom:1rem;">
+                        <div style="font-size:0.82rem; font-weight:700; color:#92400e; margin-bottom:0.4rem;">
+                            🔗 Posible coincidencia de cliente detectada
+                        </div>
+                        <div id="vinculacionDatos" style="font-size:0.8rem; color:#78350f; margin-bottom:0.6rem; line-height:1.5;"></div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <button onclick="confirmarVinculacion(true)"
+                                style="background:#059669; color:#fff; border:none; border-radius:6px;
+                                       padding:0.3rem 0.8rem; font-size:0.8rem; font-weight:700; cursor:pointer;">
+                                ✅ Confirmar — es el mismo
+                            </button>
+                            <button onclick="confirmarVinculacion(false)"
+                                style="background:#dc2626; color:#fff; border:none; border-radius:6px;
+                                       padding:0.3rem 0.8rem; font-size:0.8rem; font-weight:700; cursor:pointer;">
+                                ❌ No es el mismo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Lista de ítems (compra o multi-ítem cotizador) ── -->
+                    <div id="seccionItems" style="display:none; margin-bottom:1rem;">
+                        <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">ARTÍCULOS SOLICITADOS</p>
+                        <div id="dItemsTabla"></div>
+                    </div>
+
                     <p style="font-size:0.78rem;font-weight:700;margin-bottom:0.4rem;color:#555;">DESCRIPCIÓN</p>
                     <div class="detalle-desc" id="dDescripcion">—</div>
 
@@ -453,6 +559,192 @@
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — NUEVA SOLICITUD MANUAL
+     (solicitudes que llegan por WhatsApp u otro canal externo)
+══════════════════════════════════════════════════════════════ -->
+<div id="modalNuevaSolicitud" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>➕ Nueva solicitud manual</h3>
+            <button class="modal-close" onclick="cerrarModalNuevaSolicitud()">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <!-- Tipo de solicitud -->
+            <div class="field-group">
+                <label>Tipo de solicitud</label>
+                <div class="tipo-radio-group">
+                    <div class="tipo-radio-btn activo" id="tipoRadioCot"
+                         onclick="setTipoNuevaSolicitud('cotizacion')">
+                        🔧 Cotización personalizada
+                    </div>
+                    <div class="tipo-radio-btn" id="tipoRadioCompra"
+                         onclick="setTipoNuevaSolicitud('compra')">
+                        🛒 Compra de artículos
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos del cliente -->
+            <p style="font-size:0.78rem;font-weight:700;color:#1A2E3C;
+                      margin:0.25rem 0 0.6rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.3rem;">
+                DATOS DEL CLIENTE
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                <div class="field-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="nsNombre" placeholder="Nombre del cliente" maxlength="255" />
+                </div>
+                <div class="field-group">
+                    <label>Teléfono *</label>
+                    <input type="text" id="nsTelefono" placeholder="Ej: 3001234567" maxlength="50"
+                           oninput="document.getElementById('nsWhatsapp').value=this.value" />
+                </div>
+                <div class="field-group">
+                    <label>WhatsApp</label>
+                    <input type="text" id="nsWhatsapp" placeholder="Igual al teléfono si aplica" maxlength="50" />
+                </div>
+                <div class="field-group">
+                    <label>Email</label>
+                    <input type="email" id="nsEmail" placeholder="correo@ejemplo.com" maxlength="255" />
+                </div>
+            </div>
+
+            <!-- ── SECCIÓN: Cotización ── -->
+            <div id="nsSeccionCot">
+                <p style="font-size:0.78rem;font-weight:700;color:#1A2E3C;
+                          margin:0.25rem 0 0.6rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.3rem;">
+                    DETALLES DE LA COTIZACIÓN
+                </p>
+                <div class="field-group">
+                    <label>Descripción *</label>
+                    <textarea id="nsDescripcion" rows="3"
+                              placeholder="¿Qué necesita el cliente? Modelos, especificaciones, referencias..."></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                    <div class="field-group">
+                        <label>Material preferido</label>
+                        <input type="text" id="nsMaterial" placeholder="Ej: PLA, PETG, ABS..." />
+                    </div>
+                    <div class="field-group">
+                        <label>Cantidad</label>
+                        <input type="number" id="nsCantidad" value="1" min="1" step="1" />
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Uso final</label>
+                    <input type="text" id="nsUsoFinal" placeholder="Ej: Prototipo, uso decorativo, ensamble industrial..." />
+                </div>
+            </div>
+
+            <!-- ── SECCIÓN: Compra de artículos ── -->
+            <div id="nsSeccionCompra" style="display:none;">
+                <p style="font-size:0.78rem;font-weight:700;color:#1A2E3C;
+                          margin:0.25rem 0 0.6rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.3rem;">
+                    ARTÍCULOS A COMPRAR
+                </p>
+                <div id="nsItemsCompra"></div>
+                <button type="button" onclick="nsAgregarItemCompra()"
+                    style="background:#f0fdf4; border:1px dashed #059669; color:#059669; border-radius:6px;
+                           padding:0.4rem 0.8rem; font-size:0.8rem; cursor:pointer; font-weight:700;
+                           width:100%; margin-bottom:0.75rem; transition:background 0.15s;">
+                    + Agregar artículo
+                </button>
+                <div class="field-group">
+                    <label>Notas adicionales</label>
+                    <textarea id="nsNotasCompra" rows="2"
+                              placeholder="Instrucciones especiales, color, acabado, etc."></textarea>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button onclick="cerrarModalNuevaSolicitud()"
+                style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;
+                       border-radius:6px; padding:0.45rem 1rem; font-size:0.85rem; cursor:pointer;">
+                Cancelar
+            </button>
+            <button onclick="guardarNuevaSolicitud()" id="btnGuardarNuevaSolicitud"
+                style="background:#1A2E3C; color:#fff; border:none; border-radius:6px;
+                       padding:0.45rem 1.2rem; font-size:0.85rem; font-weight:700; cursor:pointer;
+                       transition:opacity 0.15s;">
+                💾 Crear solicitud
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — CARPETA DE CLIENTE
+     (historial de todas las solicitudes del mismo cliente)
+══════════════════════════════════════════════════════════════ -->
+<div id="modalCarpetaCliente" class="modal-overlay">
+    <div class="modal-box modal-box-lg">
+        <div class="modal-header">
+            <h3>🗂 Historial del cliente</h3>
+            <button class="modal-close" onclick="cerrarCarpetaCliente()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="carpetaClienteInfo"
+                 style="background:#f7f9fc; border-radius:8px; padding:0.75rem 1rem;
+                        margin-bottom:1rem; font-size:0.85rem; line-height:1.6;">
+            </div>
+            <p style="font-size:0.78rem;font-weight:700;color:#555;margin-bottom:0.5rem;">
+                TODAS SUS SOLICITUDES
+            </p>
+            <div id="carpetaClienteLista"></div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="cerrarCarpetaCliente()"
+                style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;
+                       border-radius:6px; padding:0.45rem 1rem; font-size:0.85rem; cursor:pointer;">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL — CONTRASEÑA PARA RETROCEDER ESTADO
+══════════════════════════════════════════════════════════════ -->
+<div id="modalPasswordRetroceso" class="modal-overlay">
+    <div class="modal-box" style="max-width:400px;">
+        <div class="modal-header" style="background:#dc2626;">
+            <h3>🔒 Confirmar retroceso de estado</h3>
+            <button class="modal-close" onclick="_resolverPasswordRetroceso(null)">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.85rem; color:#374151; margin-bottom:0.75rem; line-height:1.5;">
+                Estás intentando retroceder el estado de la solicitud. Esta acción requiere confirmación.
+            </p>
+            <div id="passwordRetrocesoDatos"
+                 style="background:#fef3c7; border:1px solid #f59e0b; border-radius:6px;
+                        padding:0.5rem 0.75rem; font-size:0.82rem; color:#92400e; margin-bottom:0.85rem; line-height:1.6;">
+            </div>
+            <div class="field-group">
+                <label>Tu contraseña *</label>
+                <input type="password" id="inputPasswordRetroceso" placeholder="Ingresa tu contraseña"
+                       onkeydown="if(event.key==='Enter')_resolverPasswordRetroceso(this.value)" />
+            </div>
+            <div id="passwordRetrocesoError"
+                 style="color:#dc2626; font-size:0.8rem; display:none; margin-top:-0.4rem;"></div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="_resolverPasswordRetroceso(null)"
+                style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;
+                       border-radius:6px; padding:0.45rem 1rem; font-size:0.85rem; cursor:pointer;">
+                Cancelar
+            </button>
+            <button onclick="_resolverPasswordRetroceso(document.getElementById('inputPasswordRetroceso').value)"
+                style="background:#dc2626; color:#fff; border:none; border-radius:6px;
+                       padding:0.45rem 1.2rem; font-size:0.85rem; font-weight:700; cursor:pointer;">
+                🔒 Confirmar retroceso
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/cotizacion-formal.js"></script>
@@ -497,7 +789,11 @@
             <div class="solicitud-item ${solicitudActual?.id === s.id ? 'activa' : ''}"
                  onclick="verDetalle('${s.id}')">
                 <div class="solicitud-item-header">
-                    <span class="solicitud-nombre">${s.cliente_nombre || s.cliente_email || 'Cliente'}</span>
+                    <span class="solicitud-nombre">
+                        ${s.cliente_nombre || s.cliente_email || 'Cliente'}
+                        ${s.vinculacion_pendiente ? '<span title="Vinculación pendiente" style="color:#f59e0b;font-size:0.8rem;">🔗</span>' : ''}
+                        ${s.origen === 'manual' ? '<span title="Solicitud manual (WhatsApp)" style="font-size:0.68rem;color:#6b7280;background:#f3f4f6;border-radius:3px;padding:0 4px;vertical-align:middle;">WA</span>' : ''}
+                    </span>
                     <div style="display:flex;gap:4px;align-items:center;">
                         ${s.mensajes_no_leidos > 0
                             ? `<span class="badge-chat">${s.mensajes_no_leidos}</span>`
@@ -505,7 +801,7 @@
                         <span class="badge-estado estado-${s.estado}">${formatEstado(s.estado)}</span>
                     </div>
                 </div>
-                <div class="solicitud-desc">${s.descripcion}</div>
+                <div class="solicitud-desc">${s.descripcion || '—'}</div>
                 <div class="solicitud-fecha">${formatFecha(s.fecha_solicitud)}</div>
             </div>
         `).join('');
@@ -697,6 +993,35 @@
                 secArch.style.display = 'none';
             }
 
+            // ── Ítems (compra o multi-ítem cotizador) ──
+            const secItems  = document.getElementById('seccionItems');
+            const tablaItems = document.getElementById('dItemsTabla');
+            if (s.items && s.items.length > 0) {
+                secItems.style.display = '';
+                tablaItems.innerHTML = renderizarItemsTabla(s.items);
+            } else {
+                secItems.style.display = 'none';
+            }
+
+            // ── Vinculación pendiente ──
+            const secVinc  = document.getElementById('seccionVinculacion');
+            const vincDatos = document.getElementById('vinculacionDatos');
+            if (s.vinculacion_pendiente) {
+                secVinc.style.display = '';
+                const lineas = [];
+                if (s.cliente_nombre)   lineas.push(`<b>Nombre registrado:</b> ${s.cliente_nombre}`);
+                if (s.cliente_telefono) lineas.push(`<b>Teléfono:</b> ${s.cliente_telefono}`);
+                if (s.cliente_id)       lineas.push(`<b>⚠️ Ya tiene cuenta en tienda3d</b> — confirma si es la misma persona.`);
+                else                   lineas.push(`Sin cuenta en tienda3d aún.`);
+                vincDatos.innerHTML = lineas.join('<br>');
+            } else {
+                secVinc.style.display = 'none';
+            }
+
+            // ── Botón historial del cliente ──
+            const btnHistorial = document.getElementById('btnHistorialCliente');
+            btnHistorial.style.display = (s.cliente_id || s.cliente_telefono) ? '' : 'none';
+
             // Resaltar en lista
             cargarSolicitudes();
 
@@ -733,16 +1058,29 @@
     // ── Guardar estado ────────────────────────────────────────
     window.guardarEstado = async function () {
         if (!solicitudActual) return;
-        const estado       = document.getElementById('selectEstado').value;
-        const precioFinal  = document.getElementById('inputPrecioFinal').value;
-        const notas        = document.getElementById('notasInternas').value;
+        const estado        = document.getElementById('selectEstado').value;
+        const precioFinal   = document.getElementById('inputPrecioFinal').value;
+        const notas         = document.getElementById('notasInternas').value;
         const fechaEstimada = document.getElementById('inputFechaEstimada').value;
+
+        // Detección de retroceso entre fases → requiere contraseña
+        const ORDEN_FASES = { recibida:1, en_proceso:2, cotizada:3, aceptada:4, en_produccion:5, entregada:6 };
+        const idxNuevo    = ORDEN_FASES[estado];
+        const idxActual   = ORDEN_FASES[solicitudActual.estado];
+        const esRetroceso = idxNuevo !== undefined && idxActual !== undefined && idxNuevo < idxActual;
 
         try {
             const body = { id: solicitudActual.id, estado };
-            if (precioFinal) body.precio_final     = parseFloat(precioFinal);
-            if (notas)       body.notas_internas   = notas;
+            if (precioFinal) body.precio_final          = parseFloat(precioFinal);
+            if (notas)       body.notas_internas        = notas;
             body.fecha_estimada_entrega = fechaEstimada || null;
+
+            if (esRetroceso) {
+                const pass = await pedirPasswordRetroceso(solicitudActual.estado, estado);
+                if (pass === null) return; // usuario canceló
+                if (!pass.trim()) { alert('⚠️ Debes ingresar tu contraseña para retroceder el estado.'); return; }
+                body.password_confirmacion = pass;
+            }
 
             await apiClient.post('api_solicitudes.php', { action: 'cambiar_estado' }, body);
             solicitudActual.estado = estado;
@@ -752,10 +1090,14 @@
             badge.className   = `badge-estado estado-${estado}`;
             cargarSolicitudes();
         } catch (e) {
-            // Mostrar el mensaje del backend (incluye errores de validación de pagos)
+            // Mostrar el mensaje del backend (incluye errores de validación de pagos y contraseña incorrecta)
             const msg = e?.message || (typeof e === 'string' ? e : null)
                      || 'Error al guardar el estado.';
             alert('⚠️ ' + msg);
+            // Restaurar el select al estado actual si no se pudo cambiar
+            if (solicitudActual?.estado) {
+                document.getElementById('selectEstado').value = solicitudActual.estado;
+            }
         }
     };
 
@@ -1004,6 +1346,345 @@
             alert('Error de conexión al registrar el pago.');
         }
     };
+
+    // ══════════════════════════════════════════════════════════════
+    // ÍTEMS — renderizado de tabla en el detalle
+    // ══════════════════════════════════════════════════════════════
+    function renderizarItemsTabla(items) {
+        if (!items || !items.length) return '<p style="font-size:0.8rem;color:#888;">Sin ítems.</p>';
+
+        let totalGeneral = 0;
+        const filas = items.map((it, idx) => {
+            const precio    = parseFloat(it.producto_precio_unitario || 0);
+            const cantidad  = parseInt(it.cantidad || 1, 10);
+            const subtotal  = precio ? precio * cantidad : null;
+            if (subtotal) totalGeneral += subtotal;
+
+            const nombre = it.producto_nombre || it.descripcion || `Ítem ${idx + 1}`;
+            const mat    = it.material ? `<span style="font-size:0.75rem;color:#6b7280;">${it.material}</span>` : '';
+            const precioStr = precio ? `$${precio.toLocaleString('es-CO', {minimumFractionDigits:0})}` : '—';
+            const subtotalStr = subtotal ? `$${subtotal.toLocaleString('es-CO', {minimumFractionDigits:0})}` : '—';
+            const tipoBadge = it.tipo_item === 'catalogo'
+                ? `<span style="background:#e0f2fe;color:#0369a1;border-radius:3px;padding:1px 5px;font-size:0.7rem;">catálogo</span>`
+                : `<span style="background:#f3f4f6;color:#374151;border-radius:3px;padding:1px 5px;font-size:0.7rem;">personalizado</span>`;
+
+            return `
+                <tr>
+                    <td><div style="font-weight:600;">${nombre}</div>${mat}${tipoBadge}</td>
+                    <td style="text-align:center;">${cantidad}</td>
+                    <td style="text-align:right;">${precioStr}</td>
+                    <td style="text-align:right;font-weight:700;">${subtotalStr}</td>
+                </tr>`;
+        }).join('');
+
+        const totalRow = totalGeneral > 0 ? `
+            <tfoot>
+                <tr>
+                    <td colspan="3" style="text-align:right;padding-top:8px;">Total estimado:</td>
+                    <td style="text-align:right;padding-top:8px;color:#1A2E3C;">
+                        $${totalGeneral.toLocaleString('es-CO', {minimumFractionDigits:0})}
+                    </td>
+                </tr>
+            </tfoot>` : '';
+
+        return `
+            <table class="items-table">
+                <thead><tr>
+                    <th>Artículo</th>
+                    <th style="text-align:center;width:60px;">Cant.</th>
+                    <th style="text-align:right;width:110px;">Precio u.</th>
+                    <th style="text-align:right;width:110px;">Subtotal</th>
+                </tr></thead>
+                <tbody>${filas}</tbody>
+                ${totalRow}
+            </table>`;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // VINCULACIÓN DE CLIENTE
+    // ══════════════════════════════════════════════════════════════
+    window.confirmarVinculacion = async function (confirmar) {
+        if (!solicitudActual) return;
+        const accion = confirmar ? '¿Confirmar que este cliente de WhatsApp es el mismo que tiene cuenta en tienda3d?' : '¿Rechazar la vinculación? (la solicitud quedará sin cuenta vinculada)';
+        if (!confirm(accion)) return;
+
+        try {
+            await apiClient.post('api_solicitudes.php',
+                { action: 'confirmar_vinculacion' },
+                { solicitud_id: solicitudActual.id, confirmar: confirmar });
+
+            solicitudActual.vinculacion_pendiente = false;
+            document.getElementById('seccionVinculacion').style.display = 'none';
+            cargarSolicitudes(); // refrescar badge en lista
+        } catch (e) {
+            alert('⚠️ Error al procesar la vinculación: ' + (e?.message || e));
+        }
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // CARPETA DE CLIENTE
+    // ══════════════════════════════════════════════════════════════
+    window.abrirCarpetaCliente = async function () {
+        if (!solicitudActual) return;
+        const modal = document.getElementById('modalCarpetaCliente');
+        const infoEl  = document.getElementById('carpetaClienteInfo');
+        const listaEl = document.getElementById('carpetaClienteLista');
+
+        infoEl.textContent  = 'Cargando...';
+        listaEl.innerHTML   = '';
+        modal.classList.add('activo');
+
+        try {
+            const params = { action: 'carpeta_cliente' };
+            if (solicitudActual.cliente_id)       params.cliente_id = solicitudActual.cliente_id;
+            if (solicitudActual.cliente_telefono) params.telefono   = solicitudActual.cliente_telefono;
+
+            const resp = await apiClient.get('api_solicitudes.php', params);
+            const solicitudes = resp?.solicitudes || [];
+            const info        = resp?.cliente || {};
+
+            // Cabecera info del cliente
+            const parts = [];
+            if (info.nombre)   parts.push(`<b>${info.nombre}</b>`);
+            if (info.email)    parts.push(info.email);
+            if (info.telefono) parts.push(`📞 ${info.telefono}`);
+            infoEl.innerHTML = parts.join(' · ') || 'Cliente sin datos adicionales.';
+            infoEl.innerHTML += ` <span style="color:#6b7280;font-size:0.8rem;">(${solicitudes.length} solicitudes en total)</span>`;
+
+            if (!solicitudes.length) {
+                listaEl.innerHTML = '<p style="color:#888;font-size:0.85rem;">Sin solicitudes previas.</p>';
+                return;
+            }
+
+            listaEl.innerHTML = solicitudes.map(s => {
+                const esActual = s.id === solicitudActual.id;
+                const precio   = s.precio_final ? ` · $${Number(s.precio_final).toLocaleString('es-CO')}` : '';
+                return `
+                    <div class="carpeta-item ${esActual ? 'carpeta-item-activa' : ''}"
+                         onclick="irASolicitudDesdeCarpeta('${s.id}')">
+                        <div>
+                            <div style="font-size:0.85rem;font-weight:700;color:#111827;">${s.descripcion || '—'}</div>
+                            <div style="font-size:0.75rem;color:#6b7280;margin-top:2px;">${formatFecha(s.fecha_solicitud)}${precio}</div>
+                        </div>
+                        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+                            ${s.tipo_solicitud === 'compra' ? '<span style="font-size:0.7rem;background:#f0fdf4;color:#059669;border-radius:3px;padding:1px 5px;">compra</span>' : ''}
+                            <span class="badge-estado estado-${s.estado}">${formatEstado(s.estado)}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+
+        } catch (e) {
+            infoEl.textContent  = '';
+            listaEl.innerHTML   = `<p style="color:#c00;font-size:0.85rem;">Error al cargar el historial: ${e?.message || e}</p>`;
+        }
+    };
+
+    window.irASolicitudDesdeCarpeta = function (id) {
+        cerrarCarpetaCliente();
+        verDetalle(id);
+    };
+
+    window.cerrarCarpetaCliente = function () {
+        document.getElementById('modalCarpetaCliente').classList.remove('activo');
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // CONTRASEÑA PARA RETROCEDER ESTADO
+    // ══════════════════════════════════════════════════════════════
+    let _resolverPasswordRetroceso = null; // función resolutora de la Promise
+
+    function pedirPasswordRetroceso(estadoActual, estadoNuevo) {
+        return new Promise(resolve => {
+            _resolverPasswordRetroceso = (valor) => {
+                document.getElementById('modalPasswordRetroceso').classList.remove('activo');
+                document.getElementById('inputPasswordRetroceso').value = '';
+                const errEl = document.getElementById('passwordRetrocesoError');
+                if (errEl) errEl.style.display = 'none';
+                _resolverPasswordRetroceso = null;
+                resolve(valor);
+            };
+
+            // Rellenar info descriptiva
+            const datosEl = document.getElementById('passwordRetrocesoDatos');
+            if (datosEl) {
+                datosEl.innerHTML = `
+                    <b>Estado actual:</b> ${formatEstado(estadoActual)}<br>
+                    <b>Retroceder a:</b> ${formatEstado(estadoNuevo)}
+                `;
+            }
+            document.getElementById('modalPasswordRetroceso').classList.add('activo');
+            setTimeout(() => document.getElementById('inputPasswordRetroceso').focus(), 100);
+        });
+    }
+
+    // Exponerla para los onclick del modal
+    window._resolverPasswordRetroceso = function (valor) {
+        if (_resolverPasswordRetroceso) _resolverPasswordRetroceso(valor);
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // MODAL — NUEVA SOLICITUD MANUAL
+    // ══════════════════════════════════════════════════════════════
+    let _tipoNuevaSolicitud = 'cotizacion';
+    let _itemsCompra        = []; // [{nombre, cantidad, precio}]
+
+    window.abrirModalNuevaSolicitud = function () {
+        _tipoNuevaSolicitud = 'cotizacion';
+        _itemsCompra        = [];
+        // Limpiar campos
+        ['nsNombre','nsTelefono','nsWhatsapp','nsEmail',
+         'nsDescripcion','nsMaterial','nsUsoFinal','nsNotasCompra'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        const cant = document.getElementById('nsCantidad');
+        if (cant) cant.value = '1';
+
+        setTipoNuevaSolicitud('cotizacion');
+        document.getElementById('nsItemsCompra').innerHTML = '';
+        document.getElementById('modalNuevaSolicitud').classList.add('activo');
+        setTimeout(() => document.getElementById('nsNombre').focus(), 100);
+    };
+
+    window.cerrarModalNuevaSolicitud = function () {
+        document.getElementById('modalNuevaSolicitud').classList.remove('activo');
+    };
+
+    window.setTipoNuevaSolicitud = function (tipo) {
+        _tipoNuevaSolicitud = tipo;
+        document.getElementById('tipoRadioCot').classList.toggle('activo', tipo === 'cotizacion');
+        document.getElementById('tipoRadioCompra').classList.toggle('activo', tipo === 'compra');
+        document.getElementById('nsSeccionCot').style.display    = tipo === 'cotizacion' ? '' : 'none';
+        document.getElementById('nsSeccionCompra').style.display = tipo === 'compra'     ? '' : 'none';
+        if (tipo === 'compra' && _itemsCompra.length === 0) {
+            nsAgregarItemCompra(); // agregar primer ítem vacío
+        }
+    };
+
+    window.nsAgregarItemCompra = function () {
+        const idx = _itemsCompra.length;
+        _itemsCompra.push({ nombre: '', cantidad: 1, precio: '' });
+        _renderizarItemsCompraModal();
+        setTimeout(() => {
+            const el = document.getElementById(`nsItem_nombre_${idx}`);
+            if (el) el.focus();
+        }, 50);
+    };
+
+    function _renderizarItemsCompraModal() {
+        const cont = document.getElementById('nsItemsCompra');
+        if (!cont) return;
+        if (!_itemsCompra.length) { cont.innerHTML = ''; return; }
+
+        cont.innerHTML = _itemsCompra.map((it, idx) => `
+            <div style="display:grid; grid-template-columns:1fr 60px 100px 32px; gap:0.4rem; align-items:end; margin-bottom:0.5rem;"
+                 id="nsItemRow_${idx}">
+                <div>
+                    ${idx === 0 ? '<label style="font-size:0.75rem;color:#555;font-weight:700;display:block;margin-bottom:3px;">Artículo / descripción *</label>' : ''}
+                    <input type="text" id="nsItem_nombre_${idx}"
+                           value="${it.nombre || ''}"
+                           placeholder="Nombre del producto"
+                           oninput="_itemsCompra[${idx}].nombre=this.value"
+                           style="width:100%;padding:0.4rem 0.6rem;font-size:0.83rem;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;" />
+                </div>
+                <div>
+                    ${idx === 0 ? '<label style="font-size:0.75rem;color:#555;font-weight:700;display:block;margin-bottom:3px;">Cant.</label>' : ''}
+                    <input type="number" id="nsItem_cant_${idx}" value="${it.cantidad}"
+                           min="1" step="1"
+                           oninput="_itemsCompra[${idx}].cantidad=parseInt(this.value)||1"
+                           style="width:100%;padding:0.4rem 0.5rem;font-size:0.83rem;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;" />
+                </div>
+                <div>
+                    ${idx === 0 ? '<label style="font-size:0.75rem;color:#555;font-weight:700;display:block;margin-bottom:3px;">Precio u. (COP)</label>' : ''}
+                    <input type="number" id="nsItem_precio_${idx}" value="${it.precio}"
+                           min="0" step="100" placeholder="Opcional"
+                           oninput="_itemsCompra[${idx}].precio=this.value"
+                           style="width:100%;padding:0.4rem 0.5rem;font-size:0.83rem;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;" />
+                </div>
+                <div style="display:flex;align-items:${idx===0?'flex-end':'center'};height:100%;">
+                    ${_itemsCompra.length > 1
+                        ? `<button type="button" onclick="nsEliminarItemCompra(${idx})"
+                              style="background:#fce8e6;color:#c62828;border:1px solid #f5c6c6;border-radius:5px;
+                                     padding:0.35rem 0.5rem;font-size:0.8rem;cursor:pointer;line-height:1;flex-shrink:0;"
+                              title="Eliminar artículo">✕</button>`
+                        : '<div style="width:32px;"></div>'}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.nsEliminarItemCompra = function (idx) {
+        _itemsCompra.splice(idx, 1);
+        _renderizarItemsCompraModal();
+    };
+
+    window.guardarNuevaSolicitud = async function () {
+        const nombre    = document.getElementById('nsNombre').value.trim();
+        const telefono  = document.getElementById('nsTelefono').value.trim();
+        const whatsapp  = document.getElementById('nsWhatsapp').value.trim();
+        const email     = document.getElementById('nsEmail').value.trim();
+
+        if (!nombre)   { alert('El nombre del cliente es requerido.'); return; }
+        if (!telefono) { alert('El teléfono del cliente es requerido.'); return; }
+
+        const payload = {
+            tipo_solicitud:   _tipoNuevaSolicitud,
+            cliente_nombre:   nombre,
+            cliente_telefono: telefono,
+            cliente_whatsapp: whatsapp || telefono,
+            cliente_email:    email || null,
+        };
+
+        if (_tipoNuevaSolicitud === 'cotizacion') {
+            const desc     = document.getElementById('nsDescripcion').value.trim();
+            const material = document.getElementById('nsMaterial').value.trim();
+            const cantidad = parseInt(document.getElementById('nsCantidad').value, 10) || 1;
+            const uso      = document.getElementById('nsUsoFinal').value.trim();
+            if (!desc) { alert('La descripción de la cotización es requerida.'); return; }
+            payload.descripcion        = desc;
+            payload.material_preferido = material || null;
+            payload.cantidad           = cantidad;
+            payload.uso_final          = uso || null;
+
+        } else { // compra
+            const itemsValidos = _itemsCompra.filter(it => it.nombre.trim());
+            if (!itemsValidos.length) { alert('Agrega al menos un artículo a comprar.'); return; }
+            const notas = document.getElementById('nsNotasCompra').value.trim();
+            payload.descripcion = itemsValidos.map(it => `${it.cantidad}x ${it.nombre}`).join(', ');
+            payload.items = itemsValidos.map(it => ({
+                producto_nombre:           it.nombre.trim(),
+                cantidad:                  parseInt(it.cantidad, 10) || 1,
+                producto_precio_unitario:  it.precio ? parseFloat(it.precio) : null,
+                tipo_item:                 'personalizado',
+            }));
+            if (notas) payload.notas_adicionales = notas;
+        }
+
+        const btn = document.getElementById('btnGuardarNuevaSolicitud');
+        if (btn) { btn.disabled = true; btn.textContent = 'Creando...'; }
+
+        try {
+            const resp = await apiClient.post('api_solicitudes.php', { action: 'crear_manual' }, payload);
+            cerrarModalNuevaSolicitud();
+            await cargarSolicitudes();
+            if (resp?.id) verDetalle(resp.id);
+        } catch (e) {
+            alert('⚠️ Error al crear la solicitud: ' + (e?.message || e));
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Crear solicitud'; }
+        }
+    };
+
+    // Cerrar modales al hacer clic en el overlay (fuera del box)
+    document.addEventListener('click', function (ev) {
+        if (ev.target.classList.contains('modal-overlay')) {
+            ev.target.classList.remove('activo');
+            // Si era el modal de contraseña, cancelar la Promise
+            if (ev.target.id === 'modalPasswordRetroceso' && _resolverPasswordRetroceso) {
+                _resolverPasswordRetroceso(null);
+            }
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', cargarSolicitudes);
 })();

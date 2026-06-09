@@ -425,6 +425,8 @@ function actualizarBotonCotizacionFormal() {
     btn.disabled = !ultimoCalculo;
     btn.style.opacity = ultimoCalculo ? '1' : '0.55';
     btn.style.cursor  = ultimoCalculo ? 'pointer' : 'not-allowed';
+    // También actualizar el botón de "Agregar a lista" (definido al final del archivo)
+    if (typeof actualizarBtnAgregarALista === 'function') actualizarBtnAgregarALista();
 }
 
 window.abrirCotizacionFormalDesdeCotizador = function () {
@@ -1771,6 +1773,215 @@ window.toggleMarcaAgua = toggleMarcaAgua;
 window.validarLote = validarLote;
 window.cargarHistorial = cargarHistorial;
 window.eliminarCotizacion = eliminarCotizacion;
+
+// ============================================================
+// COTIZADOR MULTI-ÍTEM — lista de artículos por sesión/solicitud
+// ============================================================
+
+/** Clave de localStorage según si hay solicitud vinculada */
+function _listaKey() {
+    const solId = solicitudVinculada?.id;
+    return solId ? `cotizador_lista_${solId}` : 'cotizador_lista_global';
+}
+
+/** Carga la lista desde localStorage (o []) */
+function _cargarLista() {
+    try {
+        return JSON.parse(localStorage.getItem(_listaKey()) || '[]');
+    } catch { return []; }
+}
+
+/** Persiste la lista en localStorage */
+function _guardarLista(lista) {
+    localStorage.setItem(_listaKey(), JSON.stringify(lista));
+}
+
+/** Actualiza el estado habilitado/deshabilitado del botón "Agregar a lista" */
+function actualizarBtnAgregarALista() {
+    const btn = document.getElementById('btnAgregarALista');
+    if (!btn) return;
+    const habilitado = !!ultimoCalculo;
+    btn.disabled    = !habilitado;
+    btn.style.opacity = habilitado ? '1' : '0.55';
+    btn.style.cursor  = habilitado ? 'pointer' : 'not-allowed';
+}
+
+/** Renderiza la lista de artículos acumulada */
+function renderizarListaCotizacion() {
+    const lista  = _cargarLista();
+    const panel  = document.getElementById('panelListaCotizacion');
+    const cont   = document.getElementById('listaItemsContainer');
+    const count  = document.getElementById('listaItemsCount');
+    const total  = document.getElementById('listaTotalAcumulado');
+    if (!panel || !cont) return;
+
+    if (!lista.length) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    panel.style.display = '';
+    count.textContent   = `${lista.length} artículo${lista.length !== 1 ? 's' : ''}`;
+
+    let sumaTotal = 0;
+    cont.innerHTML = lista.map((it, idx) => {
+        const precio = parseFloat(it.precio_final || 0);
+        sumaTotal += precio;
+        const precioStr = precio ? `$${precio.toLocaleString('es-CO', {minimumFractionDigits:0})}` : '—';
+        return `
+            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:7px;
+                        padding:9px 12px; margin-bottom:7px; display:flex; align-items:center; gap:8px;">
+                <div style="flex:1; min-width:0;">
+                    <input type="text" value="${(it.nombre || 'Artículo').replace(/"/g, '&quot;')}"
+                           onchange="renombrarItemLista(${idx}, this.value)"
+                           style="font-size:0.85rem; font-weight:700; color:#111827; border:none;
+                                  background:transparent; width:100%; outline:none; cursor:text;"
+                           title="Haz clic para editar el nombre" />
+                    <div style="font-size:0.75rem; color:#6b7280; margin-top:1px;">
+                        ${it.cantidad ? `${it.cantidad} u. · ` : ''}Precio base: <strong>${precioStr}</strong>
+                        ${it.precio_minorista ? ` · Min: $${Number(it.precio_minorista).toLocaleString('es-CO', {minimumFractionDigits:0})}` : ''}
+                    </div>
+                </div>
+                <button onclick="eliminarDeListaCotizacion(${idx})"
+                    style="background:#fce8e6; color:#c62828; border:1px solid #f5c6c6;
+                           border-radius:5px; padding:4px 8px; font-size:0.78rem; cursor:pointer;
+                           flex-shrink:0; white-space:nowrap; transition:background 0.15s;">
+                    ✕
+                </button>
+            </div>`;
+    }).join('');
+
+    total.textContent = `$${sumaTotal.toLocaleString('es-CO', {minimumFractionDigits:0})}`;
+}
+
+/**
+ * Agrega el cálculo actual a la lista de ítems cotizados.
+ * Requiere que haya un `ultimoCalculo`.
+ */
+window.agregarAListaCotizacion = function () {
+    if (!ultimoCalculo) {
+        mostrarNotificacionSimple
+            ? mostrarNotificacionSimple('Primero calcula un precio para agregar a la lista.', 'warning')
+            : alert('Primero calcula un precio para agregar a la lista.');
+        return;
+    }
+
+    const nombre = document.getElementById('nombrePieza')?.value?.trim() || 'Artículo sin nombre';
+    const lista  = _cargarLista();
+
+    lista.push({
+        nombre:          nombre,
+        descripcion:     ultimoCalculo.nombre_pieza || nombre,
+        precio_final:    ultimoCalculo.precio_final,
+        precio_minorista:ultimoCalculo.precio_minorista,
+        precio_mayorista:ultimoCalculo.precio_mayorista,
+        cantidad:        ultimoCalculo.cantidad_piezas
+                         || parseInt(document.getElementById('cantidadPiezas')?.value || 1, 10),
+        calculo:         JSON.parse(JSON.stringify(ultimoCalculo)), // deep clone
+        timestamp:       Date.now(),
+    });
+
+    _guardarLista(lista);
+    renderizarListaCotizacion();
+
+    if (typeof mostrarNotificacionSimple === 'function') {
+        mostrarNotificacionSimple(`"${nombre}" agregado a la lista (${lista.length} artículo${lista.length!==1?'s':''}).`, 'success');
+    }
+};
+
+/** Elimina un ítem por índice */
+window.eliminarDeListaCotizacion = function (idx) {
+    const lista = _cargarLista();
+    lista.splice(idx, 1);
+    _guardarLista(lista);
+    renderizarListaCotizacion();
+};
+
+/** Renombra un ítem */
+window.renombrarItemLista = function (idx, nuevoNombre) {
+    const lista = _cargarLista();
+    if (lista[idx]) {
+        lista[idx].nombre = nuevoNombre.trim() || lista[idx].nombre;
+        _guardarLista(lista);
+    }
+};
+
+/** Limpia toda la lista con confirmación */
+window.limpiarListaCotizacion = function () {
+    const lista = _cargarLista();
+    if (!lista.length) return;
+    if (!confirm(`¿Eliminar los ${lista.length} artículo(s) de la lista?`)) return;
+    localStorage.removeItem(_listaKey());
+    renderizarListaCotizacion();
+};
+
+/**
+ * Abre la cotización formal con todos los ítems de la lista.
+ * Si hay solicitud vinculada, permite enviar los ítems a la solicitud.
+ */
+window.abrirCotizacionFormalDeLista = function () {
+    if (typeof abrirCotizacionFormal !== 'function') {
+        console.error('cotizacion-formal.js no está cargado.');
+        return;
+    }
+
+    const lista = _cargarLista();
+    if (!lista.length) {
+        mostrarNotificacionSimple
+            ? mostrarNotificacionSimple('La lista está vacía.', 'warning')
+            : alert('La lista está vacía.');
+        return;
+    }
+
+    // Descripción combinada de todos los ítems
+    const descripcionCombinada = lista.map((it, i) => `${i+1}. ${it.nombre} (×${it.cantidad})`).join('\n');
+    const totalFinal = lista.reduce((s, it) => s + parseFloat(it.precio_final || 0), 0);
+    const totalMin   = lista.reduce((s, it) => s + parseFloat(it.precio_minorista || it.precio_final || 0), 0);
+    const totalMay   = lista.reduce((s, it) => s + parseFloat(it.precio_mayorista || it.precio_final || 0), 0);
+
+    abrirCotizacionFormal({
+        solicitudId:  solicitudVinculada ? solicitudVinculada.id : null,
+        estadoActual: solicitudVinculada ? solicitudVinculada.estado : null,
+        cliente:      solicitudVinculada ? solicitudVinculada.cliente : 'Cliente',
+        descripcion:  descripcionCombinada,
+        cantidad:     lista.reduce((s, it) => s + parseInt(it.cantidad || 1, 10), 0),
+        precios:      { base: totalFinal, minorista: totalMin, mayorista: totalMay },
+        permiteEnvio: !!solicitudVinculada,
+        esMultiItem:  true,
+        itemsLista:   lista,
+        alEnviar: async function (info) {
+            if (solicitudVinculada && lista.length) {
+                // Enviar los ítems a la solicitud via api_solicitudes.php
+                try {
+                    const items = lista.map(it => ({
+                        tipo_item:               'personalizado',
+                        producto_nombre:         it.nombre,
+                        producto_precio_unitario:it.precio_final,
+                        cantidad:                it.cantidad || 1,
+                        datos_cotizacion:        it.calculo,
+                    }));
+                    await apiClient.post('api_solicitudes.php',
+                        { action: 'agregar_items' },
+                        { solicitud_id: solicitudVinculada.id, items }
+                    );
+                    // Limpiar lista después de enviar con éxito
+                    localStorage.removeItem(_listaKey());
+                    renderizarListaCotizacion();
+                } catch (e) {
+                    console.warn('No se pudieron guardar los ítems de la lista:', e);
+                }
+            }
+            if (solicitudVinculada) solicitudVinculada.estado = info.estado;
+        }
+    });
+};
+
+// Inicializar lista al cargar la página
+document.addEventListener('DOMContentLoaded', function () {
+    renderizarListaCotizacion();
+    actualizarBtnAgregarALista();
+});
+
 
 console.log('ðŸ“¦ cotizacion.js cargado (VersiÃ³n MySQL)');
 console.log('ðŸ“¦ Funciones globales exportadas: calcularPrecio, limpiarFormulario, toggleMarcaAgua, validarLote, cargarHistorial, eliminarCotizacion');

@@ -2,7 +2,9 @@
 /**
  * API de Solicitudes de Cotización — Sistema ODI3D
  * Acciones: list, get, cambiar_estado, asignar, vincular_cotizacion, no_leidas,
- *           registrar_pago, listar_pagos, comprobante_pago
+ *           registrar_pago, listar_pagos, comprobante_pago,
+ *           crear_manual, agregar_items, listar_items, confirmar_vinculacion,
+ *           carpeta_cliente, solicitudes_por_cliente
  * Requiere: admin o empleado
  */
 
@@ -69,6 +71,38 @@ switch ($action) {
         descargarComprobantePago();
         break;
 
+    // ── Solicitudes manuales ───────────────────────────────────────────────
+    case 'crear_manual':
+        Utils::validateMethod('POST');
+        crearSolicitudManual($usuario);
+        break;
+
+    case 'agregar_items':
+        Utils::validateMethod('POST');
+        agregarItems();
+        break;
+
+    case 'listar_items':
+        Utils::validateMethod('GET');
+        $id = trim($_GET['id'] ?? '');
+        if (empty($id)) Utils::sendJsonResponse(false, null, 'ID requerido');
+        listarItems($id);
+        break;
+
+    case 'confirmar_vinculacion':
+        Utils::validateMethod('POST');
+        confirmarVinculacion();
+        break;
+
+    // ── Carpeta de cliente ─────────────────────────────────────────────────
+    case 'carpeta_cliente':
+        Utils::validateMethod('GET');
+        $clienteId  = trim($_GET['cliente_id']  ?? '');
+        $clienteTel = trim($_GET['telefono']     ?? '');
+        if (empty($clienteId) && empty($clienteTel)) Utils::sendJsonResponse(false, null, 'cliente_id o telefono requerido');
+        carpetaCliente($clienteId, $clienteTel);
+        break;
+
     default:
         Utils::sendJsonResponse(false, null, 'Acción no válida');
 }
@@ -81,10 +115,13 @@ function listarSolicitudes(): void {
     $estado = trim($_GET['estado'] ?? '');
     $db     = Database::getInstance()->getConnection();
 
-    $sql = "SELECT s.*,
-                c.nombre AS cliente_nombre,
-                c.email  AS cliente_email,
-                c.telefono AS cliente_telefono,
+    // Para solicitudes manuales (sin cliente_id), usar los campos cliente_* de la propia solicitud
+    $sql = "SELECT s.id, s.estado, s.precio_final, s.fecha_solicitud,
+                s.cotizacion_id, s.asignado_a,
+                s.origen, s.tipo_solicitud, s.vinculacion_pendiente,
+                COALESCE(c.nombre, s.cliente_nombre)  AS cliente_nombre,
+                COALESCE(c.email,  s.cliente_email)   AS cliente_email,
+                COALESCE(c.telefono, s.cliente_telefono) AS cliente_telefono,
                 u.nombre AS asignado_nombre,
                 (SELECT COUNT(*) FROM chat_mensajes cm
                  WHERE cm.solicitud_id = s.id
@@ -111,9 +148,10 @@ function obtenerSolicitud(string $id): void {
     $db   = Database::getInstance()->getConnection();
     $stmt = $db->prepare(
         "SELECT s.*,
-             c.nombre AS cliente_nombre,
-             c.email  AS cliente_email,
-             c.telefono AS cliente_telefono,
+             COALESCE(c.nombre,   s.cliente_nombre)   AS cliente_nombre,
+             COALESCE(c.email,    s.cliente_email)    AS cliente_email,
+             COALESCE(c.telefono, s.cliente_telefono) AS cliente_telefono,
+             c.id AS cuenta_cliente_id,
              u.nombre AS asignado_nombre
          FROM solicitudes_cotizacion s
          LEFT JOIN clientes c ON s.cliente_id = c.id
@@ -145,6 +183,28 @@ function obtenerSolicitud(string $id): void {
         $solicitud['cotizacion'] = $stmt->fetch() ?: null;
     }
 
+    // Ítems de la solicitud (catálogo o personalizados / multi-ítem cotizador)
+    $stmt = $db->prepare(
+        "SELECT id, tipo_item, producto_id, producto_nombre,
+                producto_precio_unitario, cantidad, material, descripcion_extra,
+                datos_cotizacion, created_at,
+                ROUND(COALESCE(producto_precio_unitario,0) * cantidad, 2) AS subtotal
+         FROM solicitud_items
+         WHERE solicitud_id = ?
+         ORDER BY created_at ASC"
+    );
+    $stmt->execute([$id]);
+    $items = $stmt->fetchAll();
+    // Decodificar JSON de datos_cotizacion si está presente
+    foreach ($items as &$item) {
+        if (!empty($item['datos_cotizacion'])) {
+            $item['datos_cotizacion'] = json_decode($item['datos_cotizacion'], true);
+        }
+    }
+    unset($item);
+    $solicitud['items'] = $items;
+    $solicitud['items_total'] = array_sum(array_column($items, 'subtotal'));
+
     Utils::sendJsonResponse(true, $solicitud);
 }
 
@@ -159,6 +219,42 @@ function cambiarEstado(array $usuario): void {
     }
 
     $db = Database::getInstance()->getConnection();
+
+    // ── Control de retroceso: verificar contraseña si el nuevo estado es anterior ──
+    // Orden de fases (rechazada no está en la progresión lineal, siempre se permite)
+    $ordenFases = ['recibida'=>1,'en_proceso'=>2,'cotizada'=>3,'aceptada'=>4,'en_produccion'=>5,'entregada'=>6];
+    if (isset($ordenFases[$estado])) {
+        $stmtActual = $db->prepare("SELECT estado FROM solicitudes_cotizacion WHERE id = ? LIMIT 1");
+        $stmtActual->execute([$id]);
+        $estadoActual = $stmtActual->fetchColumn();
+
+        if ($estadoActual && isset($ordenFases[$estadoActual])
+            && $ordenFases[$estado] < $ordenFases[$estadoActual]
+        ) {
+            // Retroceso detectado — verificar contraseña del empleado
+            $passwordConfirmacion = trim($input['password_confirmacion'] ?? '');
+            if (empty($passwordConfirmacion)) {
+                http_response_code(403);
+                Utils::sendJsonResponse(false, ['requiere_password' => true],
+                    'Se requiere tu contraseña para retroceder el estado del pedido.'
+                );
+            }
+
+            $stmtUser = $db->prepare(
+                "SELECT password_hash FROM usuarios_internos WHERE id = ? LIMIT 1"
+            );
+            $stmtUser->execute([$usuario['id']]);
+            $hashGuardado = $stmtUser->fetchColumn();
+
+            if (!$hashGuardado || !password_verify($passwordConfirmacion, $hashGuardado)) {
+                http_response_code(403);
+                Utils::sendJsonResponse(false, ['requiere_password' => true],
+                    'Contraseña incorrecta. No se puede retroceder el estado.'
+                );
+            }
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     $campos = ['estado = ?'];
     $params = [$estado];
@@ -464,6 +560,221 @@ function listarPagos(string $solicitudId): void {
         'total_abono'     => $totalAbono,
         'total_entrega'   => $totalEntrega,
         'gran_total'      => $totalAbono + $totalEntrega,
+    ]);
+}
+
+// ============================================================
+// SOLICITUDES MANUALES — proxy + lectura directa
+// ============================================================
+
+/**
+ * Crea una solicitud manual via proxy POST a tienda3d.
+ */
+function crearSolicitudManual(array $usuario): void {
+    $input = Utils::getRequestBody();
+
+    $required = ['tipo_solicitud', 'cliente_nombre', 'cliente_telefono'];
+    foreach ($required as $campo) {
+        if (empty(trim($input[$campo] ?? ''))) {
+            Utils::sendJsonResponse(false, null, "Campo requerido: {$campo}");
+        }
+    }
+
+    $url = 'http://localhost/ODI3D/tienda3d/public/api/interno/solicitudes';
+
+    $payload = [
+        'tipo_solicitud'    => trim($input['tipo_solicitud']),
+        'cliente_nombre'    => Utils::sanitizeInput($input['cliente_nombre']),
+        'cliente_telefono'  => Utils::sanitizeInput($input['cliente_telefono']),
+        'cliente_whatsapp'  => Utils::sanitizeInput($input['cliente_whatsapp'] ?? $input['cliente_telefono']),
+        'cliente_email'     => Utils::sanitizeInput($input['cliente_email']    ?? ''),
+        'descripcion'       => Utils::sanitizeInput($input['descripcion']      ?? ''),
+        'material_preferido'=> Utils::sanitizeInput($input['material_preferido'] ?? ''),
+        'cantidad'          => (int) ($input['cantidad'] ?? 1),
+        'uso_final'         => Utils::sanitizeInput($input['uso_final'] ?? ''),
+    ];
+
+    // Para solicitudes de compra con ítems
+    if (!empty($input['items']) && is_array($input['items'])) {
+        $payload['items'] = array_map(function ($it) {
+            return [
+                'producto_nombre'          => Utils::sanitizeInput($it['producto_nombre'] ?? ''),
+                'cantidad'                 => (int) ($it['cantidad'] ?? 1),
+                'producto_precio_unitario' => isset($it['producto_precio_unitario']) && $it['producto_precio_unitario'] !== null
+                                             ? (float) $it['producto_precio_unitario'] : null,
+                'tipo_item'                => 'personalizado',
+                'descripcion_extra'        => Utils::sanitizeInput($it['descripcion_extra'] ?? ''),
+            ];
+        }, $input['items']);
+    }
+
+    $postData = json_encode($payload);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $postData,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_CONNECTTIMEOUT => 5,
+    ]);
+    $respBody = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) Utils::sendJsonResponse(false, null, 'Error al crear solicitud: ' . $curlErr);
+    $resp = json_decode($respBody, true);
+    if (!$resp) Utils::sendJsonResponse(false, null, 'Respuesta inválida del servidor');
+
+    http_response_code($httpCode >= 400 ? $httpCode : 200);
+    echo $respBody;
+    exit;
+}
+
+/**
+ * Proxy para agregar ítems (catálogo o personalizados) a una solicitud.
+ */
+function agregarItems(): void {
+    $input       = Utils::getRequestBody();
+    $solicitudId = trim($input['solicitud_id'] ?? '');
+    if (empty($solicitudId)) Utils::sendJsonResponse(false, null, 'solicitud_id requerido');
+
+    $url = 'http://localhost/ODI3D/tienda3d/public/api/interno/solicitudes/' . urlencode($solicitudId) . '/items';
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['items' => $input['items'] ?? []]),
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_CONNECTTIMEOUT => 5,
+    ]);
+    $respBody = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) Utils::sendJsonResponse(false, null, 'Error al agregar ítems: ' . $curlErr);
+    http_response_code($httpCode >= 400 ? $httpCode : 200);
+    echo $respBody;
+    exit;
+}
+
+/**
+ * Lee los ítems de una solicitud directamente por PDO.
+ */
+function listarItems(string $solicitudId): void {
+    $db   = Database::getInstance()->getConnection();
+    $stmt = $db->prepare(
+        "SELECT id, tipo_item, producto_id, producto_nombre,
+                producto_precio_unitario, cantidad, material, descripcion_extra,
+                datos_cotizacion, created_at,
+                ROUND(COALESCE(producto_precio_unitario,0) * cantidad, 2) AS subtotal
+         FROM solicitud_items
+         WHERE solicitud_id = ?
+         ORDER BY created_at ASC"
+    );
+    $stmt->execute([$solicitudId]);
+    $items = $stmt->fetchAll();
+
+    foreach ($items as &$item) {
+        if (!empty($item['datos_cotizacion'])) {
+            $item['datos_cotizacion'] = json_decode($item['datos_cotizacion'], true);
+        }
+    }
+    unset($item);
+
+    $total = array_sum(array_column($items, 'subtotal'));
+    Utils::sendJsonResponse(true, ['items' => $items, 'total' => $total]);
+}
+
+/**
+ * Confirma o rechaza la vinculación de un cliente a una solicitud manual.
+ */
+function confirmarVinculacion(): void {
+    $input       = Utils::getRequestBody();
+    $solicitudId = trim($input['solicitud_id'] ?? '');
+    $confirmar   = !empty($input['confirmar']) && $input['confirmar'] !== false && $input['confirmar'] !== 'false';
+    $clienteId   = trim($input['cliente_id'] ?? '');
+
+    if (empty($solicitudId)) Utils::sendJsonResponse(false, null, 'solicitud_id requerido');
+
+    $url = 'http://localhost/ODI3D/tienda3d/public/api/interno/solicitudes/' . urlencode($solicitudId) . '/vincular-cliente';
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['confirmar' => $confirmar, 'cliente_id' => $clienteId ?: null]),
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CONNECTTIMEOUT => 5,
+    ]);
+    $respBody = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) Utils::sendJsonResponse(false, null, 'Error: ' . $curlErr);
+    http_response_code($httpCode >= 400 ? $httpCode : 200);
+    echo $respBody;
+    exit;
+}
+
+// ============================================================
+// CARPETA DE CLIENTE — historial agrupado
+// ============================================================
+
+/**
+ * Devuelve todas las solicitudes de un cliente (por cliente_id o teléfono).
+ * Incluye info básica + resumen de pagos.
+ */
+function carpetaCliente(string $clienteId, string $telefono): void {
+    $db = Database::getInstance()->getConnection();
+
+    // Buscar por cliente_id o por teléfono (para solicitudes manuales)
+    if ($clienteId) {
+        $whereClause = "s.cliente_id = ?";
+        $params      = [$clienteId];
+    } else {
+        $whereClause = "s.cliente_telefono = ? OR c.telefono = ?";
+        $params      = [$telefono, $telefono];
+    }
+
+    $stmt = $db->prepare(
+        "SELECT s.id, s.estado, s.precio_final, s.fecha_solicitud,
+                s.tipo_solicitud, s.origen, s.descripcion,
+                COALESCE(c.nombre, s.cliente_nombre) AS cliente_nombre,
+                COALESCE(c.email,  s.cliente_email)  AS cliente_email,
+                COALESCE(c.telefono, s.cliente_telefono) AS cliente_telefono,
+                (SELECT SUM(sp.monto) FROM solicitudes_pagos sp WHERE sp.solicitud_id = s.id) AS total_pagado
+         FROM solicitudes_cotizacion s
+         LEFT JOIN clientes c ON s.cliente_id = c.id
+         WHERE {$whereClause}
+         ORDER BY s.fecha_solicitud DESC"
+    );
+    $stmt->execute($params);
+    $solicitudes = $stmt->fetchAll();
+
+    // Info del cliente (si existe en el sistema)
+    $cliente = null;
+    if ($clienteId) {
+        $stmtC = $db->prepare("SELECT id, nombre, email, telefono FROM clientes WHERE id = ? LIMIT 1");
+        $stmtC->execute([$clienteId]);
+        $cliente = $stmtC->fetch() ?: null;
+    } elseif ($telefono) {
+        $stmtC = $db->prepare("SELECT id, nombre, email, telefono FROM clientes WHERE telefono = ? LIMIT 1");
+        $stmtC->execute([$telefono]);
+        $cliente = $stmtC->fetch() ?: null;
+    }
+
+    Utils::sendJsonResponse(true, [
+        'cliente'      => $cliente,
+        'solicitudes'  => $solicitudes,
+        'total_count'  => count($solicitudes),
     ]);
 }
 
