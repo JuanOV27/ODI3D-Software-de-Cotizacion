@@ -588,7 +588,68 @@ function renderizarFactura(c) {
 }
 
 function imprimirFactura() {
-    window.print();
+    const cont = document.getElementById('contenidoFactura');
+    if (!cont) { window.print(); return; }
+
+    const htmlContent = cont.innerHTML;
+    const baseURL = window.location.href.split('?')[0].replace(/\/[^/]+$/, '/');
+
+    const win = window.open('', '_blank', 'width=840,height=960,scrollbars=yes,resizable=yes');
+    if (!win) {
+        alert('Permite las ventanas emergentes del navegador para imprimir correctamente.');
+        window.print();
+        return;
+    }
+
+    win.document.write('<!DOCTYPE html>\n<html lang="es"><head>' +
+        '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
+        '<title>Factura ODI3D</title>' +
+        '<base href="' + baseURL + '">' +
+        '<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">' +
+        '<link rel="stylesheet" href="css/stylehistorial.css">' +
+        '<style>' +
+        '@page{size:A4;margin:1.5cm}' +
+        '*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+        'body{padding:0;background:#fff;margin:0}' +
+        '.modal,.modal-header,.modal-footer,.modal-close,.btn{display:none!important}' +
+        'input,textarea{border:none!important;outline:none;background:transparent;padding:2px 0!important}' +
+        '</style>' +
+        '</head><body style="padding:1cm">' +
+        htmlContent +
+        '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400)});<\/script>' +
+        '</body></html>');
+    win.document.close();
+}
+
+async function descargarImagenFactura() {
+    const btn = document.getElementById('btnDescargaImagenFactura');
+    const textoOrig = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+    try {
+        if (!window.html2canvas) {
+            await new Promise(function (resolve, reject) {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                s.crossOrigin = 'anonymous';
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        const cont = document.getElementById('contenidoFactura');
+        const canvas = await window.html2canvas(cont, {
+            scale: 2, backgroundColor: '#ffffff',
+            useCORS: true, logging: false, removeContainer: true,
+        });
+        const link = document.createElement('a');
+        link.download = 'factura-odi3d-' + new Date().toISOString().slice(0, 10) + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (err) {
+        console.error('[historial] Error imagen factura:', err);
+        mostrarNotificacion('No se pudo generar la imagen. Usa "Imprimir / PDF" como alternativa.', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = textoOrig; }
+    }
 }
 
 function cerrarModalFactura() {

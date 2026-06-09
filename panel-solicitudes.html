@@ -355,6 +355,12 @@
                             style="background:#1B5E7B; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-size:0.78rem; cursor:pointer; transition:background 0.15s ease-out; white-space:nowrap;">
                             📄 Cotización formal
                         </button>
+                        <button type="button" id="btnFacturaSolicitud"
+                            onclick="abrirFacturaDeSolicitud()"
+                            style="display:none; background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-size:0.78rem; cursor:pointer; transition:background 0.15s ease-out; white-space:nowrap;"
+                            title="Generar factura avanzada con logo, QR y detalle de artículos">
+                            🧾 Factura
+                        </button>
                     </div>
                     <div class="estado-form">
                         <select id="selectEstado">
@@ -745,6 +751,36 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL: FACTURA AVANZADA (desde panel de solicitudes)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="modalFacturaSolicitud" style="display:none; position:fixed; inset:0; z-index:9998;
+     background:rgba(15,23,32,0.72); align-items:center; justify-content:center; padding:1.5rem;">
+    <div style="background:#fff; border-radius:12px; width:100%; max-width:720px;
+                max-height:92vh; display:flex; flex-direction:column; overflow:hidden;
+                box-shadow:0 16px 48px rgba(0,0,0,0.35); font-family:'Inter',Arial,sans-serif;">
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    padding:0.9rem 1.2rem;background:#1A2E3C;color:#fff;flex-shrink:0;">
+            <span style="font-family:'Montserrat','Inter',sans-serif;font-size:1rem;font-weight:700;">🧾 Factura / Cotización</span>
+            <button onclick="cerrarFacturaSolicitud()"
+                style="background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;opacity:0.75;padding:0.2rem 0.5rem;">✕</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:1.2rem;" id="contenidoFacturaSolicitud"></div>
+        <div style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0.9rem 1.2rem;
+                    border-top:1px solid #e1e8ed;flex-wrap:wrap;flex-shrink:0;">
+            <button onclick="cerrarFacturaSolicitud()"
+                style="background:#fff;border:1px solid #ccd5dc;color:#555;border-radius:6px;
+                       padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;cursor:pointer;">Cerrar</button>
+            <button id="btnDescargarImagenFactura" onclick="_descargarImagenFactura()"
+                style="background:#6366f1;color:#fff;border:none;border-radius:6px;
+                       padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;cursor:pointer;">📷 Imagen</button>
+            <button onclick="_imprimirFacturaSolicitud()"
+                style="background:#1B5E7B;color:#fff;border:none;border-radius:6px;
+                       padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;cursor:pointer;">🖨️ Imprimir / PDF</button>
+        </div>
+    </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/cotizacion-formal.js"></script>
@@ -1021,6 +1057,12 @@
             // ── Botón historial del cliente ──
             const btnHistorial = document.getElementById('btnHistorialCliente');
             btnHistorial.style.display = (s.cliente_id || s.cliente_telefono) ? '' : 'none';
+
+            // ── Botón Factura (visible solo cuando hay precio_final) ──
+            const btnFactura = document.getElementById('btnFacturaSolicitud');
+            if (btnFactura) {
+                btnFactura.style.display = parseFloat(s.precio_final || 0) > 0 ? '' : 'none';
+            }
 
             // Resaltar en lista
             cargarSolicitudes();
@@ -1685,6 +1727,236 @@
             }
         }
     });
+
+    document.addEventListener('DOMContentLoaded', cargarSolicitudes);
+
+    // ══════════════════════════════════════════════════════════════
+    // SINCRONIZACIÓN COTIZADOR → PANEL (via postMessage del iframe)
+    // Cuando el cotizador embebido envía el precio a la solicitud,
+    // actualiza el campo "Precio final" y el badge de estado en el panel.
+    // ══════════════════════════════════════════════════════════════
+    window.addEventListener('message', function (ev) {
+        if (!ev.data || ev.data.tipo !== 'cotizacion_enviada') return;
+        if (!solicitudActual || solicitudActual.id !== ev.data.solicitudId) return;
+
+        const precio = ev.data.precio;
+        const estado = ev.data.estado;
+
+        // Actualizar el modelo local
+        solicitudActual.precio_final = precio;
+        if (estado) solicitudActual.estado = estado;
+
+        // Actualizar UI
+        const inputPrecio = document.getElementById('inputPrecioFinal');
+        if (inputPrecio) inputPrecio.value = precio;
+
+        if (estado) {
+            const sel = document.getElementById('selectEstado');
+            if (sel) sel.value = estado;
+            const badge = document.getElementById('dBadgeEstado');
+            if (badge) {
+                badge.textContent = formatEstado(estado);
+                badge.className   = `badge-estado estado-${estado}`;
+            }
+        }
+
+        // Mostrar botón Factura si hay precio
+        const btnFactura = document.getElementById('btnFacturaSolicitud');
+        if (btnFactura && parseFloat(precio || 0) > 0) {
+            btnFactura.style.display = '';
+        }
+
+        // Refrescar la lista lateral
+        cargarSolicitudes();
+    });
+
+    // ══════════════════════════════════════════════════════════════
+    // FACTURA AVANZADA DESDE EL PANEL DE SOLICITUDES
+    // Genera una factura con logo, QR, tabla de ítems y datos del
+    // cliente, imprimible en hoja única o descargable como imagen.
+    // ══════════════════════════════════════════════════════════════
+
+    const _fmtCOP = n => new Intl.NumberFormat('es-CO', {
+        style: 'currency', currency: 'COP',
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+    }).format(parseFloat(n) || 0);
+
+    const _escHtml = str => {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+
+    const _baseURLPanel = window.location.href.split('?')[0].replace(/\/[^/]+$/, '/');
+
+    window.abrirFacturaDeSolicitud = function () {
+        if (!solicitudActual) return;
+        const s = solicitudActual;
+        const modal = document.getElementById('modalFacturaSolicitud');
+        if (!modal) return;
+
+        const numFac  = 'FAC-' + Date.now().toString().slice(-6);
+        const fecha   = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+        const precio  = parseFloat(s.precio_final || 0);
+        const items   = s.items || [];
+
+        // Tabla de artículos
+        let filasItems = '';
+        if (items.length > 0) {
+            items.forEach(function (it) {
+                const pu  = parseFloat(it.producto_precio_unitario || 0);
+                const cant = parseInt(it.cantidad || 1, 10);
+                const sub  = pu * cant;
+                filasItems += '<tr>' +
+                    '<td style="padding:.45rem .6rem;border-bottom:1px solid #f0f0f0;">' + _escHtml(it.producto_nombre || '—') + '</td>' +
+                    '<td style="padding:.45rem .6rem;border-bottom:1px solid #f0f0f0;text-align:center;">' + cant + '</td>' +
+                    '<td style="padding:.45rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right;">' + (pu > 0 ? _fmtCOP(pu) : '—') + '</td>' +
+                    '<td style="padding:.45rem .6rem;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:700;">' + (sub > 0 ? _fmtCOP(sub) : '—') + '</td>' +
+                '</tr>';
+            });
+        } else {
+            filasItems = '<tr><td colspan="4" style="padding:.45rem .6rem;color:#888;font-size:.82rem;">' +
+                _escHtml(s.descripcion || 'Sin descripción') + '</td></tr>';
+        }
+
+        const html =
+            // ── Cabecera empresa ──
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;' +
+                    'margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1A2E3C;gap:1rem;flex-wrap:wrap;" id="facturaDocPanel">' +
+                '<div style="display:flex;flex-direction:column;gap:4px;max-width:280px;">' +
+                    '<img src="' + _baseURLPanel + 'img/logo-odi3d.svg" alt="ODI3D" style="height:50px;width:auto;margin-bottom:4px;" onerror="this.style.display=\'none\'">' +
+                    '<input type="text" value="ODI3D" placeholder="Nombre de tu empresa" class="fp-input-empresa" style="font-family:\'Montserrat\',sans-serif;font-size:1.1rem;font-weight:800;color:#1A2E3C;border:none;border-bottom:1px solid transparent;padding:2px 0;background:transparent;width:100%;">' +
+                    '<input type="text" placeholder="NIT: 000.000.000-0" class="fp-input-dato" style="font-size:.82rem;color:#6B7280;border:none;border-bottom:1px solid transparent;padding:1px 0;background:transparent;width:100%;">' +
+                    '<input type="text" placeholder="Tel: +57 300 000 0000" class="fp-input-dato" style="font-size:.82rem;color:#6B7280;border:none;border-bottom:1px solid transparent;padding:1px 0;background:transparent;width:100%;">' +
+                '</div>' +
+                '<div style="text-align:right;">' +
+                    '<div style="font-family:\'Montserrat\',sans-serif;font-size:1.15rem;font-weight:700;color:#1A2E3C;">' + numFac + '</div>' +
+                    '<div style="font-size:.82rem;color:#6B7280;margin-top:2px;">📅 ' + fecha + '</div>' +
+                    '<span style="display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;background:#E8F4F8;color:#1B5E7B;font-family:\'Montserrat\',sans-serif;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Cotización</span>' +
+                '</div>' +
+            '</div>' +
+            // ── Datos cliente ──
+            '<div style="margin-bottom:20px;">' +
+                '<h4 style="font-family:\'Montserrat\',sans-serif;font-size:.9rem;color:#1A2E3C;margin-bottom:8px;">👤 Datos del Cliente</h4>' +
+                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                    '<label style="font-size:.8rem;color:#555;min-width:72px;">Nombre:</label>' +
+                    '<input type="text" value="' + _escHtml(s.cliente_nombre || s.cliente_email || '') + '" placeholder="Nombre del cliente" style="flex:1;font-size:.85rem;border:1px solid #e5e7eb;border-radius:5px;padding:4px 8px;">' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                    '<label style="font-size:.8rem;color:#555;min-width:72px;">Teléfono:</label>' +
+                    '<input type="text" value="' + _escHtml(s.cliente_telefono || '') + '" placeholder="+57 300 000 0000" style="flex:1;font-size:.85rem;border:1px solid #e5e7eb;border-radius:5px;padding:4px 8px;">' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                    '<label style="font-size:.8rem;color:#555;min-width:72px;">Ciudad:</label>' +
+                    '<input type="text" value="" placeholder="Ciudad / Municipio" style="flex:1;font-size:.85rem;border:1px solid #e5e7eb;border-radius:5px;padding:4px 8px;">' +
+                '</div>' +
+            '</div>' +
+            // ── Tabla artículos ──
+            '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:.85rem;">' +
+                '<thead><tr style="background:#f4f7f9;">' +
+                    '<th style="text-align:left;padding:.45rem .6rem;border-bottom:2px solid #1A2E3C;color:#1A2E3C;font-size:.78rem;">Descripción</th>' +
+                    '<th style="text-align:center;padding:.45rem .6rem;border-bottom:2px solid #1A2E3C;color:#1A2E3C;font-size:.78rem;">Cant.</th>' +
+                    '<th style="text-align:right;padding:.45rem .6rem;border-bottom:2px solid #1A2E3C;color:#1A2E3C;font-size:.78rem;">P. Unit.</th>' +
+                    '<th style="text-align:right;padding:.45rem .6rem;border-bottom:2px solid #1A2E3C;color:#1A2E3C;font-size:.78rem;">Subtotal</th>' +
+                '</tr></thead>' +
+                '<tbody>' + filasItems + '</tbody>' +
+            '</table>' +
+            // ── Total ──
+            '<div style="display:flex;justify-content:flex-end;margin-bottom:20px;">' +
+                '<div style="min-width:200px;">' +
+                    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid #eee;font-size:.85rem;color:#555;">' +
+                        '<span>Subtotal:</span><span>' + _fmtCOP(precio) + '</span>' +
+                    '</div>' +
+                    '<div style="display:flex;justify-content:space-between;padding:.5rem 0;font-size:1rem;font-weight:700;color:#1A2E3C;">' +
+                        '<span>TOTAL:</span><span>' + _fmtCOP(precio) + '</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            // ── QR + datos de pago ──
+            '<div style="display:flex;align-items:center;gap:1.2rem;padding:1rem;background:#f8fafc;border:1px solid #e1e8ed;border-radius:8px;margin-bottom:16px;">' +
+                '<img src="' + _baseURLPanel + 'img/qr-pagos-brebe.png" alt="QR de pago" style="width:80px;height:80px;flex-shrink:0;" onerror="this.parentElement.style.display=\'none\'">' +
+                '<div>' +
+                    '<h4 style="font-family:\'Montserrat\',sans-serif;font-size:.88rem;color:#1A2E3C;margin-bottom:4px;">💳 Pagos</h4>' +
+                    '<p style="font-size:.82rem;color:#555;margin:0;">Escanea el QR desde tu app Nequi para pagar con <strong>Bre-B</strong>.</p>' +
+                    '<p style="font-size:.84rem;font-weight:700;color:#1A2E3C;margin-top:4px;">ODI3D — Juan Ortiz</p>' +
+                '</div>' +
+            '</div>' +
+            // ── Notas ──
+            '<div style="margin-bottom:12px;">' +
+                '<h4 style="font-family:\'Montserrat\',sans-serif;font-size:.88rem;color:#1A2E3C;margin-bottom:6px;">📝 Notas y Términos</h4>' +
+                '<textarea placeholder="Válido por 30 días. Precios sujetos a disponibilidad de material..." ' +
+                    'style="width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:8px;font-size:.82rem;resize:vertical;min-height:60px;font-family:\'Inter\',sans-serif;"></textarea>' +
+            '</div>' +
+            '<div style="font-size:.76rem;color:#888;border-top:1px solid #eee;padding-top:8px;text-align:center;">¡Gracias por confiar en nuestros servicios de impresión 3D! 🖨️</div>';
+
+        document.getElementById('contenidoFacturaSolicitud').innerHTML = html;
+        modal.style.display = 'flex';
+    };
+
+    window.cerrarFacturaSolicitud = function () {
+        const modal = document.getElementById('modalFacturaSolicitud');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window._imprimirFacturaSolicitud = function () {
+        const cont = document.getElementById('contenidoFacturaSolicitud');
+        if (!cont) return;
+        const htmlContent = cont.innerHTML;
+        const win = window.open('', '_blank', 'width=840,height=960,scrollbars=yes,resizable=yes');
+        if (!win) {
+            alert('Permite las ventanas emergentes del navegador para imprimir correctamente.');
+            return;
+        }
+        win.document.write('<!DOCTYPE html>\n<html lang="es"><head>' +
+            '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
+            '<title>Factura ODI3D</title>' +
+            '<base href="' + _baseURLPanel + '">' +
+            '<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">' +
+            '<style>' +
+            '@page{size:A4;margin:1.5cm}' +
+            '*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+            'body{font-family:"Inter",Arial,sans-serif;padding:0;background:#fff;color:#333;margin:0}' +
+            'input,textarea{border:none!important;outline:none;background:transparent;font-family:inherit;padding:0!important}' +
+            '</style>' +
+            '</head><body style="padding:1.5cm">' +
+            htmlContent +
+            '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400)});<\/script>' +
+            '</body></html>');
+        win.document.close();
+    };
+
+    window._descargarImagenFactura = async function () {
+        const btn = document.getElementById('btnDescargarImagenFactura');
+        const textoOrig = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+        try {
+            // Cargar html2canvas si no está disponible
+            if (!window.html2canvas) {
+                await new Promise(function (resolve, reject) {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    s.crossOrigin = 'anonymous';
+                    s.onload = resolve; s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+            const cont = document.getElementById('contenidoFacturaSolicitud');
+            const canvas = await window.html2canvas(cont, {
+                scale: 2, backgroundColor: '#ffffff',
+                useCORS: true, logging: false, removeContainer: true,
+            });
+            const link = document.createElement('a');
+            link.download = 'factura-odi3d-' + new Date().toISOString().slice(0, 10) + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            console.error('[factura] Error imagen:', err);
+            alert('No se pudo generar la imagen. Usa "Imprimir / PDF" como alternativa.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = textoOrig; }
+        }
+    };
 
     document.addEventListener('DOMContentLoaded', cargarSolicitudes);
 })();

@@ -459,6 +459,17 @@ window.abrirCotizacionFormalDesdeCotizador = function () {
         permiteEnvio: !!solicitudVinculada,
         alEnviar: function (info) {
             if (solicitudVinculada) solicitudVinculada.estado = info.estado;
+            // Notificar al frame padre (panel-solicitudes) si estamos en un iframe
+            if (window !== window.parent) {
+                window.parent.postMessage({
+                    tipo:         'cotizacion_enviada',
+                    solicitudId:  solicitudVinculada ? solicitudVinculada.id : null,
+                    precio:       info.precio,
+                    estado:       info.estado,
+                    modalidad:    info.modalidad_pago,
+                    porcentajeAbono: info.porcentaje_abono,
+                }, '*');
+            }
         }
     });
 };
@@ -1984,6 +1995,17 @@ window.abrirCotizacionFormalDeLista = function () {
                 }
             }
             if (solicitudVinculada) solicitudVinculada.estado = info.estado;
+            // Notificar al frame padre (panel-solicitudes) si estamos en un iframe
+            if (window !== window.parent) {
+                window.parent.postMessage({
+                    tipo:         'cotizacion_enviada',
+                    solicitudId:  solicitudVinculada ? solicitudVinculada.id : null,
+                    precio:       info.precio,
+                    estado:       info.estado,
+                    modalidad:    info.modalidad_pago,
+                    porcentajeAbono: info.porcentaje_abono,
+                }, '*');
+            }
         }
     });
 };
