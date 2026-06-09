@@ -1801,9 +1801,21 @@ function actualizarBtnAgregarALista() {
     const btn = document.getElementById('btnAgregarALista');
     if (!btn) return;
     const habilitado = !!ultimoCalculo;
-    btn.disabled    = !habilitado;
-    btn.style.opacity = habilitado ? '1' : '0.55';
+    btn.disabled      = !habilitado;
+    btn.style.opacity = habilitado ? '1' : '0.45';
     btn.style.cursor  = habilitado ? 'pointer' : 'not-allowed';
+    btn.title         = habilitado
+        ? `Agregar "${ultimoCalculo?.nombre_pieza || 'este artículo'}" a la lista de cotización`
+        : 'Calcula primero para poder agregar este artículo a la lista';
+
+    if (habilitado) {
+        btn.onmouseover = () => { btn.style.opacity = '0.85'; btn.style.transform = 'translateY(-1px)'; };
+        btn.onmouseout  = () => { btn.style.opacity = '1';    btn.style.transform = ''; };
+    } else {
+        btn.onmouseover = null;
+        btn.onmouseout  = null;
+        btn.style.transform = '';
+    }
 }
 
 /** Renderiza la lista de artículos acumulada */

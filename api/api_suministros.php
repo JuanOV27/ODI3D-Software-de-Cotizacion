@@ -18,7 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Nota: el archivo de configuración se llama `config.php` en este proyecto
 require_once 'config.php';
 require_once __DIR__ . '/auth_middleware.php';
-$usuario = requireAuth(['admin']);
+
+// Lectura (listar, obtener, estadisticas): accesible a admins y empleados.
+// Escritura (crear, actualizar, eliminar, actualizar_stock): sólo admins.
+$usuario = requireAuth(['admin', 'empleado']);
+
+// Determinar si la acción actual es de escritura
+$_accionesEscritura = ['crear', 'actualizar', 'eliminar', 'actualizar_stock'];
+$_accionActual = $_GET['action'] ?? '';
+if (in_array($_accionActual, $_accionesEscritura, true) && $usuario['rol'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Se requiere rol administrador para modificar suministros.']);
+    exit;
+}
 
 // Obtener la acción solicitada
 $action = isset($_GET['action']) ? $_GET['action'] : '';
