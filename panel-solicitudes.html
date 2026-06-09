@@ -1799,7 +1799,7 @@
                     <div style="font-weight:600;color:#1A2E3C;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
                          title="${it.nombre}">${it.nombre}</div>
                     <input type="number" value="${it.cantidad}" min="1" step="1"
-                           oninput="_itemsCompra[${idx}].cantidad=parseInt(this.value)||1;_renderizarItemsCompraModal();_renderizarResultadosCatalogo()"
+                           oninput="nsSetCantidadItemCompra(${idx}, this.value)"
                            style="padding:0.25rem;font-size:0.78rem;border:1px solid #d1d5db;border-radius:4px;text-align:center;" />
                     <div style="text-align:right;color:#374151;">${precioStr}</div>
                     <div style="text-align:right;font-weight:700;color:#1A2E3C;">${subtotalStr}</div>
@@ -1817,6 +1817,14 @@
                 </div>`;
         }
     }
+
+    // Setter global para que el inline oninput en el HTML dinámico pueda actualizar la cantidad
+    window.nsSetCantidadItemCompra = function (idx, val) {
+        if (!_itemsCompra[idx]) return;
+        _itemsCompra[idx].cantidad = parseInt(val, 10) || 1;
+        _renderizarItemsCompraModal();
+        _renderizarResultadosCatalogo();
+    };
 
     window.nsEliminarItemCompra = function (idx) {
         _itemsCompra.splice(idx, 1);
