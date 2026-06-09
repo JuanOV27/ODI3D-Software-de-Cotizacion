@@ -103,6 +103,23 @@ switch ($action) {
         carpetaCliente($clienteId, $clienteTel);
         break;
 
+    // ── Eliminar ítem ──────────────────────────────────────────────────────
+    case 'eliminar_item':
+        Utils::validateMethod('POST');
+        eliminarItem();
+        break;
+
+    // ── Catálogo de productos (misma BD) ───────────────────────────────────
+    case 'productos_catalogo':
+        Utils::validateMethod('GET');
+        productosCatalogo();
+        break;
+
+    case 'categorias_catalogo':
+        Utils::validateMethod('GET');
+        categoriasCatalogo();
+        break;
+
     default:
         Utils::sendJsonResponse(false, null, 'Acción no válida');
 }
@@ -821,4 +838,68 @@ function descargarComprobantePago(): void {
     header('X-Content-Type-Options: nosniff');
     readfile($rutaFisica);
     exit;
+}
+
+// ============================================================
+// ELIMINAR ÍTEM DE SOLICITUD
+// ============================================================
+
+function eliminarItem(): void {
+    $input  = Utils::getRequestBody();
+    $itemId = trim($input['item_id'] ?? '');
+    if (empty($itemId)) {
+        Utils::sendJsonResponse(false, null, 'item_id requerido');
+        return;
+    }
+    $db   = Database::getInstance()->getConnection();
+    $stmt = $db->prepare("DELETE FROM solicitud_items WHERE id = ?");
+    $stmt->execute([$itemId]);
+    Utils::sendJsonResponse(true, null, 'Ítem eliminado correctamente');
+}
+
+// ============================================================
+// CATÁLOGO DE PRODUCTOS (misma BD que tienda3d)
+// ============================================================
+
+function productosCatalogo(): void {
+    $q         = trim($_GET['q']         ?? '');
+    $categoria = trim($_GET['categoria'] ?? '');
+    $db        = Database::getInstance()->getConnection();
+
+    // La tabla productos pertenece a tienda3d pero está en la misma BD.
+    // 'visible' = columna de visibilidad, 'precio' = precio real (alias precio_base al frontend).
+    $sql    = "SELECT p.id, p.nombre, p.descripcion, p.precio AS precio_base,
+                      p.categoria,
+                      (SELECT pi.ruta FROM producto_imagenes pi
+                       WHERE pi.producto_id = p.id
+                       ORDER BY pi.orden ASC LIMIT 1) AS imagen_principal
+               FROM productos p
+               WHERE p.visible = 1";
+    $params = [];
+
+    if ($q !== '') {
+        $sql      .= " AND p.nombre LIKE ?";
+        $params[]  = '%' . $q . '%';
+    }
+    if ($categoria !== '') {
+        $sql      .= " AND p.categoria = ?";
+        $params[]  = $categoria;
+    }
+    $sql .= " ORDER BY p.nombre ASC LIMIT 100";
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    Utils::sendJsonResponse(true, $productos, '');
+}
+
+function categoriasCatalogo(): void {
+    $db   = Database::getInstance()->getConnection();
+    $stmt = $db->query(
+        "SELECT DISTINCT categoria FROM productos
+         WHERE visible = 1 AND categoria IS NOT NULL AND categoria != ''
+         ORDER BY categoria ASC"
+    );
+    $cats = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    Utils::sendJsonResponse(true, $cats, '');
 }

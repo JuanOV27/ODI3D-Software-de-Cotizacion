@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="img/logo-odi3d.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Panel de Solicitudes — ODI3D</title>
     <link rel="stylesheet" href="css/stylehistorial.css" />
@@ -244,7 +245,10 @@
 <div class="container">
     <div class="header">
         <a href="index.html" class="nav-back">← Volver al Menú</a>
-        <h1>📥 Panel de Solicitudes</h1>
+        <h1 style="display:flex;align-items:center;gap:0.6rem;">
+            <img src="img/logo-odi3d.svg" alt="ODI3D" style="height:32px;width:32px;filter:brightness(0) invert(1);object-fit:contain;flex-shrink:0;" />
+            Panel de Solicitudes
+        </h1>
         <p>Gestiona las solicitudes de cotización de los clientes</p>
     </div>
 
@@ -644,19 +648,47 @@
                 </div>
             </div>
 
-            <!-- ── SECCIÓN: Compra de artículos ── -->
+            <!-- ── SECCIÓN: Compra de artículos del catálogo ── -->
             <div id="nsSeccionCompra" style="display:none;">
                 <p style="font-size:0.78rem;font-weight:700;color:#1A2E3C;
                           margin:0.25rem 0 0.6rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.3rem;">
-                    ARTÍCULOS A COMPRAR
+                    BUSCAR PRODUCTO DEL CATÁLOGO
                 </p>
-                <div id="nsItemsCompra"></div>
-                <button type="button" onclick="nsAgregarItemCompra()"
-                    style="background:#f0fdf4; border:1px dashed #059669; color:#059669; border-radius:6px;
-                           padding:0.4rem 0.8rem; font-size:0.8rem; cursor:pointer; font-weight:700;
-                           width:100%; margin-bottom:0.75rem; transition:background 0.15s;">
-                    + Agregar artículo
-                </button>
+
+                <!-- Buscador -->
+                <div style="display:grid;grid-template-columns:1fr auto;gap:0.4rem;margin-bottom:0.4rem;">
+                    <input type="text" id="nsBuscadorProducto"
+                           placeholder="Buscar por nombre..."
+                           oninput="_debounceBuscarProductos()"
+                           style="padding:0.4rem 0.65rem;font-size:0.82rem;border:1px solid #d1d5db;
+                                  border-radius:6px;outline:none;" />
+                    <select id="nsCatFiltro" onchange="_buscarProductosCatalogo()"
+                            style="padding:0.4rem 0.5rem;font-size:0.8rem;border:1px solid #d1d5db;
+                                   border-radius:6px;background:#fff;cursor:pointer;min-width:110px;">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                </div>
+
+                <!-- Resultados del catálogo -->
+                <div id="nsResultadosProductos"
+                     style="height:190px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;
+                            background:#fafafa;margin-bottom:0.75rem;">
+                    <div style="text-align:center;padding:2rem;color:#9ca3af;font-size:0.8rem;">
+                        Escribe para buscar productos del catálogo
+                    </div>
+                </div>
+
+                <!-- Artículos seleccionados -->
+                <p style="font-size:0.78rem;font-weight:700;color:#1A2E3C;
+                          margin:0 0 0.4rem;border-bottom:1px solid #e5e7eb;padding-bottom:0.3rem;">
+                    ARTÍCULOS SELECCIONADOS
+                </p>
+                <div id="nsItemsCompra" style="margin-bottom:0.4rem;"></div>
+                <p id="nsItemsVacioMsg" style="font-size:0.78rem;color:#9ca3af;margin:0 0 0.6rem;
+                                               text-align:center;padding:0.5rem;">
+                    Ningún artículo seleccionado aún
+                </p>
+
                 <div class="field-group">
                     <label>Notas adicionales</label>
                     <textarea id="nsNotasCompra" rows="2"
@@ -1410,12 +1442,25 @@
                 ? `<span style="background:#e0f2fe;color:#0369a1;border-radius:3px;padding:1px 5px;font-size:0.7rem;">catálogo</span>`
                 : `<span style="background:#f3f4f6;color:#374151;border-radius:3px;padding:1px 5px;font-size:0.7rem;">personalizado</span>`;
 
+            const rowId = it.id ? ` id="itemRow_${it.id}"` : '';
+            const btnEliminar = it.id
+                ? `<td style="text-align:center;width:34px;">
+                       <button onclick="eliminarItemDeSolicitud('${it.id}')"
+                           style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:0.95rem;
+                                  padding:2px 5px;border-radius:3px;line-height:1;transition:background 0.15s ease-out;"
+                           onmouseover="this.style.background='#fee2e2'"
+                           onmouseout="this.style.background='none'"
+                           title="Eliminar ítem">✕</button>
+                   </td>`
+                : '<td></td>';
+
             return `
-                <tr>
+                <tr${rowId}>
                     <td><div style="font-weight:600;">${nombre}</div>${mat}${tipoBadge}</td>
                     <td style="text-align:center;">${cantidad}</td>
                     <td style="text-align:right;">${precioStr}</td>
                     <td style="text-align:right;font-weight:700;">${subtotalStr}</td>
+                    ${btnEliminar}
                 </tr>`;
         }).join('');
 
@@ -1426,6 +1471,7 @@
                     <td style="text-align:right;padding-top:8px;color:#1A2E3C;">
                         $${totalGeneral.toLocaleString('es-CO', {minimumFractionDigits:0})}
                     </td>
+                    <td></td>
                 </tr>
             </tfoot>` : '';
 
@@ -1436,11 +1482,27 @@
                     <th style="text-align:center;width:60px;">Cant.</th>
                     <th style="text-align:right;width:110px;">Precio u.</th>
                     <th style="text-align:right;width:110px;">Subtotal</th>
+                    <th style="width:34px;"></th>
                 </tr></thead>
                 <tbody>${filas}</tbody>
                 ${totalRow}
             </table>`;
     }
+
+    // Eliminar ítem de la solicitud (para quitar duplicados)
+    window.eliminarItemDeSolicitud = async function (itemId) {
+        if (!confirm('¿Eliminar este artículo de la solicitud?')) return;
+        try {
+            await apiClient.post('api_solicitudes.php', { action: 'eliminar_item' }, { item_id: itemId });
+            const fila = document.getElementById('itemRow_' + itemId);
+            if (fila) fila.remove();
+            if (solicitudActual?.items) {
+                solicitudActual.items = solicitudActual.items.filter(it => it.id !== itemId);
+            }
+        } catch (e) {
+            alert('Error al eliminar ítem: ' + (e?.message || e));
+        }
+    };
 
     // ══════════════════════════════════════════════════════════════
     // VINCULACIÓN DE CLIENTE
@@ -1568,22 +1630,30 @@
     // MODAL — NUEVA SOLICITUD MANUAL
     // ══════════════════════════════════════════════════════════════
     let _tipoNuevaSolicitud = 'cotizacion';
-    let _itemsCompra        = []; // [{nombre, cantidad, precio}]
+    let _itemsCompra        = []; // [{catalogoId?, nombre, precio, cantidad, categoria}]
 
     window.abrirModalNuevaSolicitud = function () {
-        _tipoNuevaSolicitud = 'cotizacion';
-        _itemsCompra        = [];
+        _tipoNuevaSolicitud  = 'cotizacion';
+        _itemsCompra         = [];
+        _catalogoResultados  = [];
         // Limpiar campos
         ['nsNombre','nsTelefono','nsWhatsapp','nsEmail',
-         'nsDescripcion','nsMaterial','nsUsoFinal','nsNotasCompra'].forEach(id => {
+         'nsDescripcion','nsMaterial','nsUsoFinal','nsNotasCompra',
+         'nsBuscadorProducto'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
         const cant = document.getElementById('nsCantidad');
         if (cant) cant.value = '1';
+        const catFiltro = document.getElementById('nsCatFiltro');
+        if (catFiltro) catFiltro.value = '';
+        const resEl = document.getElementById('nsResultadosProductos');
+        if (resEl) resEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#9ca3af;font-size:0.8rem;">Escribe para buscar productos del catálogo</div>';
 
         setTipoNuevaSolicitud('cotizacion');
         document.getElementById('nsItemsCompra').innerHTML = '';
+        const vacioMsg = document.getElementById('nsItemsVacioMsg');
+        if (vacioMsg) vacioMsg.style.display = '';
         document.getElementById('modalNuevaSolicitud').classList.add('activo');
         setTimeout(() => document.getElementById('nsNombre').focus(), 100);
     };
@@ -1598,66 +1668,160 @@
         document.getElementById('tipoRadioCompra').classList.toggle('activo', tipo === 'compra');
         document.getElementById('nsSeccionCot').style.display    = tipo === 'cotizacion' ? '' : 'none';
         document.getElementById('nsSeccionCompra').style.display = tipo === 'compra'     ? '' : 'none';
-        if (tipo === 'compra' && _itemsCompra.length === 0) {
-            nsAgregarItemCompra(); // agregar primer ítem vacío
+        if (tipo === 'compra') {
+            // Cargar categorías y resultados iniciales del catálogo
+            _cargarCategoriasCatalogo();
+            _buscarProductosCatalogo();
         }
     };
 
-    window.nsAgregarItemCompra = function () {
-        const idx = _itemsCompra.length;
-        _itemsCompra.push({ nombre: '', cantidad: 1, precio: '' });
+    // Carga el dropdown de categorías una sola vez
+    async function _cargarCategoriasCatalogo() {
+        const sel = document.getElementById('nsCatFiltro');
+        if (!sel || sel.dataset.cargado) return; // solo cargar 1 vez
+        try {
+            const resp = await apiClient.get('api_solicitudes.php', { action: 'categorias_catalogo' });
+            const cats = resp?.data ?? resp ?? [];
+            cats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat; opt.textContent = cat;
+                sel.appendChild(opt);
+            });
+            sel.dataset.cargado = '1';
+        } catch { /* fallo silencioso, el select queda con solo "Todas" */ }
+    }
+
+    // Variables del buscador de catálogo
+    let _catalogoResultados = [];
+    let _debounceBuscarTimer = null;
+
+    // Función pública expuesta al HTML (oninput en el buscador)
+    window._debounceBuscarProductos = function () {
+        clearTimeout(_debounceBuscarTimer);
+        _debounceBuscarTimer = setTimeout(_buscarProductosCatalogo, 280);
+    };
+
+    window._buscarProductosCatalogo = async function () {
+        const q   = (document.getElementById('nsBuscadorProducto')?.value  || '').trim();
+        const cat = (document.getElementById('nsCatFiltro')?.value          || '').trim();
+        const cont = document.getElementById('nsResultadosProductos');
+        if (!cont) return;
+
+        cont.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9ca3af;font-size:0.78rem;">Buscando...</div>';
+
+        try {
+            const resp = await apiClient.get('api_solicitudes.php', { action: 'productos_catalogo', q, categoria: cat });
+            _catalogoResultados = resp?.data ?? resp ?? [];
+            _renderizarResultadosCatalogo();
+        } catch {
+            cont.innerHTML = '<div style="text-align:center;padding:1rem;color:#ef4444;font-size:0.78rem;">Error al cargar el catálogo.</div>';
+        }
+    };
+
+    function _renderizarResultadosCatalogo() {
+        const cont = document.getElementById('nsResultadosProductos');
+        if (!cont) return;
+
+        if (!_catalogoResultados.length) {
+            cont.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9ca3af;font-size:0.78rem;">No se encontraron productos.</div>';
+            return;
+        }
+
+        cont.innerHTML = _catalogoResultados.map((p, idx) => {
+            const yaSeleccionado = _itemsCompra.some(it => it.catalogoId === p.id);
+            const precio = p.precio_base
+                ? '$' + parseFloat(p.precio_base).toLocaleString('es-CO', {minimumFractionDigits: 0})
+                : 'Sin precio';
+            return `
+                <div onclick="${yaSeleccionado ? '' : 'nsSeleccionarProductoCatalogo(' + idx + ')'}"
+                     style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.75rem;
+                            cursor:${yaSeleccionado ? 'default' : 'pointer'};
+                            background:${yaSeleccionado ? '#f0fdf4' : 'white'};
+                            border-bottom:1px solid #f3f4f6;
+                            transition:background 0.15s ease-out;"
+                     ${!yaSeleccionado ? 'onmouseover="this.style.background=\'#eff6ff\'"  onmouseout="this.style.background=\'white\'"' : ''}>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.81rem;font-weight:600;color:#1A2E3C;
+                                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nombre}</div>
+                        ${p.categoria ? `<div style="font-size:0.7rem;color:#6b7280;">${p.categoria}</div>` : ''}
+                    </div>
+                    <div style="font-size:0.79rem;color:#374151;white-space:nowrap;">${precio}</div>
+                    <div style="font-size:0.85rem;${yaSeleccionado ? 'color:#16a34a;' : 'color:#3b82f6;'}">
+                        ${yaSeleccionado ? '✓' : '+'}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    window.nsSeleccionarProductoCatalogo = function (idx) {
+        const p = _catalogoResultados[idx];
+        if (!p) return;
+        if (_itemsCompra.some(it => it.catalogoId === p.id)) return;
+        _itemsCompra.push({
+            catalogoId: p.id,
+            nombre:     p.nombre,
+            precio:     p.precio_base || '',
+            cantidad:   1,
+            categoria:  p.categoria || '',
+        });
         _renderizarItemsCompraModal();
-        setTimeout(() => {
-            const el = document.getElementById(`nsItem_nombre_${idx}`);
-            if (el) el.focus();
-        }, 50);
+        _renderizarResultadosCatalogo();
     };
 
     function _renderizarItemsCompraModal() {
         const cont = document.getElementById('nsItemsCompra');
+        const msg  = document.getElementById('nsItemsVacioMsg');
         if (!cont) return;
-        if (!_itemsCompra.length) { cont.innerHTML = ''; return; }
 
-        cont.innerHTML = _itemsCompra.map((it, idx) => `
-            <div style="display:grid; grid-template-columns:1fr 60px 100px 32px; gap:0.4rem; align-items:end; margin-bottom:0.5rem;"
-                 id="nsItemRow_${idx}">
-                <div>
-                    ${idx === 0 ? '<label style="font-size:0.75rem;color:#555;font-weight:700;display:block;margin-bottom:3px;">Artículo / descripción *</label>' : ''}
-                    <input type="text" id="nsItem_nombre_${idx}"
-                           value="${it.nombre || ''}"
-                           placeholder="Nombre del producto"
-                           oninput="_itemsCompra[${idx}].nombre=this.value"
-                           style="width:100%;padding:0.4rem 0.6rem;font-size:0.83rem;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;" />
-                </div>
-                <div>
-                    ${idx === 0 ? '<label style="font-size:0.75rem;color:#555;font-weight:700;display:block;margin-bottom:3px;">Cant.</label>' : ''}
-                    <input type="number" id="nsItem_cant_${idx}" value="${it.cantidad}"
-                           min="1" step="1"
-                           oninput="_itemsCompra[${idx}].cantidad=parseInt(this.value)||1"
-                           style="width:100%;padding:0.4rem 0.5rem;font-size:0.83rem;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;" />
-                </div>
-                <div>
-                    ${idx === 0 ? '<label style="font-size:0.75rem;color:#555;font-weight:700;display:block;margin-bottom:3px;">Precio u. (COP)</label>' : ''}
-                    <input type="number" id="nsItem_precio_${idx}" value="${it.precio}"
-                           min="0" step="100" placeholder="Opcional"
-                           oninput="_itemsCompra[${idx}].precio=this.value"
-                           style="width:100%;padding:0.4rem 0.5rem;font-size:0.83rem;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;" />
-                </div>
-                <div style="display:flex;align-items:${idx===0?'flex-end':'center'};height:100%;">
-                    ${_itemsCompra.length > 1
-                        ? `<button type="button" onclick="nsEliminarItemCompra(${idx})"
-                              style="background:#fce8e6;color:#c62828;border:1px solid #f5c6c6;border-radius:5px;
-                                     padding:0.35rem 0.5rem;font-size:0.8rem;cursor:pointer;line-height:1;flex-shrink:0;"
-                              title="Eliminar artículo">✕</button>`
-                        : '<div style="width:32px;"></div>'}
-                </div>
-            </div>
-        `).join('');
+        if (!_itemsCompra.length) {
+            cont.innerHTML = '';
+            if (msg) msg.style.display = '';
+            return;
+        }
+        if (msg) msg.style.display = 'none';
+
+        const total = _itemsCompra.reduce((sum, it) =>
+            sum + (parseFloat(it.precio || 0) * (parseInt(it.cantidad, 10) || 1)), 0);
+
+        cont.innerHTML = _itemsCompra.map((it, idx) => {
+            const subtotal = parseFloat(it.precio || 0) * (parseInt(it.cantidad, 10) || 1);
+            const precioStr = it.precio
+                ? '$' + parseFloat(it.precio).toLocaleString('es-CO', {minimumFractionDigits: 0})
+                : '—';
+            const subtotalStr = subtotal > 0
+                ? '$' + subtotal.toLocaleString('es-CO', {minimumFractionDigits: 0})
+                : '—';
+            return `
+                <div style="display:grid;grid-template-columns:1fr 54px 88px 88px 28px;gap:0.3rem;
+                            align-items:center;padding:0.35rem 0.4rem;
+                            background:${idx % 2 === 0 ? '#fff' : '#f9fafb'};
+                            border-bottom:1px solid #f0f0f0;font-size:0.8rem;">
+                    <div style="font-weight:600;color:#1A2E3C;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                         title="${it.nombre}">${it.nombre}</div>
+                    <input type="number" value="${it.cantidad}" min="1" step="1"
+                           oninput="_itemsCompra[${idx}].cantidad=parseInt(this.value)||1;_renderizarItemsCompraModal();_renderizarResultadosCatalogo()"
+                           style="padding:0.25rem;font-size:0.78rem;border:1px solid #d1d5db;border-radius:4px;text-align:center;" />
+                    <div style="text-align:right;color:#374151;">${precioStr}</div>
+                    <div style="text-align:right;font-weight:700;color:#1A2E3C;">${subtotalStr}</div>
+                    <button type="button" onclick="nsEliminarItemCompra(${idx})"
+                        style="background:#fce8e6;color:#c62828;border:1px solid #f5c6c6;border-radius:4px;
+                               padding:0.2rem 0.35rem;font-size:0.75rem;cursor:pointer;line-height:1;">✕</button>
+                </div>`;
+        }).join('');
+
+        if (total > 0) {
+            cont.innerHTML += `
+                <div style="text-align:right;padding:0.4rem 0.6rem;font-weight:700;font-size:0.82rem;
+                            color:#1A2E3C;border-top:2px solid #e5e7eb;background:#f0fdf4;">
+                    Total estimado: $${total.toLocaleString('es-CO', {minimumFractionDigits: 0})}
+                </div>`;
+        }
     }
 
     window.nsEliminarItemCompra = function (idx) {
         _itemsCompra.splice(idx, 1);
         _renderizarItemsCompraModal();
+        _renderizarResultadosCatalogo();
     };
 
     window.guardarNuevaSolicitud = async function () {
@@ -1689,15 +1853,16 @@
             payload.uso_final          = uso || null;
 
         } else { // compra
-            const itemsValidos = _itemsCompra.filter(it => it.nombre.trim());
-            if (!itemsValidos.length) { alert('Agrega al menos un artículo a comprar.'); return; }
+            const itemsValidos = _itemsCompra.filter(it => it.nombre && it.nombre.trim());
+            if (!itemsValidos.length) { alert('Selecciona al menos un artículo del catálogo.'); return; }
             const notas = document.getElementById('nsNotasCompra').value.trim();
             payload.descripcion = itemsValidos.map(it => `${it.cantidad}x ${it.nombre}`).join(', ');
             payload.items = itemsValidos.map(it => ({
                 producto_nombre:           it.nombre.trim(),
                 cantidad:                  parseInt(it.cantidad, 10) || 1,
                 producto_precio_unitario:  it.precio ? parseFloat(it.precio) : null,
-                tipo_item:                 'personalizado',
+                tipo_item:                 it.catalogoId ? 'catalogo' : 'personalizado',
+                ...(it.catalogoId ? { producto_id: it.catalogoId } : {}),
             }));
             if (notas) payload.notas_adicionales = notas;
         }
