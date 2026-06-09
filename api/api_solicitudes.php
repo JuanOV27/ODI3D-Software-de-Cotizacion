@@ -870,7 +870,7 @@ function productosCatalogo(): void {
     // 'visible' = columna de visibilidad, 'precio' = precio real (alias precio_base al frontend).
     $sql    = "SELECT p.id, p.nombre, p.descripcion, p.precio AS precio_base,
                       p.categoria,
-                      (SELECT pi.ruta FROM producto_imagenes pi
+                      (SELECT pi.ruta FROM productos_imagenes pi
                        WHERE pi.producto_id = p.id
                        ORDER BY pi.orden ASC LIMIT 1) AS imagen_principal
                FROM productos p
